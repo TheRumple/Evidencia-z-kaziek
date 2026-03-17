@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 
 type Customer = {
@@ -36,6 +37,7 @@ const STATUSY = [
   { value: 'stornovana', label: 'Stornovaná' },
 ]
 
+const AKTIVNE_STATUSY = ['nova', 'rozpracovana', 'caka', 'hotova']
 const PRACE = ['Montáž', 'Servis', 'Vlastné'] as const
 type PracaType = (typeof PRACE)[number]
 
@@ -45,6 +47,13 @@ function getTodayDate() {
   const month = String(now.getMonth() + 1).padStart(2, '0')
   const day = String(now.getDate()).padStart(2, '0')
   return `${year}-${month}-${day}`
+}
+
+function formatDate(date: string | null | undefined) {
+  if (!date) return '-'
+  const parts = date.split('-')
+  if (parts.length !== 3) return date
+  return `${parts[2]}.${parts[1]}.${parts[0]}`
 }
 
 function getStatusLabel(stav: string) {
@@ -63,14 +72,14 @@ function getStatusBadgeStyle(stav: string): CSSProperties {
   return map[stav] || {}
 }
 
-function getStatusRowStyle(stav: string): CSSProperties {
+function getStatusCardBorder(stav: string): CSSProperties {
   const map: Record<string, CSSProperties> = {
-    nova: { background: '#eff6ff' },
-    rozpracovana: { background: '#fffbeb' },
-    caka: { background: '#fff7ed' },
-    hotova: { background: '#ecfeff' },
-    odovzdana: { background: '#ecfdf5' },
-    stornovana: { background: '#fef2f2' },
+    nova: { borderLeft: '6px solid #60a5fa' },
+    rozpracovana: { borderLeft: '6px solid #fbbf24' },
+    caka: { borderLeft: '6px solid #fb923c' },
+    hotova: { borderLeft: '6px solid #22d3ee' },
+    odovzdana: { borderLeft: '6px solid #34d399' },
+    stornovana: { borderLeft: '6px solid #f87171' },
   }
   return map[stav] || {}
 }
@@ -95,12 +104,11 @@ function Modal({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 20,
+        padding: 16,
         zIndex: 1000,
       }}
     >
       <div
-        onClick={(e) => e.stopPropagation()}
         style={{
           width: '100%',
           maxWidth: 780,
@@ -527,17 +535,20 @@ export default function Page() {
     return customers.find((c) => c.id === id)?.nazov || 'Neznámy zákazník'
   }
 
+  const activeOrders = useMemo(() => {
+    return orders.filter((o) => AKTIVNE_STATUSY.includes(o.stav))
+  }, [orders])
+
   const filteredOrders = useMemo(() => {
     const q = search.trim().toLowerCase()
 
-    const result = orders.filter((o) => {
+    const result = activeOrders.filter((o) => {
       const customerName = getCustomerName(o.customer_id).toLowerCase()
       const matchesSearch = !q
         ? true
         : [o.nazov, o.praca || '', o.popis || '', customerName].join(' ').toLowerCase().includes(q)
 
       const matchesStatus = statusFilter === 'vsetky' ? true : o.stav === statusFilter
-
       return matchesSearch && matchesStatus
     })
 
@@ -571,7 +582,7 @@ export default function Page() {
     })
 
     return result
-  }, [orders, search, statusFilter, sortBy, customers])
+  }, [activeOrders, search, statusFilter, sortBy, customers])
 
   const boxStyle: CSSProperties = {
     background: '#ffffff',
@@ -588,6 +599,7 @@ export default function Page() {
     border: '1px solid #cbd5e1',
     outline: 'none',
     background: '#fff',
+    fontSize: 14,
   }
 
   const buttonStyle: CSSProperties = {
@@ -597,6 +609,10 @@ export default function Page() {
     background: '#fff',
     cursor: 'pointer',
     fontWeight: 600,
+    textDecoration: 'none',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   }
 
   const primaryButtonStyle: CSSProperties = {
@@ -665,7 +681,7 @@ export default function Page() {
       style={{
         minHeight: '100vh',
         background: 'linear-gradient(180deg, #f8fafc 0%, #eef4ff 100%)',
-        padding: 24,
+        padding: 16,
         fontFamily: 'Arial, Helvetica, sans-serif',
         color: '#0f172a',
       }}
@@ -681,34 +697,16 @@ export default function Page() {
             border: 'none',
           }}
         >
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              gap: 18,
-              alignItems: 'center',
-              flexWrap: 'wrap',
-            }}
-          >
+          <div className="headerWrap">
             <div>
-              <div style={{ fontSize: 25, opacity: 0.8, marginBottom: 8, letterSpacing: 1 }}>
-                ITspot s.r.o.
-              </div>
+              <div style={{ fontSize: 13, opacity: 0.8, marginBottom: 8, letterSpacing: 1 }}>ITSPOT S.R.O.</div>
               <h1 style={{ margin: 0, fontSize: 32, fontWeight: 800 }}>Evidencia zákaziek</h1>
               <div style={{ marginTop: 8, fontSize: 15, color: 'rgba(255,255,255,0.82)' }}>
-                Zákazky, zákazníci, stavy a termíny na jednom mieste
+                Aktívne zákazky, zákazníci, stavy a termíny
               </div>
             </div>
 
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                flexWrap: 'wrap',
-                justifyContent: 'flex-end',
-              }}
-            >
+            <div className="headerActions">
               <div
                 style={{
                   background: 'rgba(255,255,255,0.08)',
@@ -719,7 +717,9 @@ export default function Page() {
                 }}
               >
                 <div style={{ fontSize: 12, opacity: 0.75, marginBottom: 4 }}>Prihlásený používateľ</div>
-                <div style={{ fontSize: 14, fontWeight: 700 }}>{userEmail || 'Používateľ'}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, wordBreak: 'break-word' }}>
+                  {userEmail || 'Používateľ'}
+                </div>
               </div>
 
               <button
@@ -747,6 +747,18 @@ export default function Page() {
                 Nový zákazník
               </button>
 
+              <Link
+                href="/fakturovane"
+                style={{
+                  ...buttonStyle,
+                  background: 'rgba(255,255,255,0.08)',
+                  color: '#fff',
+                  border: '1px solid rgba(255,255,255,0.25)',
+                }}
+              >
+                Fakturované / Stornované
+              </Link>
+
               <button
                 style={{
                   ...buttonStyle,
@@ -762,20 +774,20 @@ export default function Page() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 14, marginBottom: 20, flexWrap: 'wrap' }}>
-          {summaryCard('Všetky zákazky', orders.length, {
+        <div className="summaryGrid" style={{ display: 'grid', gap: 14, marginBottom: 20 }}>
+          {summaryCard('Aktívne zákazky', activeOrders.length, {
             background: '#e2e8f0',
             color: '#0f172a',
             border: '1px solid #cbd5e1',
           })}
-          {summaryCard('Nové', orders.filter((o) => o.stav === 'nova').length, getStatusBadgeStyle('nova'))}
+          {summaryCard('Nové', activeOrders.filter((o) => o.stav === 'nova').length, getStatusBadgeStyle('nova'))}
           {summaryCard(
             'Rozpracované',
-            orders.filter((o) => o.stav === 'rozpracovana').length,
+            activeOrders.filter((o) => o.stav === 'rozpracovana').length,
             getStatusBadgeStyle('rozpracovana'),
           )}
-          {summaryCard('Čakajú', orders.filter((o) => o.stav === 'caka').length, getStatusBadgeStyle('caka'))}
-          {summaryCard('Dokončené', orders.filter((o) => o.stav === 'hotova').length, getStatusBadgeStyle('hotova'))}
+          {summaryCard('Čakajú', activeOrders.filter((o) => o.stav === 'caka').length, getStatusBadgeStyle('caka'))}
+          {summaryCard('Dokončené', activeOrders.filter((o) => o.stav === 'hotova').length, getStatusBadgeStyle('hotova'))}
         </div>
 
         <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
@@ -790,13 +802,7 @@ export default function Page() {
         {activeTab === 'zakazky' && (
           <>
             <div style={{ ...boxStyle, marginBottom: 20 }}>
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '2fr 1fr 1fr',
-                  gap: 12,
-                }}
-              >
+              <div className="filtersGrid">
                 <div>
                   <div style={{ fontSize: 13, color: '#475569', fontWeight: 700, marginBottom: 6 }}>Hľadať</div>
                   <input
@@ -811,7 +817,7 @@ export default function Page() {
                   <div style={{ fontSize: 13, color: '#475569', fontWeight: 700, marginBottom: 6 }}>Filter</div>
                   <select style={inputStyle} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
                     <option value="vsetky">Všetky stavy</option>
-                    {STATUSY.map((s) => (
+                    {STATUSY.filter((s) => AKTIVNE_STATUSY.includes(s.value)).map((s) => (
                       <option key={s.value} value={s.value}>
                         {s.label}
                       </option>
@@ -844,81 +850,152 @@ export default function Page() {
                   flexWrap: 'wrap',
                 }}
               >
-                <div style={{ fontWeight: 800, fontSize: 18 }}>Prehľad zákaziek</div>
+                <div style={{ fontWeight: 800, fontSize: 18 }}>Aktívne zákazky</div>
                 <div style={{ color: '#475569', fontWeight: 700 }}>Zobrazené: {filteredOrders.length}</div>
               </div>
 
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
-                  <thead>
-                    <tr style={{ textAlign: 'left', color: '#64748b', borderBottom: '1px solid #e2e8f0' }}>
-                      <th style={{ padding: '12px 10px' }}>Názov</th>
-                      <th style={{ padding: '12px 10px' }}>Zákazník</th>
-                      <th style={{ padding: '12px 10px' }}>Práca</th>
-                      <th style={{ padding: '12px 10px' }}>Termín</th>
-                      <th style={{ padding: '12px 10px' }}>Stav</th>
-                      <th style={{ padding: '12px 10px' }}>Akcie</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredOrders.map((o) => (
-                      <tr
-                        key={o.id}
+              <div className="desktopTable">
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+                    <thead>
+                      <tr style={{ textAlign: 'left', color: '#64748b', borderBottom: '1px solid #e2e8f0' }}>
+                        <th style={{ padding: '12px 10px' }}>Názov</th>
+                        <th style={{ padding: '12px 10px' }}>Zákazník</th>
+                        <th style={{ padding: '12px 10px' }}>Práca</th>
+                        <th style={{ padding: '12px 10px' }}>Termín</th>
+                        <th style={{ padding: '12px 10px' }}>Stav</th>
+                        <th style={{ padding: '12px 10px' }}>Akcie</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredOrders.map((o) => (
+                        <tr key={o.id} style={{ borderBottom: '1px solid #e2e8f0', verticalAlign: 'top' }}>
+                          <td style={{ padding: '12px 10px' }}>
+                            <div style={{ fontWeight: 800 }}>{o.nazov}</div>
+                            <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>{o.popis || '-'}</div>
+                          </td>
+                          <td style={{ padding: '12px 10px' }}>{getCustomerName(o.customer_id)}</td>
+                          <td style={{ padding: '12px 10px' }}>{o.praca || '-'}</td>
+                          <td style={{ padding: '12px 10px' }}>{formatDate(o.termin)}</td>
+                          <td style={{ padding: '12px 10px' }}>
+                            <select
+                              value={o.stav}
+                              onChange={(e) => updateOrderStatus(o.id, e.target.value)}
+                              style={{
+                                ...getStatusBadgeStyle(o.stav),
+                                padding: '8px 10px',
+                                borderRadius: 999,
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                outline: 'none',
+                              }}
+                            >
+                              {STATUSY.map((s) => (
+                                <option key={s.value} value={s.value}>
+                                  {s.label}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+                          <td style={{ padding: '12px 10px' }}>
+                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                              <button style={buttonStyle} onClick={() => startEditOrder(o)}>
+                                Upraviť
+                              </button>
+                              <button style={dangerButtonStyle} onClick={() => deleteOrder(o.id)}>
+                                Zmazať
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+
+                      {filteredOrders.length === 0 && (
+                        <tr>
+                          <td colSpan={6} style={{ padding: 24, textAlign: 'center', color: '#64748b' }}>
+                            Žiadne zákazky na zobrazenie
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="mobileCards">
+                {filteredOrders.length === 0 && (
+                  <div style={{ padding: 12, textAlign: 'center', color: '#64748b' }}>
+                    Žiadne zákazky na zobrazenie
+                  </div>
+                )}
+
+                {filteredOrders.map((o) => (
+                  <div
+                    key={o.id}
+                    style={{
+                      border: '1px solid #e2e8f0',
+                      borderRadius: 18,
+                      padding: 14,
+                      marginBottom: 12,
+                      background: '#fff',
+                      ...getStatusCardBorder(o.stav),
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontWeight: 800, fontSize: 17 }}>{o.nazov}</div>
+                        <div style={{ marginTop: 4, color: '#475569', fontSize: 13 }}>{o.popis || '-'}</div>
+                      </div>
+
+                      <div
                         style={{
-                          ...getStatusRowStyle(o.stav),
-                          borderBottom: '1px solid #e2e8f0',
-                          verticalAlign: 'top',
+                          ...getStatusBadgeStyle(o.stav),
+                          padding: '6px 10px',
+                          borderRadius: 999,
+                          fontWeight: 800,
+                          fontSize: 12,
+                          whiteSpace: 'nowrap',
                         }}
                       >
-                        <td style={{ padding: '12px 10px' }}>
-                          <div style={{ fontWeight: 800 }}>{o.nazov}</div>
-                          <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>{o.popis || '-'}</div>
-                        </td>
-                        <td style={{ padding: '12px 10px' }}>{getCustomerName(o.customer_id)}</td>
-                        <td style={{ padding: '12px 10px' }}>{o.praca || '-'}</td>
-                        <td style={{ padding: '12px 10px' }}>{o.termin || '-'}</td>
-                        <td style={{ padding: '12px 10px' }}>
-                          <select
-                            value={o.stav}
-                            onChange={(e) => updateOrderStatus(o.id, e.target.value)}
-                            style={{
-                              ...getStatusBadgeStyle(o.stav),
-                              padding: '8px 10px',
-                              borderRadius: 999,
-                              fontWeight: 800,
-                              cursor: 'pointer',
-                              outline: 'none',
-                            }}
-                          >
-                            {STATUSY.map((s) => (
-                              <option key={s.value} value={s.value}>
-                                {s.label}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                        <td style={{ padding: '12px 10px' }}>
-                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                            <button style={buttonStyle} onClick={() => startEditOrder(o)}>
-                              Upraviť
-                            </button>
-                            <button style={dangerButtonStyle} onClick={() => deleteOrder(o.id)}>
-                              Zmazať
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                        {getStatusLabel(o.stav)}
+                      </div>
+                    </div>
 
-                    {filteredOrders.length === 0 && (
-                      <tr>
-                        <td colSpan={6} style={{ padding: 24, textAlign: 'center', color: '#64748b' }}>
-                          Žiadne zákazky na zobrazenie
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+                    <div style={{ display: 'grid', gap: 8, marginTop: 14 }}>
+                      <div><strong>Zákazník:</strong> {getCustomerName(o.customer_id)}</div>
+                      <div><strong>Práca:</strong> {o.praca || '-'}</div>
+                      <div><strong>Termín:</strong> {formatDate(o.termin)}</div>
+                    </div>
+
+                    <div style={{ marginTop: 14 }}>
+                      <div style={{ fontSize: 13, color: '#475569', fontWeight: 700, marginBottom: 6 }}>Stav</div>
+                      <select
+                        value={o.stav}
+                        onChange={(e) => updateOrderStatus(o.id, e.target.value)}
+                        style={{
+                          ...inputStyle,
+                          ...getStatusBadgeStyle(o.stav),
+                          fontWeight: 800,
+                        }}
+                      >
+                        {STATUSY.map((s) => (
+                          <option key={s.value} value={s.value}>
+                            {s.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 14 }}>
+                      <button style={buttonStyle} onClick={() => startEditOrder(o)}>
+                        Upraviť
+                      </button>
+                      <button style={dangerButtonStyle} onClick={() => deleteOrder(o.id)}>
+                        Zmazať
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </>
@@ -940,46 +1017,86 @@ export default function Page() {
               <div style={{ color: '#475569', fontWeight: 700 }}>Spolu: {customers.length}</div>
             </div>
 
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
-                <thead>
-                  <tr style={{ textAlign: 'left', color: '#64748b', borderBottom: '1px solid #e2e8f0' }}>
-                    <th style={{ padding: '12px 10px' }}>Názov</th>
-                    <th style={{ padding: '12px 10px' }}>Kontakt</th>
-                    <th style={{ padding: '12px 10px' }}>Telefón</th>
-                    <th style={{ padding: '12px 10px' }}>Email</th>
-                    <th style={{ padding: '12px 10px' }}>Akcie</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {customers.map((c) => (
-                    <tr key={c.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ padding: '12px 10px', fontWeight: 800 }}>{c.nazov}</td>
-                      <td style={{ padding: '12px 10px' }}>{c.kontakt || '-'}</td>
-                      <td style={{ padding: '12px 10px' }}>{c.telefon || '-'}</td>
-                      <td style={{ padding: '12px 10px' }}>{c.email || '-'}</td>
-                      <td style={{ padding: '12px 10px' }}>
-                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                          <button style={buttonStyle} onClick={() => startEditCustomer(c)}>
-                            Upraviť
-                          </button>
-                          <button style={dangerButtonStyle} onClick={() => deleteCustomer(c.id)}>
-                            Zmazať
-                          </button>
-                        </div>
-                      </td>
+            <div className="desktopTable">
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+                  <thead>
+                    <tr style={{ textAlign: 'left', color: '#64748b', borderBottom: '1px solid #e2e8f0' }}>
+                      <th style={{ padding: '12px 10px' }}>Názov</th>
+                      <th style={{ padding: '12px 10px' }}>Kontakt</th>
+                      <th style={{ padding: '12px 10px' }}>Telefón</th>
+                      <th style={{ padding: '12px 10px' }}>Email</th>
+                      <th style={{ padding: '12px 10px' }}>Akcie</th>
                     </tr>
-                  ))}
+                  </thead>
+                  <tbody>
+                    {customers.map((c) => (
+                      <tr key={c.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ padding: '12px 10px', fontWeight: 800 }}>{c.nazov}</td>
+                        <td style={{ padding: '12px 10px' }}>{c.kontakt || '-'}</td>
+                        <td style={{ padding: '12px 10px' }}>{c.telefon || '-'}</td>
+                        <td style={{ padding: '12px 10px' }}>{c.email || '-'}</td>
+                        <td style={{ padding: '12px 10px' }}>
+                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                            <button style={buttonStyle} onClick={() => startEditCustomer(c)}>
+                              Upraviť
+                            </button>
+                            <button style={dangerButtonStyle} onClick={() => deleteCustomer(c.id)}>
+                              Zmazať
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
 
-                  {customers.length === 0 && (
-                    <tr>
-                      <td colSpan={5} style={{ padding: 24, textAlign: 'center', color: '#64748b' }}>
-                        Zatiaľ nemáš žiadnych zákazníkov
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                    {customers.length === 0 && (
+                      <tr>
+                        <td colSpan={5} style={{ padding: 24, textAlign: 'center', color: '#64748b' }}>
+                          Zatiaľ nemáš žiadnych zákazníkov
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="mobileCards">
+              {customers.length === 0 && (
+                <div style={{ padding: 12, textAlign: 'center', color: '#64748b' }}>
+                  Zatiaľ nemáš žiadnych zákazníkov
+                </div>
+              )}
+
+              {customers.map((c) => (
+                <div
+                  key={c.id}
+                  style={{
+                    border: '1px solid #e2e8f0',
+                    borderRadius: 18,
+                    padding: 14,
+                    marginBottom: 12,
+                    background: '#fff',
+                  }}
+                >
+                  <div style={{ fontWeight: 800, fontSize: 17 }}>{c.nazov}</div>
+
+                  <div style={{ display: 'grid', gap: 8, marginTop: 14 }}>
+                    <div><strong>Kontakt:</strong> {c.kontakt || '-'}</div>
+                    <div><strong>Telefón:</strong> {c.telefon || '-'}</div>
+                    <div><strong>Email:</strong> {c.email || '-'}</div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 14 }}>
+                    <button style={buttonStyle} onClick={() => startEditCustomer(c)}>
+                      Upraviť
+                    </button>
+                    <button style={dangerButtonStyle} onClick={() => deleteCustomer(c.id)}>
+                      Zmazať
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -1011,7 +1128,7 @@ export default function Page() {
               onChange={(e) => setEmail(e.target.value)}
             />
 
-            <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+            <div style={{ display: 'flex', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
               <button style={primaryButtonStyle} onClick={addCustomer}>
                 Uložiť zákazníka
               </button>
@@ -1029,7 +1146,7 @@ export default function Page() {
         </Modal>
 
         <Modal open={openAddOrder} title="Pridať zákazku">
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="modalGrid">
             <input
               style={inputStyle}
               placeholder="Názov zákazky"
@@ -1125,7 +1242,7 @@ export default function Page() {
             />
           </div>
 
-          <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
+          <div style={{ display: 'flex', gap: 10, marginTop: 18, flexWrap: 'wrap' }}>
             <button style={primaryButtonStyle} onClick={addOrder}>
               Uložiť zákazku
             </button>
@@ -1168,7 +1285,7 @@ export default function Page() {
               placeholder="Email"
             />
 
-            <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+            <div style={{ display: 'flex', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
               <button style={primaryButtonStyle} onClick={saveCustomerEdit}>
                 Uložiť zmeny
               </button>
@@ -1186,7 +1303,7 @@ export default function Page() {
         </Modal>
 
         <Modal open={openEditOrder} title="Upraviť zákazku">
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="modalGrid">
             <input
               style={inputStyle}
               placeholder="Názov zákazky"
@@ -1241,7 +1358,7 @@ export default function Page() {
             />
           </div>
 
-          <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
+          <div style={{ display: 'flex', gap: 10, marginTop: 18, flexWrap: 'wrap' }}>
             <button style={primaryButtonStyle} onClick={saveOrderEdit}>
               Uložiť zmeny
             </button>
@@ -1263,6 +1380,80 @@ export default function Page() {
           </div>
         )}
       </div>
+
+      <style jsx>{`
+        .headerWrap {
+          display: flex;
+          justify-content: space-between;
+          gap: 18px;
+          align-items: center;
+          flex-wrap: wrap;
+        }
+
+        .headerActions {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          flex-wrap: wrap;
+          justify-content: flex-end;
+        }
+
+        .summaryGrid {
+          grid-template-columns: repeat(5, minmax(0, 1fr));
+        }
+
+        .filtersGrid {
+          display: grid;
+          grid-template-columns: 2fr 1fr 1fr;
+          gap: 12px;
+        }
+
+        .modalGrid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+        }
+
+        .mobileCards {
+          display: none;
+        }
+
+        .desktopTable {
+          display: block;
+        }
+
+        @media (max-width: 1024px) {
+          .summaryGrid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+        }
+
+        @media (max-width: 768px) {
+          .filtersGrid,
+          .modalGrid,
+          .summaryGrid {
+            grid-template-columns: 1fr;
+          }
+
+          .desktopTable {
+            display: none;
+          }
+
+          .mobileCards {
+            display: block;
+          }
+
+          .headerActions {
+            width: 100%;
+            justify-content: stretch;
+          }
+
+          .headerActions :global(a),
+          .headerActions button {
+            width: 100%;
+          }
+        }
+      `}</style>
     </div>
   )
 }
