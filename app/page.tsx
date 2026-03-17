@@ -1,7 +1,31 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
+
+type Customer = {
+  id: string
+  user_id: string
+  nazov: string
+  kontakt: string | null
+  telefon: string | null
+  email: string | null
+  created_at?: string
+}
+
+type Order = {
+  id: string
+  user_id: string
+  nazov: string
+  customer_id: string
+  stav: string
+  praca: string | null
+  popis: string | null
+  termin: string | null
+  hodiny?: number
+  created_at?: string
+}
 
 const STATUSY = [
   { value: 'nova', label: 'Nová' },
@@ -12,8 +36,23 @@ const STATUSY = [
   { value: 'stornovana', label: 'Stornovaná' },
 ]
 
-function getStatusBadgeStyle(stav: string) {
-  const map: Record<string, React.CSSProperties> = {
+const PRACE = ['Montáž', 'Servis', 'Vlastné'] as const
+type PracaType = (typeof PRACE)[number]
+
+function getTodayDate() {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function getStatusLabel(stav: string) {
+  return STATUSY.find((s) => s.value === stav)?.label || stav
+}
+
+function getStatusBadgeStyle(stav: string): CSSProperties {
+  const map: Record<string, CSSProperties> = {
     nova: { background: '#dbeafe', color: '#1e40af', border: '1px solid #93c5fd' },
     rozpracovana: { background: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d' },
     caka: { background: '#ffedd5', color: '#9a3412', border: '1px solid #fdba74' },
@@ -24,8 +63,8 @@ function getStatusBadgeStyle(stav: string) {
   return map[stav] || {}
 }
 
-function getStatusRowStyle(stav: string): React.CSSProperties {
-  const map: Record<string, React.CSSProperties> = {
+function getStatusRowStyle(stav: string): CSSProperties {
+  const map: Record<string, CSSProperties> = {
     nova: { background: '#eff6ff' },
     rozpracovana: { background: '#fffbeb' },
     caka: { background: '#fff7ed' },
@@ -39,13 +78,11 @@ function getStatusRowStyle(stav: string): React.CSSProperties {
 function Modal({
   open,
   title,
-  onClose,
   children,
 }: {
   open: boolean
   title: string
-  onClose: () => void
-  children: React.ReactNode
+  children: ReactNode
 }) {
   if (!open) return null
 
@@ -66,39 +103,17 @@ function Modal({
         onClick={(e) => e.stopPropagation()}
         style={{
           width: '100%',
-          maxWidth: 760,
+          maxWidth: 780,
           maxHeight: '90vh',
           overflowY: 'auto',
           background: '#fff',
-          borderRadius: 18,
+          borderRadius: 20,
           border: '1px solid #e2e8f0',
           boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
-          padding: 20,
+          padding: 22,
         }}
       >
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            gap: 12,
-            marginBottom: 16,
-          }}
-        >
-          <div style={{ fontSize: 20, fontWeight: 700 }}>{title}</div>
-          <button
-            onClick={onClose}
-            style={{
-              border: '1px solid #cbd5e1',
-              background: '#fff',
-              borderRadius: 10,
-              padding: '8px 12px',
-              cursor: 'pointer',
-            }}
-          >
-            Zavrieť
-          </button>
-        </div>
+        <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 18 }}>{title}</div>
         {children}
       </div>
     </div>
@@ -107,10 +122,12 @@ function Modal({
 
 export default function Page() {
   const [userId, setUserId] = useState<string | null>(null)
+  const [userEmail, setUserEmail] = useState('')
   const [checkingAuth, setCheckingAuth] = useState(true)
+  const [loading, setLoading] = useState(false)
 
-  const [customers, setCustomers] = useState<any[]>([])
-  const [orders, setOrders] = useState<any[]>([])
+  const [customers, setCustomers] = useState<Customer[]>([])
+  const [orders, setOrders] = useState<Order[]>([])
 
   const [activeTab, setActiveTab] = useState<'zakazky' | 'zakaznici'>('zakazky')
 
@@ -120,13 +137,20 @@ export default function Page() {
   const [email, setEmail] = useState('')
 
   const [orderNazov, setOrderNazov] = useState('')
+  const [customerMode, setCustomerMode] = useState<'existing' | 'new'>('existing')
   const [customerId, setCustomerId] = useState('')
-  const [orderPraca, setOrderPraca] = useState('Servis')
+  const [newCustomerNazov, setNewCustomerNazov] = useState('')
+  const [newCustomerKontakt, setNewCustomerKontakt] = useState('')
+  const [newCustomerTelefon, setNewCustomerTelefon] = useState('')
+  const [newCustomerEmail, setNewCustomerEmail] = useState('')
+  const [orderPracaType, setOrderPracaType] = useState<PracaType>('Servis')
+  const [orderPracaCustom, setOrderPracaCustom] = useState('')
   const [orderPopis, setOrderPopis] = useState('')
-  const [orderTermin, setOrderTermin] = useState('')
+  const [orderTermin, setOrderTermin] = useState(getTodayDate())
 
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('vsetky')
+  const [sortBy, setSortBy] = useState('newest')
 
   const [editCustomerId, setEditCustomerId] = useState('')
   const [editCustomerNazov, setEditCustomerNazov] = useState('')
@@ -137,7 +161,8 @@ export default function Page() {
   const [editOrderId, setEditOrderId] = useState('')
   const [editOrderNazov, setEditOrderNazov] = useState('')
   const [editOrderCustomerId, setEditOrderCustomerId] = useState('')
-  const [editOrderPraca, setEditOrderPraca] = useState('Servis')
+  const [editOrderPracaType, setEditOrderPracaType] = useState<PracaType>('Servis')
+  const [editOrderPracaCustom, setEditOrderPracaCustom] = useState('')
   const [editOrderPopis, setEditOrderPopis] = useState('')
   const [editOrderTermin, setEditOrderTermin] = useState('')
 
@@ -158,6 +183,8 @@ export default function Page() {
       }
 
       setUserId(session.user.id)
+      setUserEmail(session.user.email || '')
+      setCheckingAuth(false)
     })
 
     return () => subscription.unsubscribe()
@@ -165,8 +192,7 @@ export default function Page() {
 
   useEffect(() => {
     if (userId) {
-      loadCustomers(userId)
-      loadOrders(userId)
+      loadInitialData(userId)
     }
   }, [userId])
 
@@ -181,27 +207,44 @@ export default function Page() {
     }
 
     setUserId(session.user.id)
+    setUserEmail(session.user.email || '')
     setCheckingAuth(false)
   }
 
+  async function loadInitialData(currentUserId: string) {
+    setLoading(true)
+    await Promise.all([loadCustomers(currentUserId), loadOrders(currentUserId)])
+    setLoading(false)
+  }
+
   async function loadCustomers(currentUserId: string) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('customers')
       .select('*')
       .eq('user_id', currentUserId)
       .order('created_at', { ascending: false })
 
-    setCustomers(data || [])
+    if (error) {
+      alert(error.message)
+      return
+    }
+
+    setCustomers((data || []) as Customer[])
   }
 
   async function loadOrders(currentUserId: string) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('orders')
       .select('*')
       .eq('user_id', currentUserId)
       .order('created_at', { ascending: false })
 
-    setOrders(data || [])
+    if (error) {
+      alert(error.message)
+      return
+    }
+
+    setOrders((data || []) as Order[])
   }
 
   function resetAddCustomerForm() {
@@ -213,10 +256,16 @@ export default function Page() {
 
   function resetAddOrderForm() {
     setOrderNazov('')
+    setCustomerMode('existing')
     setCustomerId('')
-    setOrderPraca('Servis')
+    setNewCustomerNazov('')
+    setNewCustomerKontakt('')
+    setNewCustomerTelefon('')
+    setNewCustomerEmail('')
+    setOrderPracaType('Servis')
+    setOrderPracaCustom('')
     setOrderPopis('')
-    setOrderTermin('')
+    setOrderTermin(getTodayDate())
   }
 
   function resetEditCustomerForm() {
@@ -231,45 +280,29 @@ export default function Page() {
     setEditOrderId('')
     setEditOrderNazov('')
     setEditOrderCustomerId('')
-    setEditOrderPraca('Servis')
+    setEditOrderPracaType('Servis')
+    setEditOrderPracaCustom('')
     setEditOrderPopis('')
     setEditOrderTermin('')
-  }
-
-  const isAddCustomerDirty = [nazov, kontakt, telefon, email].some((v) => v.trim() !== '')
-  const isAddOrderDirty = [orderNazov, customerId, orderPraca !== 'Servis' ? 'x' : '', orderPopis, orderTermin].some(
-    (v) => String(v).trim() !== '',
-  )
-  const isEditCustomerDirty =
-    openEditCustomer &&
-    [editCustomerNazov, editCustomerKontakt, editCustomerTelefon, editCustomerEmail].some((v) => v.trim() !== '')
-  const isEditOrderDirty =
-    openEditOrder &&
-    [editOrderNazov, editOrderCustomerId, editOrderPraca !== 'Servis' ? 'x' : '', editOrderPopis, editOrderTermin].some(
-      (v) => String(v).trim() !== '',
-    )
-
-  function confirmClose(isDirty: boolean, resetFn: () => void, closeFn: () => void) {
-    if (isDirty) {
-      const ok = window.confirm('Máš neuložené zmeny. Naozaj chceš zavrieť okno?')
-      if (!ok) return
-    }
-    resetFn()
-    closeFn()
   }
 
   async function addCustomer() {
     if (!nazov.trim() || !userId) return
 
-    await supabase.from('customers').insert([
+    const { error } = await supabase.from('customers').insert([
       {
         user_id: userId,
-        nazov,
-        kontakt,
-        telefon,
-        email,
+        nazov: nazov.trim(),
+        kontakt: kontakt.trim() || null,
+        telefon: telefon.trim() || null,
+        email: email.trim() || null,
       },
     ])
+
+    if (error) {
+      alert(error.message)
+      return
+    }
 
     resetAddCustomerForm()
     setOpenAddCustomer(false)
@@ -277,20 +310,70 @@ export default function Page() {
   }
 
   async function addOrder() {
-    if (!orderNazov.trim() || !customerId || !userId) return
+    if (!orderNazov.trim() || !userId) return
 
-    await supabase.from('orders').insert([
+    let finalCustomerId = customerId
+
+    if (customerMode === 'existing') {
+      if (!customerId) {
+        alert('Vyber zákazníka.')
+        return
+      }
+    }
+
+    if (customerMode === 'new') {
+      if (!newCustomerNazov.trim()) {
+        alert('Zadaj názov zákazníka alebo meno osoby.')
+        return
+      }
+
+      const { data: newCustomer, error: newCustomerError } = await supabase
+        .from('customers')
+        .insert([
+          {
+            user_id: userId,
+            nazov: newCustomerNazov.trim(),
+            kontakt: newCustomerKontakt.trim() || null,
+            telefon: newCustomerTelefon.trim() || null,
+            email: newCustomerEmail.trim() || null,
+          },
+        ])
+        .select()
+        .single()
+
+      if (newCustomerError || !newCustomer) {
+        alert(newCustomerError?.message || 'Nepodarilo sa vytvoriť zákazníka.')
+        return
+      }
+
+      finalCustomerId = newCustomer.id
+      await loadCustomers(userId)
+    }
+
+    const finalPraca = orderPracaType === 'Vlastné' ? orderPracaCustom.trim() : orderPracaType
+
+    if (!finalPraca) {
+      alert('Zadaj typ práce.')
+      return
+    }
+
+    const { error } = await supabase.from('orders').insert([
       {
         user_id: userId,
-        nazov: orderNazov,
-        customer_id: customerId,
+        nazov: orderNazov.trim(),
+        customer_id: finalCustomerId,
         stav: 'nova',
-        praca: orderPraca,
-        popis: orderPopis,
+        praca: finalPraca,
+        popis: orderPopis.trim() || null,
         termin: orderTermin || null,
         hodiny: 0,
       },
     ])
+
+    if (error) {
+      alert(error.message)
+      return
+    }
 
     resetAddOrderForm()
     setOpenAddOrder(false)
@@ -300,17 +383,30 @@ export default function Page() {
   async function updateOrderStatus(orderId: string, stav: string) {
     if (!userId) return
 
-    await supabase.from('orders').update({ stav }).eq('id', orderId)
+    const { error } = await supabase
+      .from('orders')
+      .update({ stav })
+      .eq('id', orderId)
+      .eq('user_id', userId)
+
+    if (error) {
+      alert(error.message)
+      return
+    }
+
     loadOrders(userId)
   }
 
   async function deleteOrder(orderId: string) {
     if (!userId) return
 
-    const ok = window.confirm('Naozaj chceš zmazať túto zákazku?')
-    if (!ok) return
+    const { error } = await supabase.from('orders').delete().eq('id', orderId).eq('user_id', userId)
 
-    await supabase.from('orders').delete().eq('id', orderId)
+    if (error) {
+      alert(error.message)
+      return
+    }
+
     loadOrders(userId)
   }
 
@@ -320,18 +416,25 @@ export default function Page() {
     const hasOrders = orders.some((o) => o.customer_id === customerIdToDelete)
 
     if (hasOrders) {
-      alert('Tento zákazník má naviazané zákazky. Najprv zmaž alebo presuň zákazky.')
+      alert('Tento zákazník má naviazané zákazky. Najprv zmeň alebo zmaž zákazky.')
       return
     }
 
-    const ok = window.confirm('Naozaj chceš zmazať tohto zákazníka?')
-    if (!ok) return
+    const { error } = await supabase
+      .from('customers')
+      .delete()
+      .eq('id', customerIdToDelete)
+      .eq('user_id', userId)
 
-    await supabase.from('customers').delete().eq('id', customerIdToDelete)
+    if (error) {
+      alert(error.message)
+      return
+    }
+
     loadCustomers(userId)
   }
 
-  function startEditCustomer(c: any) {
+  function startEditCustomer(c: Customer) {
     setEditCustomerId(c.id)
     setEditCustomerNazov(c.nazov || '')
     setEditCustomerKontakt(c.kontakt || '')
@@ -343,26 +446,40 @@ export default function Page() {
   async function saveCustomerEdit() {
     if (!editCustomerId || !editCustomerNazov.trim() || !userId) return
 
-    await supabase
+    const { error } = await supabase
       .from('customers')
       .update({
-        nazov: editCustomerNazov,
-        kontakt: editCustomerKontakt,
-        telefon: editCustomerTelefon,
-        email: editCustomerEmail,
+        nazov: editCustomerNazov.trim(),
+        kontakt: editCustomerKontakt.trim() || null,
+        telefon: editCustomerTelefon.trim() || null,
+        email: editCustomerEmail.trim() || null,
       })
       .eq('id', editCustomerId)
+      .eq('user_id', userId)
+
+    if (error) {
+      alert(error.message)
+      return
+    }
 
     resetEditCustomerForm()
     setOpenEditCustomer(false)
     loadCustomers(userId)
   }
 
-  function startEditOrder(o: any) {
+  function startEditOrder(o: Order) {
     setEditOrderId(o.id)
     setEditOrderNazov(o.nazov || '')
     setEditOrderCustomerId(o.customer_id || '')
-    setEditOrderPraca(o.praca || 'Servis')
+
+    if (o.praca === 'Montáž' || o.praca === 'Servis') {
+      setEditOrderPracaType(o.praca)
+      setEditOrderPracaCustom('')
+    } else {
+      setEditOrderPracaType('Vlastné')
+      setEditOrderPracaCustom(o.praca || '')
+    }
+
     setEditOrderPopis(o.popis || '')
     setEditOrderTermin(o.termin || '')
     setOpenEditOrder(true)
@@ -371,16 +488,30 @@ export default function Page() {
   async function saveOrderEdit() {
     if (!editOrderId || !editOrderNazov.trim() || !editOrderCustomerId || !userId) return
 
-    await supabase
+    const finalPraca =
+      editOrderPracaType === 'Vlastné' ? editOrderPracaCustom.trim() : editOrderPracaType
+
+    if (!finalPraca) {
+      alert('Zadaj typ práce.')
+      return
+    }
+
+    const { error } = await supabase
       .from('orders')
       .update({
-        nazov: editOrderNazov,
+        nazov: editOrderNazov.trim(),
         customer_id: editOrderCustomerId,
-        praca: editOrderPraca,
-        popis: editOrderPopis,
+        praca: finalPraca,
+        popis: editOrderPopis.trim() || null,
         termin: editOrderTermin || null,
       })
       .eq('id', editOrderId)
+      .eq('user_id', userId)
+
+    if (error) {
+      alert(error.message)
+      return
+    }
 
     resetEditOrderForm()
     setOpenEditOrder(false)
@@ -399,65 +530,131 @@ export default function Page() {
   const filteredOrders = useMemo(() => {
     const q = search.trim().toLowerCase()
 
-    return orders.filter((o) => {
+    const result = orders.filter((o) => {
       const customerName = getCustomerName(o.customer_id).toLowerCase()
       const matchesSearch = !q
         ? true
-        : [o.nazov, o.praca, o.popis || '', customerName].join(' ').toLowerCase().includes(q)
+        : [o.nazov, o.praca || '', o.popis || '', customerName].join(' ').toLowerCase().includes(q)
 
       const matchesStatus = statusFilter === 'vsetky' ? true : o.stav === statusFilter
 
       return matchesSearch && matchesStatus
     })
-  }, [orders, search, statusFilter, customers])
 
-  const boxStyle: React.CSSProperties = {
+    result.sort((a, b) => {
+      const customerA = getCustomerName(a.customer_id).toLowerCase()
+      const customerB = getCustomerName(b.customer_id).toLowerCase()
+      const statusA = getStatusLabel(a.stav).toLowerCase()
+      const statusB = getStatusLabel(b.stav).toLowerCase()
+      const nazovA = (a.nazov || '').toLowerCase()
+      const nazovB = (b.nazov || '').toLowerCase()
+      const terminA = a.termin || '9999-12-31'
+      const terminB = b.termin || '9999-12-31'
+      const createdA = a.created_at || ''
+      const createdB = b.created_at || ''
+
+      switch (sortBy) {
+        case 'customer':
+          return customerA.localeCompare(customerB, 'sk')
+        case 'status':
+          return statusA.localeCompare(statusB, 'sk')
+        case 'name':
+          return nazovA.localeCompare(nazovB, 'sk')
+        case 'deadline':
+          return terminA.localeCompare(terminB)
+        case 'oldest':
+          return createdA.localeCompare(createdB)
+        case 'newest':
+        default:
+          return createdB.localeCompare(createdA)
+      }
+    })
+
+    return result
+  }, [orders, search, statusFilter, sortBy, customers])
+
+  const boxStyle: CSSProperties = {
     background: '#ffffff',
     border: '1px solid #e2e8f0',
-    borderRadius: 16,
+    borderRadius: 18,
     padding: 20,
-    boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+    boxShadow: '0 6px 18px rgba(15, 23, 42, 0.05)',
   }
 
-  const inputStyle: React.CSSProperties = {
+  const inputStyle: CSSProperties = {
     width: '100%',
-    padding: '10px 12px',
-    borderRadius: 10,
+    padding: '11px 12px',
+    borderRadius: 12,
     border: '1px solid #cbd5e1',
     outline: 'none',
+    background: '#fff',
   }
 
-  const buttonStyle: React.CSSProperties = {
+  const buttonStyle: CSSProperties = {
     padding: '10px 14px',
     borderRadius: 12,
     border: '1px solid #cbd5e1',
     background: '#fff',
     cursor: 'pointer',
+    fontWeight: 600,
   }
 
-  const primaryButtonStyle: React.CSSProperties = {
+  const primaryButtonStyle: CSSProperties = {
     ...buttonStyle,
     background: '#0f172a',
     color: '#fff',
     border: '1px solid #0f172a',
   }
 
-  const dangerButtonStyle: React.CSSProperties = {
+  const dangerButtonStyle: CSSProperties = {
     ...buttonStyle,
     background: '#fff1f2',
     border: '1px solid #fecdd3',
     color: '#be123c',
   }
 
-  const tabButton = (active: boolean): React.CSSProperties => ({
+  const secondaryDarkButtonStyle: CSSProperties = {
+    ...buttonStyle,
+    background: '#e2e8f0',
+    border: '1px solid #cbd5e1',
+    color: '#0f172a',
+  }
+
+  const tabButton = (active: boolean): CSSProperties => ({
     padding: '10px 14px',
     borderRadius: 12,
     border: active ? '1px solid #0f172a' : '1px solid #cbd5e1',
     background: active ? '#0f172a' : '#fff',
     color: active ? '#fff' : '#0f172a',
     cursor: 'pointer',
-    fontWeight: 600,
+    fontWeight: 700,
   })
+
+  const summaryCard = (label: string, value: number, color: CSSProperties): ReactNode => (
+    <div
+      style={{
+        ...boxStyle,
+        minWidth: 160,
+        padding: 16,
+        flex: 1,
+      }}
+    >
+      <div
+        style={{
+          ...color,
+          display: 'inline-flex',
+          padding: '4px 10px',
+          borderRadius: 999,
+          fontSize: 12,
+          fontWeight: 800,
+          marginBottom: 10,
+        }}
+      >
+        {label}
+      </div>
+      <div style={{ fontSize: 28, fontWeight: 800 }}>{value}</div>
+    </div>
+  )
 
   if (checkingAuth) {
     return <div style={{ padding: 24, fontFamily: 'Arial, Helvetica, sans-serif' }}>Načítavam...</div>
@@ -467,41 +664,118 @@ export default function Page() {
     <div
       style={{
         minHeight: '100vh',
-        background: '#f8fafc',
+        background: 'linear-gradient(180deg, #f8fafc 0%, #eef4ff 100%)',
         padding: 24,
         fontFamily: 'Arial, Helvetica, sans-serif',
         color: '#0f172a',
       }}
     >
-      <div style={{ maxWidth: 1280, margin: '0 auto' }}>
+      <div style={{ maxWidth: 1320, margin: '0 auto' }}>
         <div
           style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            gap: 16,
-            alignItems: 'flex-start',
-            flexWrap: 'wrap',
-            marginBottom: 24,
+            ...boxStyle,
+            marginBottom: 22,
+            padding: 24,
+            background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+            color: '#fff',
+            border: 'none',
           }}
         >
-          <div>
-            <h1 style={{ margin: 0, fontSize: 32, fontWeight: 700 }}>ITspot s.r.o.</h1>
-            <div style={{ marginTop: 6, fontSize: 20, color: '#334155', fontWeight: 600 }}>
-              Evidencia zákaziek
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              gap: 18,
+              alignItems: 'center',
+              flexWrap: 'wrap',
+            }}
+          >
+            <div>
+              <div style={{ fontSize: 25, opacity: 0.8, marginBottom: 8, letterSpacing: 1 }}>
+                ITspot s.r.o.
+              </div>
+              <h1 style={{ margin: 0, fontSize: 32, fontWeight: 800 }}>Evidencia zákaziek</h1>
+              <div style={{ marginTop: 8, fontSize: 15, color: 'rgba(255,255,255,0.82)' }}>
+                Zákazky, zákazníci, stavy a termíny na jednom mieste
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                flexWrap: 'wrap',
+                justifyContent: 'flex-end',
+              }}
+            >
+              <div
+                style={{
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: 16,
+                  padding: '12px 14px',
+                  minWidth: 220,
+                }}
+              >
+                <div style={{ fontSize: 12, opacity: 0.75, marginBottom: 4 }}>Prihlásený používateľ</div>
+                <div style={{ fontSize: 14, fontWeight: 700 }}>{userEmail || 'Používateľ'}</div>
+              </div>
+
+              <button
+                style={{ ...primaryButtonStyle, background: '#fff', color: '#0f172a', borderColor: '#fff' }}
+                onClick={() => {
+                  resetAddOrderForm()
+                  setOpenAddOrder(true)
+                }}
+              >
+                Nová zákazka
+              </button>
+
+              <button
+                style={{
+                  ...buttonStyle,
+                  background: 'transparent',
+                  color: '#fff',
+                  border: '1px solid rgba(255,255,255,0.25)',
+                }}
+                onClick={() => {
+                  resetAddCustomerForm()
+                  setOpenAddCustomer(true)
+                }}
+              >
+                Nový zákazník
+              </button>
+
+              <button
+                style={{
+                  ...buttonStyle,
+                  background: 'transparent',
+                  color: '#fff',
+                  border: '1px solid rgba(255,255,255,0.25)',
+                }}
+                onClick={logout}
+              >
+                Odhlásiť
+              </button>
             </div>
           </div>
+        </div>
 
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <button style={primaryButtonStyle} onClick={() => setOpenAddOrder(true)}>
-              Nová zákazka
-            </button>
-            <button style={buttonStyle} onClick={() => setOpenAddCustomer(true)}>
-              Nový zákazník
-            </button>
-            <button style={buttonStyle} onClick={logout}>
-              Odhlásiť
-            </button>
-          </div>
+        <div style={{ display: 'flex', gap: 14, marginBottom: 20, flexWrap: 'wrap' }}>
+          {summaryCard('Všetky zákazky', orders.length, {
+            background: '#e2e8f0',
+            color: '#0f172a',
+            border: '1px solid #cbd5e1',
+          })}
+          {summaryCard('Nové', orders.filter((o) => o.stav === 'nova').length, getStatusBadgeStyle('nova'))}
+          {summaryCard(
+            'Rozpracované',
+            orders.filter((o) => o.stav === 'rozpracovana').length,
+            getStatusBadgeStyle('rozpracovana'),
+          )}
+          {summaryCard('Čakajú', orders.filter((o) => o.stav === 'caka').length, getStatusBadgeStyle('caka'))}
+          {summaryCard('Dokončené', orders.filter((o) => o.stav === 'hotova').length, getStatusBadgeStyle('hotova'))}
         </div>
 
         <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
@@ -516,48 +790,46 @@ export default function Page() {
         {activeTab === 'zakazky' && (
           <>
             <div style={{ ...boxStyle, marginBottom: 20 }}>
-              <div style={{ fontWeight: 700, marginBottom: 12 }}>Prehľad stavov</div>
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                <button
-                  onClick={() => setStatusFilter('vsetky')}
-                  style={{
-                    ...buttonStyle,
-                    background: statusFilter === 'vsetky' ? '#e2e8f0' : '#fff',
-                    fontWeight: 600,
-                  }}
-                >
-                  Všetky ({orders.length})
-                </button>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '2fr 1fr 1fr',
+                  gap: 12,
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: 13, color: '#475569', fontWeight: 700, marginBottom: 6 }}>Hľadať</div>
+                  <input
+                    style={inputStyle}
+                    placeholder="Hľadať zákazku, popis, prácu alebo zákazníka"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                </div>
 
-                {STATUSY.map((s) => {
-                  const count = orders.filter((o) => o.stav === s.value).length
-                  return (
-                    <button
-                      key={s.value}
-                      onClick={() => setStatusFilter(s.value)}
-                      style={{
-                        ...buttonStyle,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        background: statusFilter === s.value ? '#f1f5f9' : '#fff',
-                      }}
-                    >
-                      <span
-                        style={{
-                          ...getStatusBadgeStyle(s.value),
-                          padding: '4px 10px',
-                          borderRadius: 999,
-                          fontSize: 12,
-                          fontWeight: 700,
-                        }}
-                      >
+                <div>
+                  <div style={{ fontSize: 13, color: '#475569', fontWeight: 700, marginBottom: 6 }}>Filter</div>
+                  <select style={inputStyle} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+                    <option value="vsetky">Všetky stavy</option>
+                    {STATUSY.map((s) => (
+                      <option key={s.value} value={s.value}>
                         {s.label}
-                      </span>
-                      <span style={{ fontWeight: 700 }}>{count}</span>
-                    </button>
-                  )
-                })}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <div style={{ fontSize: 13, color: '#475569', fontWeight: 700, marginBottom: 6 }}>Radenie</div>
+                  <select style={inputStyle} value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                    <option value="newest">Najnovšie</option>
+                    <option value="oldest">Najstaršie</option>
+                    <option value="customer">Podľa zákazníka</option>
+                    <option value="status">Podľa stavu</option>
+                    <option value="name">Podľa názvu</option>
+                    <option value="deadline">Podľa termínu</option>
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -568,17 +840,12 @@ export default function Page() {
                   justifyContent: 'space-between',
                   gap: 12,
                   alignItems: 'center',
-                  marginBottom: 12,
+                  marginBottom: 14,
                   flexWrap: 'wrap',
                 }}
               >
-                <div style={{ fontWeight: 700 }}>Prehľad zákaziek</div>
-                <input
-                  style={{ ...inputStyle, maxWidth: 320 }}
-                  placeholder="Hľadať zákazku alebo zákazníka"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
+                <div style={{ fontWeight: 800, fontSize: 18 }}>Prehľad zákaziek</div>
+                <div style={{ color: '#475569', fontWeight: 700 }}>Zobrazené: {filteredOrders.length}</div>
               </div>
 
               <div style={{ overflowX: 'auto' }}>
@@ -604,7 +871,7 @@ export default function Page() {
                         }}
                       >
                         <td style={{ padding: '12px 10px' }}>
-                          <div style={{ fontWeight: 700 }}>{o.nazov}</div>
+                          <div style={{ fontWeight: 800 }}>{o.nazov}</div>
                           <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>{o.popis || '-'}</div>
                         </td>
                         <td style={{ padding: '12px 10px' }}>{getCustomerName(o.customer_id)}</td>
@@ -618,7 +885,7 @@ export default function Page() {
                               ...getStatusBadgeStyle(o.stav),
                               padding: '8px 10px',
                               borderRadius: 999,
-                              fontWeight: 700,
+                              fontWeight: 800,
                               cursor: 'pointer',
                               outline: 'none',
                             }}
@@ -642,6 +909,14 @@ export default function Page() {
                         </td>
                       </tr>
                     ))}
+
+                    {filteredOrders.length === 0 && (
+                      <tr>
+                        <td colSpan={6} style={{ padding: 24, textAlign: 'center', color: '#64748b' }}>
+                          Žiadne zákazky na zobrazenie
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -651,7 +926,19 @@ export default function Page() {
 
         {activeTab === 'zakaznici' && (
           <div style={boxStyle}>
-            <div style={{ fontWeight: 700, marginBottom: 12 }}>Zoznam zákazníkov</div>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                gap: 12,
+                alignItems: 'center',
+                marginBottom: 14,
+                flexWrap: 'wrap',
+              }}
+            >
+              <div style={{ fontWeight: 800, fontSize: 18 }}>Zoznam zákazníkov</div>
+              <div style={{ color: '#475569', fontWeight: 700 }}>Spolu: {customers.length}</div>
+            </div>
 
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
@@ -667,7 +954,7 @@ export default function Page() {
                 <tbody>
                   {customers.map((c) => (
                     <tr key={c.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ padding: '12px 10px', fontWeight: 700 }}>{c.nazov}</td>
+                      <td style={{ padding: '12px 10px', fontWeight: 800 }}>{c.nazov}</td>
                       <td style={{ padding: '12px 10px' }}>{c.kontakt || '-'}</td>
                       <td style={{ padding: '12px 10px' }}>{c.telefon || '-'}</td>
                       <td style={{ padding: '12px 10px' }}>{c.email || '-'}</td>
@@ -683,21 +970,25 @@ export default function Page() {
                       </td>
                     </tr>
                   ))}
+
+                  {customers.length === 0 && (
+                    <tr>
+                      <td colSpan={5} style={{ padding: 24, textAlign: 'center', color: '#64748b' }}>
+                        Zatiaľ nemáš žiadnych zákazníkov
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
           </div>
         )}
 
-        <Modal
-          open={openAddCustomer}
-          title="Pridať zákazníka"
-          onClose={() => confirmClose(isAddCustomerDirty, resetAddCustomerForm, () => setOpenAddCustomer(false))}
-        >
+        <Modal open={openAddCustomer} title="Pridať zákazníka">
           <div style={{ display: 'grid', gap: 12 }}>
             <input
               style={inputStyle}
-              placeholder="Názov firmy"
+              placeholder="Názov firmy alebo meno"
               value={nazov}
               onChange={(e) => setNazov(e.target.value)}
             />
@@ -725,10 +1016,11 @@ export default function Page() {
                 Uložiť zákazníka
               </button>
               <button
-                style={buttonStyle}
-                onClick={() =>
-                  confirmClose(isAddCustomerDirty, resetAddCustomerForm, () => setOpenAddCustomer(false))
-                }
+                style={secondaryDarkButtonStyle}
+                onClick={() => {
+                  resetAddCustomerForm()
+                  setOpenAddCustomer(false)
+                }}
               >
                 Zrušiť
               </button>
@@ -736,11 +1028,7 @@ export default function Page() {
           </div>
         </Modal>
 
-        <Modal
-          open={openAddOrder}
-          title="Pridať zákazku"
-          onClose={() => confirmClose(isAddOrderDirty, resetAddOrderForm, () => setOpenAddOrder(false))}
-        >
+        <Modal open={openAddOrder} title="Pridať zákazku">
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <input
               style={inputStyle}
@@ -749,21 +1037,78 @@ export default function Page() {
               onChange={(e) => setOrderNazov(e.target.value)}
             />
 
-            <select style={inputStyle} value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
-              <option value="">Vyber zákazníka</option>
-              {customers.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nazov}
-                </option>
-              ))}
-            </select>
+            <div style={{ display: 'grid', gap: 8 }}>
+              <select
+                style={inputStyle}
+                value={customerMode}
+                onChange={(e) => setCustomerMode(e.target.value as 'existing' | 'new')}
+              >
+                <option value="existing">Vybrať existujúceho zákazníka</option>
+                <option value="new">Vytvoriť nového zákazníka</option>
+              </select>
+            </div>
 
-            <input
-              style={inputStyle}
-              placeholder="Typ práce"
-              value={orderPraca}
-              onChange={(e) => setOrderPraca(e.target.value)}
-            />
+            {customerMode === 'existing' ? (
+              <select style={inputStyle} value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
+                <option value="">Vyber zákazníka</option>
+                {customers.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nazov}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                style={inputStyle}
+                placeholder="Názov firmy alebo meno osoby"
+                value={newCustomerNazov}
+                onChange={(e) => setNewCustomerNazov(e.target.value)}
+              />
+            )}
+
+            <div style={{ display: 'grid', gap: 8 }}>
+              <select
+                style={inputStyle}
+                value={orderPracaType}
+                onChange={(e) => setOrderPracaType(e.target.value as PracaType)}
+              >
+                <option value="Montáž">Montáž</option>
+                <option value="Servis">Servis</option>
+                <option value="Vlastné">Vlastné</option>
+              </select>
+            </div>
+
+            {customerMode === 'new' && (
+              <>
+                <input
+                  style={inputStyle}
+                  placeholder="Kontaktná osoba"
+                  value={newCustomerKontakt}
+                  onChange={(e) => setNewCustomerKontakt(e.target.value)}
+                />
+                <input
+                  style={inputStyle}
+                  placeholder="Telefón"
+                  value={newCustomerTelefon}
+                  onChange={(e) => setNewCustomerTelefon(e.target.value)}
+                />
+                <input
+                  style={inputStyle}
+                  placeholder="Email"
+                  value={newCustomerEmail}
+                  onChange={(e) => setNewCustomerEmail(e.target.value)}
+                />
+              </>
+            )}
+
+            {orderPracaType === 'Vlastné' && (
+              <input
+                style={inputStyle}
+                placeholder="Zadaj vlastný typ práce"
+                value={orderPracaCustom}
+                onChange={(e) => setOrderPracaCustom(e.target.value)}
+              />
+            )}
 
             <input
               style={inputStyle}
@@ -780,24 +1125,23 @@ export default function Page() {
             />
           </div>
 
-          <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+          <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
             <button style={primaryButtonStyle} onClick={addOrder}>
               Uložiť zákazku
             </button>
             <button
-              style={buttonStyle}
-              onClick={() => confirmClose(isAddOrderDirty, resetAddOrderForm, () => setOpenAddOrder(false))}
+              style={secondaryDarkButtonStyle}
+              onClick={() => {
+                resetAddOrderForm()
+                setOpenAddOrder(false)
+              }}
             >
               Zrušiť
             </button>
           </div>
         </Modal>
 
-        <Modal
-          open={openEditCustomer}
-          title="Upraviť zákazníka"
-          onClose={() => confirmClose(isEditCustomerDirty, resetEditCustomerForm, () => setOpenEditCustomer(false))}
-        >
+        <Modal open={openEditCustomer} title="Upraviť zákazníka">
           <div style={{ display: 'grid', gap: 12 }}>
             <input
               style={inputStyle}
@@ -829,10 +1173,11 @@ export default function Page() {
                 Uložiť zmeny
               </button>
               <button
-                style={buttonStyle}
-                onClick={() =>
-                  confirmClose(isEditCustomerDirty, resetEditCustomerForm, () => setOpenEditCustomer(false))
-                }
+                style={secondaryDarkButtonStyle}
+                onClick={() => {
+                  resetEditCustomerForm()
+                  setOpenEditCustomer(false)
+                }}
               >
                 Zrušiť
               </button>
@@ -840,11 +1185,7 @@ export default function Page() {
           </div>
         </Modal>
 
-        <Modal
-          open={openEditOrder}
-          title="Upraviť zákazku"
-          onClose={() => confirmClose(isEditOrderDirty, resetEditOrderForm, () => setOpenEditOrder(false))}
-        >
+        <Modal open={openEditOrder} title="Upraviť zákazku">
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <input
               style={inputStyle}
@@ -866,12 +1207,15 @@ export default function Page() {
               ))}
             </select>
 
-            <input
+            <select
               style={inputStyle}
-              placeholder="Typ práce"
-              value={editOrderPraca}
-              onChange={(e) => setEditOrderPraca(e.target.value)}
-            />
+              value={editOrderPracaType}
+              onChange={(e) => setEditOrderPracaType(e.target.value as PracaType)}
+            >
+              <option value="Montáž">Montáž</option>
+              <option value="Servis">Servis</option>
+              <option value="Vlastné">Vlastné</option>
+            </select>
 
             <input
               style={inputStyle}
@@ -879,6 +1223,15 @@ export default function Page() {
               value={editOrderTermin}
               onChange={(e) => setEditOrderTermin(e.target.value)}
             />
+
+            {editOrderPracaType === 'Vlastné' && (
+              <input
+                style={{ ...inputStyle, gridColumn: '1 / -1' }}
+                placeholder="Zadaj vlastný typ práce"
+                value={editOrderPracaCustom}
+                onChange={(e) => setEditOrderPracaCustom(e.target.value)}
+              />
+            )}
 
             <input
               style={{ ...inputStyle, gridColumn: '1 / -1' }}
@@ -888,18 +1241,27 @@ export default function Page() {
             />
           </div>
 
-          <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+          <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
             <button style={primaryButtonStyle} onClick={saveOrderEdit}>
               Uložiť zmeny
             </button>
             <button
-              style={buttonStyle}
-              onClick={() => confirmClose(isEditOrderDirty, resetEditOrderForm, () => setOpenEditOrder(false))}
+              style={secondaryDarkButtonStyle}
+              onClick={() => {
+                resetEditOrderForm()
+                setOpenEditOrder(false)
+              }}
             >
               Zrušiť
             </button>
           </div>
         </Modal>
+
+        {loading && (
+          <div style={{ textAlign: 'center', color: '#64748b', padding: 18 }}>
+            Načítavam dáta...
+          </div>
+        )}
       </div>
     </div>
   )
