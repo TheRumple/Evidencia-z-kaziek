@@ -51,7 +51,6 @@ function Modal({
 
   return (
     <div
-      onClick={onClose}
       style={{
         position: 'fixed',
         inset: 0,
@@ -237,6 +236,28 @@ export default function Page() {
     setEditOrderTermin('')
   }
 
+  const isAddCustomerDirty = [nazov, kontakt, telefon, email].some((v) => v.trim() !== '')
+  const isAddOrderDirty = [orderNazov, customerId, orderPraca !== 'Servis' ? 'x' : '', orderPopis, orderTermin].some(
+    (v) => String(v).trim() !== '',
+  )
+  const isEditCustomerDirty =
+    openEditCustomer &&
+    [editCustomerNazov, editCustomerKontakt, editCustomerTelefon, editCustomerEmail].some((v) => v.trim() !== '')
+  const isEditOrderDirty =
+    openEditOrder &&
+    [editOrderNazov, editOrderCustomerId, editOrderPraca !== 'Servis' ? 'x' : '', editOrderPopis, editOrderTermin].some(
+      (v) => String(v).trim() !== '',
+    )
+
+  function confirmClose(isDirty: boolean, resetFn: () => void, closeFn: () => void) {
+    if (isDirty) {
+      const ok = window.confirm('Máš neuložené zmeny. Naozaj chceš zavrieť okno?')
+      if (!ok) return
+    }
+    resetFn()
+    closeFn()
+  }
+
   async function addCustomer() {
     if (!nazov.trim() || !userId) return
 
@@ -382,10 +403,7 @@ export default function Page() {
       const customerName = getCustomerName(o.customer_id).toLowerCase()
       const matchesSearch = !q
         ? true
-        : [o.nazov, o.praca, o.popis || '', customerName]
-            .join(' ')
-            .toLowerCase()
-            .includes(q)
+        : [o.nazov, o.praca, o.popis || '', customerName].join(' ').toLowerCase().includes(q)
 
       const matchesStatus = statusFilter === 'vsetky' ? true : o.stav === statusFilter
 
@@ -442,11 +460,7 @@ export default function Page() {
   })
 
   if (checkingAuth) {
-    return (
-      <div style={{ padding: 24, fontFamily: 'Arial, Helvetica, sans-serif' }}>
-        Načítavam...
-      </div>
-    )
+    return <div style={{ padding: 24, fontFamily: 'Arial, Helvetica, sans-serif' }}>Načítavam...</div>
   }
 
   return (
@@ -591,9 +605,7 @@ export default function Page() {
                       >
                         <td style={{ padding: '12px 10px' }}>
                           <div style={{ fontWeight: 700 }}>{o.nazov}</div>
-                          <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>
-                            {o.popis || '-'}
-                          </div>
+                          <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>{o.popis || '-'}</div>
                         </td>
                         <td style={{ padding: '12px 10px' }}>{getCustomerName(o.customer_id)}</td>
                         <td style={{ padding: '12px 10px' }}>{o.praca || '-'}</td>
@@ -680,10 +692,7 @@ export default function Page() {
         <Modal
           open={openAddCustomer}
           title="Pridať zákazníka"
-          onClose={() => {
-            setOpenAddCustomer(false)
-            resetAddCustomerForm()
-          }}
+          onClose={() => confirmClose(isAddCustomerDirty, resetAddCustomerForm, () => setOpenAddCustomer(false))}
         >
           <div style={{ display: 'grid', gap: 12 }}>
             <input
@@ -717,10 +726,9 @@ export default function Page() {
               </button>
               <button
                 style={buttonStyle}
-                onClick={() => {
-                  setOpenAddCustomer(false)
-                  resetAddCustomerForm()
-                }}
+                onClick={() =>
+                  confirmClose(isAddCustomerDirty, resetAddCustomerForm, () => setOpenAddCustomer(false))
+                }
               >
                 Zrušiť
               </button>
@@ -731,10 +739,7 @@ export default function Page() {
         <Modal
           open={openAddOrder}
           title="Pridať zákazku"
-          onClose={() => {
-            setOpenAddOrder(false)
-            resetAddOrderForm()
-          }}
+          onClose={() => confirmClose(isAddOrderDirty, resetAddOrderForm, () => setOpenAddOrder(false))}
         >
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <input
@@ -744,11 +749,7 @@ export default function Page() {
               onChange={(e) => setOrderNazov(e.target.value)}
             />
 
-            <select
-              style={inputStyle}
-              value={customerId}
-              onChange={(e) => setCustomerId(e.target.value)}
-            >
+            <select style={inputStyle} value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
               <option value="">Vyber zákazníka</option>
               {customers.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -785,10 +786,7 @@ export default function Page() {
             </button>
             <button
               style={buttonStyle}
-              onClick={() => {
-                setOpenAddOrder(false)
-                resetAddOrderForm()
-              }}
+              onClick={() => confirmClose(isAddOrderDirty, resetAddOrderForm, () => setOpenAddOrder(false))}
             >
               Zrušiť
             </button>
@@ -798,10 +796,7 @@ export default function Page() {
         <Modal
           open={openEditCustomer}
           title="Upraviť zákazníka"
-          onClose={() => {
-            setOpenEditCustomer(false)
-            resetEditCustomerForm()
-          }}
+          onClose={() => confirmClose(isEditCustomerDirty, resetEditCustomerForm, () => setOpenEditCustomer(false))}
         >
           <div style={{ display: 'grid', gap: 12 }}>
             <input
@@ -835,10 +830,9 @@ export default function Page() {
               </button>
               <button
                 style={buttonStyle}
-                onClick={() => {
-                  setOpenEditCustomer(false)
-                  resetEditCustomerForm()
-                }}
+                onClick={() =>
+                  confirmClose(isEditCustomerDirty, resetEditCustomerForm, () => setOpenEditCustomer(false))
+                }
               >
                 Zrušiť
               </button>
@@ -849,10 +843,7 @@ export default function Page() {
         <Modal
           open={openEditOrder}
           title="Upraviť zákazku"
-          onClose={() => {
-            setOpenEditOrder(false)
-            resetEditOrderForm()
-          }}
+          onClose={() => confirmClose(isEditOrderDirty, resetEditOrderForm, () => setOpenEditOrder(false))}
         >
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <input
@@ -903,10 +894,7 @@ export default function Page() {
             </button>
             <button
               style={buttonStyle}
-              onClick={() => {
-                setOpenEditOrder(false)
-                resetEditOrderForm()
-              }}
+              onClick={() => confirmClose(isEditOrderDirty, resetEditOrderForm, () => setOpenEditOrder(false))}
             >
               Zrušiť
             </button>
