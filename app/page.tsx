@@ -116,7 +116,6 @@ export default function Page() {
   const [activeTab, setActiveTab] = useState<'zakazky' | 'zakaznici'>('zakazky')
 
   const [nazov, setNazov] = useState('')
-  const [ico, setIco] = useState('')
   const [kontakt, setKontakt] = useState('')
   const [telefon, setTelefon] = useState('')
   const [email, setEmail] = useState('')
@@ -132,7 +131,6 @@ export default function Page() {
 
   const [editCustomerId, setEditCustomerId] = useState('')
   const [editCustomerNazov, setEditCustomerNazov] = useState('')
-  const [editCustomerIco, setEditCustomerIco] = useState('')
   const [editCustomerKontakt, setEditCustomerKontakt] = useState('')
   const [editCustomerTelefon, setEditCustomerTelefon] = useState('')
   const [editCustomerEmail, setEditCustomerEmail] = useState('')
@@ -209,7 +207,6 @@ export default function Page() {
 
   function resetAddCustomerForm() {
     setNazov('')
-    setIco('')
     setKontakt('')
     setTelefon('')
     setEmail('')
@@ -226,7 +223,6 @@ export default function Page() {
   function resetEditCustomerForm() {
     setEditCustomerId('')
     setEditCustomerNazov('')
-    setEditCustomerIco('')
     setEditCustomerKontakt('')
     setEditCustomerTelefon('')
     setEditCustomerEmail('')
@@ -248,7 +244,6 @@ export default function Page() {
       {
         user_id: userId,
         nazov,
-        ico,
         kontakt,
         telefon,
         email,
@@ -318,7 +313,6 @@ export default function Page() {
   function startEditCustomer(c: any) {
     setEditCustomerId(c.id)
     setEditCustomerNazov(c.nazov || '')
-    setEditCustomerIco(c.ico || '')
     setEditCustomerKontakt(c.kontakt || '')
     setEditCustomerTelefon(c.telefon || '')
     setEditCustomerEmail(c.email || '')
@@ -332,7 +326,6 @@ export default function Page() {
       .from('customers')
       .update({
         nazov: editCustomerNazov,
-        ico: editCustomerIco,
         kontakt: editCustomerKontakt,
         telefon: editCustomerTelefon,
         email: editCustomerEmail,
@@ -485,11 +478,11 @@ export default function Page() {
           </div>
 
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <button style={primaryButtonStyle} onClick={() => setOpenAddCustomer(true)}>
-              Nový zákazník
-            </button>
-            <button style={buttonStyle} onClick={() => setOpenAddOrder(true)}>
+            <button style={primaryButtonStyle} onClick={() => setOpenAddOrder(true)}>
               Nová zákazka
+            </button>
+            <button style={buttonStyle} onClick={() => setOpenAddCustomer(true)}>
+              Nový zákazník
             </button>
             <button style={buttonStyle} onClick={logout}>
               Odhlásiť
@@ -653,7 +646,6 @@ export default function Page() {
                 <thead>
                   <tr style={{ textAlign: 'left', color: '#64748b', borderBottom: '1px solid #e2e8f0' }}>
                     <th style={{ padding: '12px 10px' }}>Názov</th>
-                    <th style={{ padding: '12px 10px' }}>IČO</th>
                     <th style={{ padding: '12px 10px' }}>Kontakt</th>
                     <th style={{ padding: '12px 10px' }}>Telefón</th>
                     <th style={{ padding: '12px 10px' }}>Email</th>
@@ -664,7 +656,6 @@ export default function Page() {
                   {customers.map((c) => (
                     <tr key={c.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
                       <td style={{ padding: '12px 10px', fontWeight: 700 }}>{c.nazov}</td>
-                      <td style={{ padding: '12px 10px' }}>{c.ico || '-'}</td>
                       <td style={{ padding: '12px 10px' }}>{c.kontakt || '-'}</td>
                       <td style={{ padding: '12px 10px' }}>{c.telefon || '-'}</td>
                       <td style={{ padding: '12px 10px' }}>{c.email || '-'}</td>
@@ -700,12 +691,6 @@ export default function Page() {
               placeholder="Názov firmy"
               value={nazov}
               onChange={(e) => setNazov(e.target.value)}
-            />
-            <input
-              style={inputStyle}
-              placeholder="IČO"
-              value={ico}
-              onChange={(e) => setIco(e.target.value)}
             />
             <input
               style={inputStyle}
@@ -824,12 +809,6 @@ export default function Page() {
               value={editCustomerNazov}
               onChange={(e) => setEditCustomerNazov(e.target.value)}
               placeholder="Názov firmy"
-            />
-            <input
-              style={inputStyle}
-              value={editCustomerIco}
-              onChange={(e) => setEditCustomerIco(e.target.value)}
-              placeholder="IČO"
             />
             <input
               style={inputStyle}
