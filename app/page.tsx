@@ -699,7 +699,7 @@ export default function Page() {
         >
           <div className="headerWrap">
             <div>
-              <div style={{ fontSize: 13, opacity: 0.8, marginBottom: 8, letterSpacing: 1 }}>ITSPOT S.R.O.</div>
+              <div style={{ fontSize: 25, opacity: 0.8, marginBottom: 8, letterSpacing: 1 }}>ITspot s.r.o.</div>
               <h1 style={{ margin: 0, fontSize: 32, fontWeight: 800 }}>Evidencia zákaziek</h1>
               <div style={{ marginTop: 8, fontSize: 15, color: 'rgba(255,255,255,0.82)' }}>
                 Aktívne zákazky, zákazníci, stavy a termíny

@@ -223,8 +223,8 @@ export default function LoginPage() {
   return (
     <div style={pageStyle}>
       <div style={boxStyle}>
-        <h1 style={titleStyle}>Evidencia zákaziek</h1>
-        <div style={subtitleStyle}>Prihlásenie do systému</div>
+        <h1 style={titleStyle}>ITspot s.r.o.</h1>
+        <div style={subtitleStyle}>Evidencia zákaziek</div>
 
         <div style={{ display: 'grid', gap: 16, marginTop: 24 }}>
           <div>
