@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 type Customer = {
@@ -40,6 +41,11 @@ const STATUSY = [
 const AKTIVNE_STATUSY = ['nova', 'rozpracovana', 'caka', 'hotova']
 const PRACE = ['Montáž', 'Servis', 'Vlastné'] as const
 type PracaType = (typeof PRACE)[number]
+
+type Notice = {
+  type: 'success' | 'error'
+  text: string
+} | null
 
 function getTodayDate() {
   const now = new Date()
@@ -88,11 +94,24 @@ function Modal({
   open,
   title,
   children,
+  onClose,
 }: {
   open: boolean
   title: string
   children: ReactNode
+  onClose: () => void
 }) {
+  useEffect(() => {
+    if (!open) return
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') onClose()
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [open, onClose])
+
   if (!open) return null
 
   return (
@@ -109,6 +128,9 @@ function Modal({
       }}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
         style={{
           width: '100%',
           maxWidth: 780,
@@ -121,7 +143,35 @@ function Modal({
           padding: 22,
         }}
       >
-        <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 18 }}>{title}</div>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            gap: 12,
+            alignItems: 'center',
+            marginBottom: 18,
+          }}
+        >
+          <div style={{ fontSize: 22, fontWeight: 800 }}>{title}</div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Zavrieť okno"
+            style={{
+              border: '1px solid #cbd5e1',
+              background: '#fff',
+              width: 38,
+              height: 38,
+              borderRadius: 12,
+              cursor: 'pointer',
+              fontSize: 20,
+              lineHeight: 1,
+              color: '#0f172a',
+            }}
+          >
+            ×
+          </button>
+        </div>
         {children}
       </div>
     </div>
@@ -129,10 +179,17 @@ function Modal({
 }
 
 export default function Page() {
+  const router = useRouter()
+
   const [userId, setUserId] = useState<string | null>(null)
-  const [userEmail, setUserEmail] = useState('')
   const [checkingAuth, setCheckingAuth] = useState(true)
   const [loading, setLoading] = useState(false)
+  const [savingCustomer, setSavingCustomer] = useState(false)
+  const [savingOrder, setSavingOrder] = useState(false)
+  const [savingEditCustomer, setSavingEditCustomer] = useState(false)
+  const [savingEditOrder, setSavingEditOrder] = useState(false)
+  const [loggingOut, setLoggingOut] = useState(false)
+  const [notice, setNotice] = useState<Notice>(null)
 
   const [customers, setCustomers] = useState<Customer[]>([])
   const [orders, setOrders] = useState<Order[]>([])
@@ -180,44 +237,57 @@ export default function Page() {
   const [openEditOrder, setOpenEditOrder] = useState(false)
 
   useEffect(() => {
-    checkUser()
+    let mounted = true
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    async function initAuth() {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+
+      if (!mounted) return
+
       if (!session?.user) {
-        window.location.href = '/login'
+        router.replace('/login')
         return
       }
 
       setUserId(session.user.id)
-      setUserEmail(session.user.email || '')
+      setCheckingAuth(false)
+    }
+
+    initAuth()
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return
+
+      if (!session?.user) {
+        router.replace('/login')
+        return
+      }
+
+      setUserId(session.user.id)
       setCheckingAuth(false)
     })
 
-    return () => subscription.unsubscribe()
-  }, [])
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
+  }, [router])
 
   useEffect(() => {
     if (userId) {
-      loadInitialData(userId)
+      void loadInitialData(userId)
     }
   }, [userId])
 
-  async function checkUser() {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-
-    if (!session?.user) {
-      window.location.href = '/login'
-      return
-    }
-
-    setUserId(session.user.id)
-    setUserEmail(session.user.email || '')
-    setCheckingAuth(false)
-  }
+  useEffect(() => {
+    if (!notice) return
+    const timer = window.setTimeout(() => setNotice(null), 4000)
+    return () => window.clearTimeout(timer)
+  }, [notice])
 
   async function loadInitialData(currentUserId: string) {
     setLoading(true)
@@ -233,7 +303,7 @@ export default function Page() {
       .order('created_at', { ascending: false })
 
     if (error) {
-      alert(error.message)
+      setNotice({ type: 'error', text: error.message })
       return
     }
 
@@ -248,11 +318,31 @@ export default function Page() {
       .order('created_at', { ascending: false })
 
     if (error) {
-      alert(error.message)
+      setNotice({ type: 'error', text: error.message })
       return
     }
 
     setOrders((data || []) as Order[])
+  }
+
+  function closeAddCustomerModal() {
+    resetAddCustomerForm()
+    setOpenAddCustomer(false)
+  }
+
+  function closeAddOrderModal() {
+    resetAddOrderForm()
+    setOpenAddOrder(false)
+  }
+
+  function closeEditCustomerModal() {
+    resetEditCustomerForm()
+    setOpenEditCustomer(false)
+  }
+
+  function closeEditOrderModal() {
+    resetEditOrderForm()
+    setOpenEditOrder(false)
   }
 
   function resetAddCustomerForm() {
@@ -295,43 +385,62 @@ export default function Page() {
   }
 
   async function addCustomer() {
-    if (!nazov.trim() || !userId) return
-
-    const { error } = await supabase.from('customers').insert([
-      {
-        user_id: userId,
-        nazov: nazov.trim(),
-        kontakt: kontakt.trim() || null,
-        telefon: telefon.trim() || null,
-        email: email.trim() || null,
-      },
-    ])
-
-    if (error) {
-      alert(error.message)
+    if (!nazov.trim() || !userId) {
+      setNotice({ type: 'error', text: 'Zadaj názov zákazníka.' })
       return
     }
 
-    resetAddCustomerForm()
-    setOpenAddCustomer(false)
-    loadCustomers(userId)
+    setSavingCustomer(true)
+
+    const { data, error } = await supabase
+      .from('customers')
+      .insert([
+        {
+          user_id: userId,
+          nazov: nazov.trim(),
+          kontakt: kontakt.trim() || null,
+          telefon: telefon.trim() || null,
+          email: email.trim() || null,
+        },
+      ])
+      .select()
+      .single()
+
+    setSavingCustomer(false)
+
+    if (error) {
+      setNotice({ type: 'error', text: error.message })
+      return
+    }
+
+    if (data) {
+      setCustomers((curr) => [data as Customer, ...curr])
+    }
+
+    setNotice({ type: 'success', text: 'Zákazník bol vytvorený.' })
+    closeAddCustomerModal()
   }
 
   async function addOrder() {
-    if (!orderNazov.trim() || !userId) return
+    if (!orderNazov.trim() || !userId) {
+      setNotice({ type: 'error', text: 'Zadaj názov zákazky.' })
+      return
+    }
 
     let finalCustomerId = customerId
+    let createdCustomerId: string | null = null
 
-    if (customerMode === 'existing') {
-      if (!customerId) {
-        alert('Vyber zákazníka.')
-        return
-      }
+    if (customerMode === 'existing' && !customerId) {
+      setNotice({ type: 'error', text: 'Vyber zákazníka.' })
+      return
     }
+
+    setSavingOrder(true)
 
     if (customerMode === 'new') {
       if (!newCustomerNazov.trim()) {
-        alert('Zadaj názov zákazníka alebo meno osoby.')
+        setSavingOrder(false)
+        setNotice({ type: 'error', text: 'Zadaj názov zákazníka alebo meno osoby.' })
         return
       }
 
@@ -350,46 +459,66 @@ export default function Page() {
         .single()
 
       if (newCustomerError || !newCustomer) {
-        alert(newCustomerError?.message || 'Nepodarilo sa vytvoriť zákazníka.')
+        setSavingOrder(false)
+        setNotice({ type: 'error', text: newCustomerError?.message || 'Nepodarilo sa vytvoriť zákazníka.' })
         return
       }
 
       finalCustomerId = newCustomer.id
-      await loadCustomers(userId)
+      createdCustomerId = newCustomer.id
+      setCustomers((curr) => [newCustomer as Customer, ...curr])
     }
 
     const finalPraca = orderPracaType === 'Vlastné' ? orderPracaCustom.trim() : orderPracaType
 
     if (!finalPraca) {
-      alert('Zadaj typ práce.')
+      setSavingOrder(false)
+      setNotice({ type: 'error', text: 'Zadaj typ práce.' })
       return
     }
 
-    const { error } = await supabase.from('orders').insert([
-      {
-        user_id: userId,
-        nazov: orderNazov.trim(),
-        customer_id: finalCustomerId,
-        stav: 'nova',
-        praca: finalPraca,
-        popis: orderPopis.trim() || null,
-        termin: orderTermin || null,
-        hodiny: 0,
-      },
-    ])
+    const { data: insertedOrder, error } = await supabase
+      .from('orders')
+      .insert([
+        {
+          user_id: userId,
+          nazov: orderNazov.trim(),
+          customer_id: finalCustomerId,
+          stav: 'nova',
+          praca: finalPraca,
+          popis: orderPopis.trim() || null,
+          termin: orderTermin || null,
+          hodiny: 0,
+        },
+      ])
+      .select()
+      .single()
 
     if (error) {
-      alert(error.message)
+      if (createdCustomerId) {
+        await supabase.from('customers').delete().eq('id', createdCustomerId).eq('user_id', userId)
+        setCustomers((curr) => curr.filter((c) => c.id !== createdCustomerId))
+      }
+
+      setSavingOrder(false)
+      setNotice({ type: 'error', text: error.message })
       return
     }
 
-    resetAddOrderForm()
-    setOpenAddOrder(false)
-    loadOrders(userId)
+    setSavingOrder(false)
+    if (insertedOrder) {
+      setOrders((curr) => [insertedOrder as Order, ...curr])
+    }
+
+    setNotice({ type: 'success', text: 'Zákazka bola vytvorená.' })
+    closeAddOrderModal()
   }
 
   async function updateOrderStatus(orderId: string, stav: string) {
     if (!userId) return
+
+    const previousOrders = orders
+    setOrders((curr) => curr.map((o) => (o.id === orderId ? { ...o, stav } : o)))
 
     const { error } = await supabase
       .from('orders')
@@ -398,35 +527,48 @@ export default function Page() {
       .eq('user_id', userId)
 
     if (error) {
-      alert(error.message)
+      setOrders(previousOrders)
+      setNotice({ type: 'error', text: error.message })
       return
     }
 
-    loadOrders(userId)
+    setNotice({ type: 'success', text: 'Stav zákazky bol aktualizovaný.' })
   }
 
   async function deleteOrder(orderId: string) {
     if (!userId) return
+    if (!window.confirm('Naozaj chceš zmazať túto zákazku?')) return
+
+    const previousOrders = orders
+    setOrders((curr) => curr.filter((o) => o.id !== orderId))
 
     const { error } = await supabase.from('orders').delete().eq('id', orderId).eq('user_id', userId)
 
     if (error) {
-      alert(error.message)
+      setOrders(previousOrders)
+      setNotice({ type: 'error', text: error.message })
       return
     }
 
-    loadOrders(userId)
+    setNotice({ type: 'success', text: 'Zákazka bola zmazaná.' })
   }
 
   async function deleteCustomer(customerIdToDelete: string) {
     if (!userId) return
 
     const hasOrders = orders.some((o) => o.customer_id === customerIdToDelete)
-
     if (hasOrders) {
-      alert('Tento zákazník má naviazané zákazky. Najprv zmeň alebo zmaž zákazky.')
+      setNotice({
+        type: 'error',
+        text: 'Tento zákazník má naviazané zákazky. Najprv zmeň alebo zmaž zákazky.',
+      })
       return
     }
+
+    if (!window.confirm('Naozaj chceš zmazať tohto zákazníka?')) return
+
+    const previousCustomers = customers
+    setCustomers((curr) => curr.filter((c) => c.id !== customerIdToDelete))
 
     const { error } = await supabase
       .from('customers')
@@ -435,11 +577,12 @@ export default function Page() {
       .eq('user_id', userId)
 
     if (error) {
-      alert(error.message)
+      setCustomers(previousCustomers)
+      setNotice({ type: 'error', text: error.message })
       return
     }
 
-    loadCustomers(userId)
+    setNotice({ type: 'success', text: 'Zákazník bol zmazaný.' })
   }
 
   function startEditCustomer(c: Customer) {
@@ -452,27 +595,39 @@ export default function Page() {
   }
 
   async function saveCustomerEdit() {
-    if (!editCustomerId || !editCustomerNazov.trim() || !userId) return
-
-    const { error } = await supabase
-      .from('customers')
-      .update({
-        nazov: editCustomerNazov.trim(),
-        kontakt: editCustomerKontakt.trim() || null,
-        telefon: editCustomerTelefon.trim() || null,
-        email: editCustomerEmail.trim() || null,
-      })
-      .eq('id', editCustomerId)
-      .eq('user_id', userId)
-
-    if (error) {
-      alert(error.message)
+    if (!editCustomerId || !editCustomerNazov.trim() || !userId) {
+      setNotice({ type: 'error', text: 'Zadaj názov zákazníka.' })
       return
     }
 
-    resetEditCustomerForm()
-    setOpenEditCustomer(false)
-    loadCustomers(userId)
+    setSavingEditCustomer(true)
+
+    const payload = {
+      nazov: editCustomerNazov.trim(),
+      kontakt: editCustomerKontakt.trim() || null,
+      telefon: editCustomerTelefon.trim() || null,
+      email: editCustomerEmail.trim() || null,
+    }
+
+    const previousCustomers = customers
+    setCustomers((curr) => curr.map((c) => (c.id === editCustomerId ? { ...c, ...payload } : c)))
+
+    const { error } = await supabase
+      .from('customers')
+      .update(payload)
+      .eq('id', editCustomerId)
+      .eq('user_id', userId)
+
+    setSavingEditCustomer(false)
+
+    if (error) {
+      setCustomers(previousCustomers)
+      setNotice({ type: 'error', text: error.message })
+      return
+    }
+
+    setNotice({ type: 'success', text: 'Zákazník bol upravený.' })
+    closeEditCustomerModal()
   }
 
   function startEditOrder(o: Order) {
@@ -494,45 +649,61 @@ export default function Page() {
   }
 
   async function saveOrderEdit() {
-    if (!editOrderId || !editOrderNazov.trim() || !editOrderCustomerId || !userId) return
-
-    const finalPraca =
-      editOrderPracaType === 'Vlastné' ? editOrderPracaCustom.trim() : editOrderPracaType
-
-    if (!finalPraca) {
-      alert('Zadaj typ práce.')
+    if (!editOrderId || !editOrderNazov.trim() || !editOrderCustomerId || !userId) {
+      setNotice({ type: 'error', text: 'Vyplň povinné údaje zákazky.' })
       return
     }
+
+    const finalPraca = editOrderPracaType === 'Vlastné' ? editOrderPracaCustom.trim() : editOrderPracaType
+    if (!finalPraca) {
+      setNotice({ type: 'error', text: 'Zadaj typ práce.' })
+      return
+    }
+
+    setSavingEditOrder(true)
+
+    const payload = {
+      nazov: editOrderNazov.trim(),
+      customer_id: editOrderCustomerId,
+      praca: finalPraca,
+      popis: editOrderPopis.trim() || null,
+      termin: editOrderTermin || null,
+    }
+
+    const previousOrders = orders
+    setOrders((curr) => curr.map((o) => (o.id === editOrderId ? { ...o, ...payload } : o)))
 
     const { error } = await supabase
       .from('orders')
-      .update({
-        nazov: editOrderNazov.trim(),
-        customer_id: editOrderCustomerId,
-        praca: finalPraca,
-        popis: editOrderPopis.trim() || null,
-        termin: editOrderTermin || null,
-      })
+      .update(payload)
       .eq('id', editOrderId)
       .eq('user_id', userId)
 
+    setSavingEditOrder(false)
+
     if (error) {
-      alert(error.message)
+      setOrders(previousOrders)
+      setNotice({ type: 'error', text: error.message })
       return
     }
 
-    resetEditOrderForm()
-    setOpenEditOrder(false)
-    loadOrders(userId)
+    setNotice({ type: 'success', text: 'Zákazka bola upravená.' })
+    closeEditOrderModal()
   }
 
   async function logout() {
+    setLoggingOut(true)
     await supabase.auth.signOut()
-    window.location.href = '/login'
+    setLoggingOut(false)
+    router.replace('/login')
   }
 
+  const customerMap = useMemo(() => {
+    return Object.fromEntries(customers.map((c) => [c.id, c.nazov]))
+  }, [customers])
+
   function getCustomerName(id: string) {
-    return customers.find((c) => c.id === id)?.nazov || 'Neznámy zákazník'
+    return customerMap[id] || 'Neznámy zákazník'
   }
 
   const activeOrders = useMemo(() => {
@@ -582,7 +753,7 @@ export default function Page() {
     })
 
     return result
-  }, [activeOrders, search, statusFilter, sortBy, customers])
+  }, [activeOrders, search, statusFilter, sortBy, customerMap])
 
   const boxStyle: CSSProperties = {
     background: '#ffffff',
@@ -602,6 +773,14 @@ export default function Page() {
     fontSize: 14,
   }
 
+  const labelStyle: CSSProperties = {
+    fontSize: 13,
+    color: '#475569',
+    fontWeight: 700,
+    marginBottom: 6,
+    display: 'block',
+  }
+
   const buttonStyle: CSSProperties = {
     padding: '10px 14px',
     borderRadius: 12,
@@ -613,6 +792,7 @@ export default function Page() {
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
+    transition: 'all 0.2s ease',
   }
 
   const primaryButtonStyle: CSSProperties = {
@@ -620,6 +800,10 @@ export default function Page() {
     background: '#0f172a',
     color: '#fff',
     border: '1px solid #0f172a',
+    minHeight: 48,
+    padding: '12px 18px',
+    fontSize: 15,
+    fontWeight: 800,
   }
 
   const dangerButtonStyle: CSSProperties = {
@@ -706,73 +890,104 @@ export default function Page() {
               </div>
             </div>
 
-            <div className="headerActions">
-              <div
-                style={{
-                  background: 'rgba(255,255,255,0.08)',
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  borderRadius: 16,
-                  padding: '12px 14px',
-                  minWidth: 220,
-                }}
-              >
-                <div style={{ fontSize: 12, opacity: 0.75, marginBottom: 4 }}>Prihlásený používateľ</div>
-                <div style={{ fontSize: 14, fontWeight: 700, wordBreak: 'break-word' }}>
-                  {userEmail || 'Používateľ'}
-                </div>
-              </div>
-
+            <div className="headerButtonsWrap">
               <button
-                style={{ ...primaryButtonStyle, background: '#fff', color: '#0f172a', borderColor: '#fff' }}
+                style={primaryButtonStyle}
                 onClick={() => {
                   resetAddOrderForm()
                   setOpenAddOrder(true)
                 }}
               >
-                Nová zákazka
+                + Nová zákazka
               </button>
 
-              <button
-                style={{
-                  ...buttonStyle,
-                  background: 'transparent',
-                  color: '#fff',
-                  border: '1px solid rgba(255,255,255,0.25)',
-                }}
-                onClick={() => {
-                  resetAddCustomerForm()
-                  setOpenAddCustomer(true)
-                }}
-              >
-                Nový zákazník
-              </button>
+              <div className="secondaryActionsRow">
+                <button
+                  style={{
+                    ...buttonStyle,
+                    background: 'rgba(255,255,255,0.08)',
+                    color: '#fff',
+                    border: '1px solid rgba(255,255,255,0.25)',
+                    minHeight: 44,
+                  }}
+                  onClick={() => {
+                    resetAddCustomerForm()
+                    setOpenAddCustomer(true)
+                  }}
+                >
+                  Nový zákazník
+                </button>
 
-              <Link
-                href="/fakturovane"
-                style={{
-                  ...buttonStyle,
-                  background: 'rgba(255,255,255,0.08)',
-                  color: '#fff',
-                  border: '1px solid rgba(255,255,255,0.25)',
-                }}
-              >
-                Fakturované / Stornované
-              </Link>
-
-              <button
-                style={{
-                  ...buttonStyle,
-                  background: 'transparent',
-                  color: '#fff',
-                  border: '1px solid rgba(255,255,255,0.25)',
-                }}
-                onClick={logout}
-              >
-                Odhlásiť
-              </button>
+                <Link
+                  href="/fakturovane"
+                  style={{
+                    ...buttonStyle,
+                    background: 'rgba(255,255,255,0.08)',
+                    color: '#fff',
+                    border: '1px solid rgba(255,255,255,0.25)',
+                    minHeight: 44,
+                  }}
+                >
+                  Fakturované / Stornované
+                </Link>
+              </div>
             </div>
           </div>
         </div>
+
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            marginBottom: 18,
+          }}
+        >
+          <button
+            style={{
+              ...buttonStyle,
+              background: '#fff',
+              color: '#475569',
+              border: '1px solid #cbd5e1',
+              minHeight: 44,
+            }}
+            onClick={logout}
+            disabled={loggingOut}
+          >
+            {loggingOut ? 'Odhlasujem...' : 'Odhlásiť'}
+          </button>
+        </div>
+
+        {notice && (
+          <div
+            style={{
+              ...boxStyle,
+              marginBottom: 18,
+              padding: '14px 16px',
+              border:
+                notice.type === 'success' ? '1px solid #86efac' : '1px solid #fecaca',
+              background: notice.type === 'success' ? '#f0fdf4' : '#fef2f2',
+              color: notice.type === 'success' ? '#166534' : '#991b1b',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+              <div style={{ fontWeight: 700 }}>{notice.text}</div>
+              <button
+                type="button"
+                onClick={() => setNotice(null)}
+                style={{
+                  border: 'none',
+                  background: 'transparent',
+                  cursor: 'pointer',
+                  fontSize: 18,
+                  color: 'inherit',
+                }}
+                aria-label="Zavrieť správu"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="summaryGrid" style={{ display: 'grid', gap: 14, marginBottom: 20 }}>
           {summaryCard('Aktívne zákazky', activeOrders.length, {
@@ -804,8 +1019,11 @@ export default function Page() {
             <div style={{ ...boxStyle, marginBottom: 20 }}>
               <div className="filtersGrid">
                 <div>
-                  <div style={{ fontSize: 13, color: '#475569', fontWeight: 700, marginBottom: 6 }}>Hľadať</div>
+                  <label style={labelStyle} htmlFor="search-orders">
+                    Hľadať
+                  </label>
                   <input
+                    id="search-orders"
                     style={inputStyle}
                     placeholder="Hľadať zákazku, popis, prácu alebo zákazníka"
                     value={search}
@@ -814,8 +1032,10 @@ export default function Page() {
                 </div>
 
                 <div>
-                  <div style={{ fontSize: 13, color: '#475569', fontWeight: 700, marginBottom: 6 }}>Filter</div>
-                  <select style={inputStyle} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+                  <label style={labelStyle} htmlFor="status-filter">
+                    Filter
+                  </label>
+                  <select id="status-filter" style={inputStyle} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
                     <option value="vsetky">Všetky stavy</option>
                     {STATUSY.filter((s) => AKTIVNE_STATUSY.includes(s.value)).map((s) => (
                       <option key={s.value} value={s.value}>
@@ -826,8 +1046,10 @@ export default function Page() {
                 </div>
 
                 <div>
-                  <div style={{ fontSize: 13, color: '#475569', fontWeight: 700, marginBottom: 6 }}>Radenie</div>
-                  <select style={inputStyle} value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                  <label style={labelStyle} htmlFor="sort-by">
+                    Radenie
+                  </label>
+                  <select id="sort-by" style={inputStyle} value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
                     <option value="newest">Najnovšie</option>
                     <option value="oldest">Najstaršie</option>
                     <option value="customer">Podľa zákazníka</option>
@@ -968,7 +1190,7 @@ export default function Page() {
                     </div>
 
                     <div style={{ marginTop: 14 }}>
-                      <div style={{ fontSize: 13, color: '#475569', fontWeight: 700, marginBottom: 6 }}>Stav</div>
+                      <label style={labelStyle}>Stav</label>
                       <select
                         value={o.stav}
                         onChange={(e) => updateOrderStatus(o.id, e.target.value)}
@@ -1101,277 +1323,435 @@ export default function Page() {
           </div>
         )}
 
-        <Modal open={openAddCustomer} title="Pridať zákazníka">
-          <div style={{ display: 'grid', gap: 12 }}>
-            <input
-              style={inputStyle}
-              placeholder="Názov firmy alebo meno"
-              value={nazov}
-              onChange={(e) => setNazov(e.target.value)}
-            />
-            <input
-              style={inputStyle}
-              placeholder="Kontaktná osoba"
-              value={kontakt}
-              onChange={(e) => setKontakt(e.target.value)}
-            />
-            <input
-              style={inputStyle}
-              placeholder="Telefón"
-              value={telefon}
-              onChange={(e) => setTelefon(e.target.value)}
-            />
-            <input
-              style={inputStyle}
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-
-            <div style={{ display: 'flex', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
-              <button style={primaryButtonStyle} onClick={addCustomer}>
-                Uložiť zákazníka
-              </button>
-              <button
-                style={secondaryDarkButtonStyle}
-                onClick={() => {
-                  resetAddCustomerForm()
-                  setOpenAddCustomer(false)
-                }}
-              >
-                Zrušiť
-              </button>
-            </div>
-          </div>
-        </Modal>
-
-        <Modal open={openAddOrder} title="Pridať zákazku">
-          <div className="modalGrid">
-            <input
-              style={inputStyle}
-              placeholder="Názov zákazky"
-              value={orderNazov}
-              onChange={(e) => setOrderNazov(e.target.value)}
-            />
-
-            <div style={{ display: 'grid', gap: 8 }}>
-              <select
-                style={inputStyle}
-                value={customerMode}
-                onChange={(e) => setCustomerMode(e.target.value as 'existing' | 'new')}
-              >
-                <option value="existing">Vybrať existujúceho zákazníka</option>
-                <option value="new">Vytvoriť nového zákazníka</option>
-              </select>
-            </div>
-
-            {customerMode === 'existing' ? (
-              <select style={inputStyle} value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
-                <option value="">Vyber zákazníka</option>
-                {customers.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nazov}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <input
-                style={inputStyle}
-                placeholder="Názov firmy alebo meno osoby"
-                value={newCustomerNazov}
-                onChange={(e) => setNewCustomerNazov(e.target.value)}
-              />
-            )}
-
-            <div style={{ display: 'grid', gap: 8 }}>
-              <select
-                style={inputStyle}
-                value={orderPracaType}
-                onChange={(e) => setOrderPracaType(e.target.value as PracaType)}
-              >
-                <option value="Montáž">Montáž</option>
-                <option value="Servis">Servis</option>
-                <option value="Vlastné">Vlastné</option>
-              </select>
-            </div>
-
-            {customerMode === 'new' && (
-              <>
+        <Modal open={openAddCustomer} title="Pridať zákazníka" onClose={closeAddCustomerModal}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              void addCustomer()
+            }}
+          >
+            <div style={{ display: 'grid', gap: 12 }}>
+              <div>
+                <label style={labelStyle} htmlFor="add-customer-name">
+                  Názov firmy alebo meno
+                </label>
                 <input
+                  id="add-customer-name"
+                  style={inputStyle}
+                  placeholder="Názov firmy alebo meno"
+                  value={nazov}
+                  onChange={(e) => setNazov(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label style={labelStyle} htmlFor="add-customer-contact">
+                  Kontaktná osoba
+                </label>
+                <input
+                  id="add-customer-contact"
                   style={inputStyle}
                   placeholder="Kontaktná osoba"
-                  value={newCustomerKontakt}
-                  onChange={(e) => setNewCustomerKontakt(e.target.value)}
+                  value={kontakt}
+                  onChange={(e) => setKontakt(e.target.value)}
                 />
+              </div>
+
+              <div>
+                <label style={labelStyle} htmlFor="add-customer-phone">
+                  Telefón
+                </label>
                 <input
+                  id="add-customer-phone"
+                  type="tel"
                   style={inputStyle}
                   placeholder="Telefón"
-                  value={newCustomerTelefon}
-                  onChange={(e) => setNewCustomerTelefon(e.target.value)}
+                  value={telefon}
+                  onChange={(e) => setTelefon(e.target.value)}
                 />
+              </div>
+
+              <div>
+                <label style={labelStyle} htmlFor="add-customer-email">
+                  Email
+                </label>
                 <input
+                  id="add-customer-email"
+                  type="email"
                   style={inputStyle}
                   placeholder="Email"
-                  value={newCustomerEmail}
-                  onChange={(e) => setNewCustomerEmail(e.target.value)}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                 />
-              </>
-            )}
+              </div>
 
-            {orderPracaType === 'Vlastné' && (
-              <input
-                style={inputStyle}
-                placeholder="Zadaj vlastný typ práce"
-                value={orderPracaCustom}
-                onChange={(e) => setOrderPracaCustom(e.target.value)}
-              />
-            )}
-
-            <input
-              style={inputStyle}
-              type="date"
-              value={orderTermin}
-              onChange={(e) => setOrderTermin(e.target.value)}
-            />
-
-            <input
-              style={{ ...inputStyle, gridColumn: '1 / -1' }}
-              placeholder="Popis"
-              value={orderPopis}
-              onChange={(e) => setOrderPopis(e.target.value)}
-            />
-          </div>
-
-          <div style={{ display: 'flex', gap: 10, marginTop: 18, flexWrap: 'wrap' }}>
-            <button style={primaryButtonStyle} onClick={addOrder}>
-              Uložiť zákazku
-            </button>
-            <button
-              style={secondaryDarkButtonStyle}
-              onClick={() => {
-                resetAddOrderForm()
-                setOpenAddOrder(false)
-              }}
-            >
-              Zrušiť
-            </button>
-          </div>
+              <div style={{ display: 'flex', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
+                <button type="submit" style={primaryButtonStyle} disabled={savingCustomer}>
+                  {savingCustomer ? 'Ukladám...' : 'Uložiť zákazníka'}
+                </button>
+                <button type="button" style={secondaryDarkButtonStyle} onClick={closeAddCustomerModal}>
+                  Zrušiť
+                </button>
+              </div>
+            </div>
+          </form>
         </Modal>
 
-        <Modal open={openEditCustomer} title="Upraviť zákazníka">
-          <div style={{ display: 'grid', gap: 12 }}>
-            <input
-              style={inputStyle}
-              value={editCustomerNazov}
-              onChange={(e) => setEditCustomerNazov(e.target.value)}
-              placeholder="Názov firmy"
-            />
-            <input
-              style={inputStyle}
-              value={editCustomerKontakt}
-              onChange={(e) => setEditCustomerKontakt(e.target.value)}
-              placeholder="Kontaktná osoba"
-            />
-            <input
-              style={inputStyle}
-              value={editCustomerTelefon}
-              onChange={(e) => setEditCustomerTelefon(e.target.value)}
-              placeholder="Telefón"
-            />
-            <input
-              style={inputStyle}
-              value={editCustomerEmail}
-              onChange={(e) => setEditCustomerEmail(e.target.value)}
-              placeholder="Email"
-            />
+        <Modal open={openAddOrder} title="Pridať zákazku" onClose={closeAddOrderModal}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              void addOrder()
+            }}
+          >
+            <div className="modalGrid">
+              <div>
+                <label style={labelStyle} htmlFor="add-order-name">
+                  Názov zákazky
+                </label>
+                <input
+                  id="add-order-name"
+                  style={inputStyle}
+                  placeholder="Názov zákazky"
+                  value={orderNazov}
+                  onChange={(e) => setOrderNazov(e.target.value)}
+                />
+              </div>
 
-            <div style={{ display: 'flex', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
-              <button style={primaryButtonStyle} onClick={saveCustomerEdit}>
-                Uložiť zmeny
+              <div>
+                <label style={labelStyle} htmlFor="customer-mode">
+                  Zákazník
+                </label>
+                <select
+                  id="customer-mode"
+                  style={inputStyle}
+                  value={customerMode}
+                  onChange={(e) => setCustomerMode(e.target.value as 'existing' | 'new')}
+                >
+                  <option value="existing">Vybrať existujúceho zákazníka</option>
+                  <option value="new">Vytvoriť nového zákazníka</option>
+                </select>
+              </div>
+
+              {customerMode === 'existing' ? (
+                <div>
+                  <label style={labelStyle} htmlFor="existing-customer">
+                    Existujúci zákazník
+                  </label>
+                  <select id="existing-customer" style={inputStyle} value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
+                    <option value="">Vyber zákazníka</option>
+                    {customers.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.nazov}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div>
+                  <label style={labelStyle} htmlFor="new-customer-name">
+                    Názov firmy alebo meno osoby
+                  </label>
+                  <input
+                    id="new-customer-name"
+                    style={inputStyle}
+                    placeholder="Názov firmy alebo meno osoby"
+                    value={newCustomerNazov}
+                    onChange={(e) => setNewCustomerNazov(e.target.value)}
+                  />
+                </div>
+              )}
+
+              <div>
+                <label style={labelStyle} htmlFor="order-work-type">
+                  Typ práce
+                </label>
+                <select
+                  id="order-work-type"
+                  style={inputStyle}
+                  value={orderPracaType}
+                  onChange={(e) => setOrderPracaType(e.target.value as PracaType)}
+                >
+                  <option value="Montáž">Montáž</option>
+                  <option value="Servis">Servis</option>
+                  <option value="Vlastné">Vlastné</option>
+                </select>
+              </div>
+
+              {customerMode === 'new' && (
+                <>
+                  <div>
+                    <label style={labelStyle} htmlFor="new-customer-contact">
+                      Kontaktná osoba
+                    </label>
+                    <input
+                      id="new-customer-contact"
+                      style={inputStyle}
+                      placeholder="Kontaktná osoba"
+                      value={newCustomerKontakt}
+                      onChange={(e) => setNewCustomerKontakt(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label style={labelStyle} htmlFor="new-customer-phone">
+                      Telefón
+                    </label>
+                    <input
+                      id="new-customer-phone"
+                      type="tel"
+                      style={inputStyle}
+                      placeholder="Telefón"
+                      value={newCustomerTelefon}
+                      onChange={(e) => setNewCustomerTelefon(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label style={labelStyle} htmlFor="new-customer-email">
+                      Email
+                    </label>
+                    <input
+                      id="new-customer-email"
+                      type="email"
+                      style={inputStyle}
+                      placeholder="Email"
+                      value={newCustomerEmail}
+                      onChange={(e) => setNewCustomerEmail(e.target.value)}
+                    />
+                  </div>
+                </>
+              )}
+
+              {orderPracaType === 'Vlastné' && (
+                <div>
+                  <label style={labelStyle} htmlFor="order-custom-work">
+                    Vlastný typ práce
+                  </label>
+                  <input
+                    id="order-custom-work"
+                    style={inputStyle}
+                    placeholder="Zadaj vlastný typ práce"
+                    value={orderPracaCustom}
+                    onChange={(e) => setOrderPracaCustom(e.target.value)}
+                  />
+                </div>
+              )}
+
+              <div>
+                <label style={labelStyle} htmlFor="order-date">
+                  Termín
+                </label>
+                <input
+                  id="order-date"
+                  style={inputStyle}
+                  type="date"
+                  value={orderTermin}
+                  onChange={(e) => setOrderTermin(e.target.value)}
+                />
+              </div>
+
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label style={labelStyle} htmlFor="order-description">
+                  Popis
+                </label>
+                <input
+                  id="order-description"
+                  style={inputStyle}
+                  placeholder="Popis"
+                  value={orderPopis}
+                  onChange={(e) => setOrderPopis(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, marginTop: 18, flexWrap: 'wrap' }}>
+              <button type="submit" style={primaryButtonStyle} disabled={savingOrder}>
+                {savingOrder ? 'Ukladám...' : 'Uložiť zákazku'}
               </button>
-              <button
-                style={secondaryDarkButtonStyle}
-                onClick={() => {
-                  resetEditCustomerForm()
-                  setOpenEditCustomer(false)
-                }}
-              >
+              <button type="button" style={secondaryDarkButtonStyle} onClick={closeAddOrderModal}>
                 Zrušiť
               </button>
             </div>
-          </div>
+          </form>
         </Modal>
 
-        <Modal open={openEditOrder} title="Upraviť zákazku">
-          <div className="modalGrid">
-            <input
-              style={inputStyle}
-              placeholder="Názov zákazky"
-              value={editOrderNazov}
-              onChange={(e) => setEditOrderNazov(e.target.value)}
-            />
+        <Modal open={openEditCustomer} title="Upraviť zákazníka" onClose={closeEditCustomerModal}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              void saveCustomerEdit()
+            }}
+          >
+            <div style={{ display: 'grid', gap: 12 }}>
+              <div>
+                <label style={labelStyle} htmlFor="edit-customer-name">
+                  Názov firmy
+                </label>
+                <input
+                  id="edit-customer-name"
+                  style={inputStyle}
+                  value={editCustomerNazov}
+                  onChange={(e) => setEditCustomerNazov(e.target.value)}
+                  placeholder="Názov firmy"
+                />
+              </div>
+              <div>
+                <label style={labelStyle} htmlFor="edit-customer-contact">
+                  Kontaktná osoba
+                </label>
+                <input
+                  id="edit-customer-contact"
+                  style={inputStyle}
+                  value={editCustomerKontakt}
+                  onChange={(e) => setEditCustomerKontakt(e.target.value)}
+                  placeholder="Kontaktná osoba"
+                />
+              </div>
+              <div>
+                <label style={labelStyle} htmlFor="edit-customer-phone">
+                  Telefón
+                </label>
+                <input
+                  id="edit-customer-phone"
+                  type="tel"
+                  style={inputStyle}
+                  value={editCustomerTelefon}
+                  onChange={(e) => setEditCustomerTelefon(e.target.value)}
+                  placeholder="Telefón"
+                />
+              </div>
+              <div>
+                <label style={labelStyle} htmlFor="edit-customer-email">
+                  Email
+                </label>
+                <input
+                  id="edit-customer-email"
+                  type="email"
+                  style={inputStyle}
+                  value={editCustomerEmail}
+                  onChange={(e) => setEditCustomerEmail(e.target.value)}
+                  placeholder="Email"
+                />
+              </div>
 
-            <select
-              style={inputStyle}
-              value={editOrderCustomerId}
-              onChange={(e) => setEditOrderCustomerId(e.target.value)}
-            >
-              <option value="">Vyber zákazníka</option>
-              {customers.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nazov}
-                </option>
-              ))}
-            </select>
+              <div style={{ display: 'flex', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
+                <button type="submit" style={primaryButtonStyle} disabled={savingEditCustomer}>
+                  {savingEditCustomer ? 'Ukladám...' : 'Uložiť zmeny'}
+                </button>
+                <button type="button" style={secondaryDarkButtonStyle} onClick={closeEditCustomerModal}>
+                  Zrušiť
+                </button>
+              </div>
+            </div>
+          </form>
+        </Modal>
 
-            <select
-              style={inputStyle}
-              value={editOrderPracaType}
-              onChange={(e) => setEditOrderPracaType(e.target.value as PracaType)}
-            >
-              <option value="Montáž">Montáž</option>
-              <option value="Servis">Servis</option>
-              <option value="Vlastné">Vlastné</option>
-            </select>
+        <Modal open={openEditOrder} title="Upraviť zákazku" onClose={closeEditOrderModal}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              void saveOrderEdit()
+            }}
+          >
+            <div className="modalGrid">
+              <div>
+                <label style={labelStyle} htmlFor="edit-order-name">
+                  Názov zákazky
+                </label>
+                <input
+                  id="edit-order-name"
+                  style={inputStyle}
+                  placeholder="Názov zákazky"
+                  value={editOrderNazov}
+                  onChange={(e) => setEditOrderNazov(e.target.value)}
+                />
+              </div>
 
-            <input
-              style={inputStyle}
-              type="date"
-              value={editOrderTermin}
-              onChange={(e) => setEditOrderTermin(e.target.value)}
-            />
+              <div>
+                <label style={labelStyle} htmlFor="edit-order-customer">
+                  Zákazník
+                </label>
+                <select
+                  id="edit-order-customer"
+                  style={inputStyle}
+                  value={editOrderCustomerId}
+                  onChange={(e) => setEditOrderCustomerId(e.target.value)}
+                >
+                  <option value="">Vyber zákazníka</option>
+                  {customers.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.nazov}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            {editOrderPracaType === 'Vlastné' && (
-              <input
-                style={{ ...inputStyle, gridColumn: '1 / -1' }}
-                placeholder="Zadaj vlastný typ práce"
-                value={editOrderPracaCustom}
-                onChange={(e) => setEditOrderPracaCustom(e.target.value)}
-              />
-            )}
+              <div>
+                <label style={labelStyle} htmlFor="edit-order-work-type">
+                  Typ práce
+                </label>
+                <select
+                  id="edit-order-work-type"
+                  style={inputStyle}
+                  value={editOrderPracaType}
+                  onChange={(e) => setEditOrderPracaType(e.target.value as PracaType)}
+                >
+                  <option value="Montáž">Montáž</option>
+                  <option value="Servis">Servis</option>
+                  <option value="Vlastné">Vlastné</option>
+                </select>
+              </div>
 
-            <input
-              style={{ ...inputStyle, gridColumn: '1 / -1' }}
-              placeholder="Popis"
-              value={editOrderPopis}
-              onChange={(e) => setEditOrderPopis(e.target.value)}
-            />
-          </div>
+              <div>
+                <label style={labelStyle} htmlFor="edit-order-date">
+                  Termín
+                </label>
+                <input
+                  id="edit-order-date"
+                  style={inputStyle}
+                  type="date"
+                  value={editOrderTermin}
+                  onChange={(e) => setEditOrderTermin(e.target.value)}
+                />
+              </div>
 
-          <div style={{ display: 'flex', gap: 10, marginTop: 18, flexWrap: 'wrap' }}>
-            <button style={primaryButtonStyle} onClick={saveOrderEdit}>
-              Uložiť zmeny
-            </button>
-            <button
-              style={secondaryDarkButtonStyle}
-              onClick={() => {
-                resetEditOrderForm()
-                setOpenEditOrder(false)
-              }}
-            >
-              Zrušiť
-            </button>
-          </div>
+              {editOrderPracaType === 'Vlastné' && (
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={labelStyle} htmlFor="edit-order-custom-work">
+                    Vlastný typ práce
+                  </label>
+                  <input
+                    id="edit-order-custom-work"
+                    style={inputStyle}
+                    placeholder="Zadaj vlastný typ práce"
+                    value={editOrderPracaCustom}
+                    onChange={(e) => setEditOrderPracaCustom(e.target.value)}
+                  />
+                </div>
+              )}
+
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label style={labelStyle} htmlFor="edit-order-description">
+                  Popis
+                </label>
+                <input
+                  id="edit-order-description"
+                  style={inputStyle}
+                  placeholder="Popis"
+                  value={editOrderPopis}
+                  onChange={(e) => setEditOrderPopis(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, marginTop: 18, flexWrap: 'wrap' }}>
+              <button type="submit" style={primaryButtonStyle} disabled={savingEditOrder}>
+                {savingEditOrder ? 'Ukladám...' : 'Uložiť zmeny'}
+              </button>
+              <button type="button" style={secondaryDarkButtonStyle} onClick={closeEditOrderModal}>
+                Zrušiť
+              </button>
+            </div>
+          </form>
         </Modal>
 
         {loading && (
@@ -1390,7 +1770,14 @@ export default function Page() {
           flex-wrap: wrap;
         }
 
-        .headerActions {
+        .headerButtonsWrap {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 12px;
+        }
+
+        .secondaryActionsRow {
           display: flex;
           align-items: center;
           gap: 12px;
@@ -1443,13 +1830,20 @@ export default function Page() {
             display: block;
           }
 
-          .headerActions {
+          .headerButtonsWrap,
+          .secondaryActionsRow {
             width: 100%;
+            align-items: stretch;
             justify-content: stretch;
           }
 
-          .headerActions :global(a),
-          .headerActions button {
+          .secondaryActionsRow {
+            flex-direction: column;
+          }
+
+          .secondaryActionsRow :global(a),
+          .secondaryActionsRow button,
+          .headerButtonsWrap > button {
             width: 100%;
           }
         }
