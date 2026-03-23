@@ -1433,7 +1433,7 @@ export default function Page() {
                     setOpenAddCustomer(true)
                   }}
                 >
-                  Zákazníci
+                  Nový zákazník
                 </button>
 
                 <button
@@ -1449,7 +1449,7 @@ export default function Page() {
                     setOpenAddEmployee(true)
                   }}
                 >
-                  Zamestnanci
+                  Nový zamestnanec
                 </button>
 
                 <Link
