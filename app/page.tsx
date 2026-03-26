@@ -62,8 +62,6 @@ const STATUSY = [
 ]
 
 const AKTIVNE_STATUSY = ['nova', 'rozpracovana', 'caka', 'hotova']
-const PRACE = ['Montáž', 'Servis', 'Vlastné'] as const
-type PracaType = (typeof PRACE)[number]
 
 type Notice =
   | {
@@ -116,10 +114,6 @@ function getStatusCardBorder(stav: string): CSSProperties {
   return map[stav] || {}
 }
 
-function resolvePraca(type: PracaType, custom: string) {
-  return type === 'Vlastné' ? custom.trim() : type
-}
-
 function escapeCsvValue(value: string | number | null | undefined) {
   const safe = String(value ?? '')
   if (safe.includes('"') || safe.includes(';') || safe.includes('\n')) {
@@ -139,6 +133,13 @@ function downloadCsv(filename: string, rows: string[][]) {
   link.click()
   document.body.removeChild(link)
   URL.revokeObjectURL(url)
+}
+
+function parseHoursInput(value: string) {
+  const normalized = value.replace(',', '.').trim()
+  const num = Number(normalized)
+  if (!Number.isFinite(num)) return NaN
+  return num
 }
 
 function Modal({
@@ -267,8 +268,6 @@ export default function Page() {
   const [newCustomerKontakt, setNewCustomerKontakt] = useState('')
   const [newCustomerTelefon, setNewCustomerTelefon] = useState('')
   const [newCustomerEmail, setNewCustomerEmail] = useState('')
-  const [orderPracaType, setOrderPracaType] = useState<PracaType>('Servis')
-  const [orderPracaCustom, setOrderPracaCustom] = useState('')
   const [orderPopis, setOrderPopis] = useState('')
   const [orderTermin, setOrderTermin] = useState(getTodayDate())
   const [orderPrijatieZakazky, setOrderPrijatieZakazky] = useState(getTodayDate())
@@ -286,8 +285,6 @@ export default function Page() {
   const [editOrderId, setEditOrderId] = useState('')
   const [editOrderNazov, setEditOrderNazov] = useState('')
   const [editOrderCustomerId, setEditOrderCustomerId] = useState('')
-  const [editOrderPracaType, setEditOrderPracaType] = useState<PracaType>('Servis')
-  const [editOrderPracaCustom, setEditOrderPracaCustom] = useState('')
   const [editOrderPopis, setEditOrderPopis] = useState('')
   const [editOrderTermin, setEditOrderTermin] = useState('')
   const [editOrderPrijatieZakazky, setEditOrderPrijatieZakazky] = useState('')
@@ -459,8 +456,6 @@ export default function Page() {
     setNewCustomerKontakt('')
     setNewCustomerTelefon('')
     setNewCustomerEmail('')
-    setOrderPracaType('Servis')
-    setOrderPracaCustom('')
     setOrderPopis('')
     setOrderTermin(getTodayDate())
     setOrderPrijatieZakazky(getTodayDate())
@@ -478,8 +473,6 @@ export default function Page() {
     setEditOrderId('')
     setEditOrderNazov('')
     setEditOrderCustomerId('')
-    setEditOrderPracaType('Servis')
-    setEditOrderPracaCustom('')
     setEditOrderPopis('')
     setEditOrderTermin('')
     setEditOrderPrijatieZakazky('')
@@ -619,21 +612,16 @@ export default function Page() {
 
       if (newCustomerError || !newCustomer) {
         setSavingOrder(false)
-        setNotice({ type: 'error', text: newCustomerError?.message || 'Nepodarilo sa vytvoriť zákazníka.' })
+        setNotice({
+          type: 'error',
+          text: newCustomerError?.message || 'Nepodarilo sa vytvoriť zákazníka.',
+        })
         return
       }
 
       finalCustomerId = newCustomer.id
       createdCustomerId = newCustomer.id
       setCustomers((curr) => [newCustomer as Customer, ...curr])
-    }
-
-    const finalPraca = resolvePraca(orderPracaType, orderPracaCustom)
-
-    if (!finalPraca) {
-      setSavingOrder(false)
-      setNotice({ type: 'error', text: 'Zadaj typ práce.' })
-      return
     }
 
     const { data: insertedOrder, error } = await supabase
@@ -644,7 +632,7 @@ export default function Page() {
           nazov: orderNazov.trim(),
           customer_id: finalCustomerId,
           stav: 'nova',
-          praca: finalPraca,
+          praca: null,
           popis: orderPopis.trim() || null,
           termin: orderTermin || null,
           prijatie_zakazky: orderPrijatieZakazky || null,
@@ -811,15 +799,6 @@ export default function Page() {
     setEditOrderId(o.id)
     setEditOrderNazov(o.nazov || '')
     setEditOrderCustomerId(o.customer_id || '')
-
-    if (o.praca === 'Montáž' || o.praca === 'Servis') {
-      setEditOrderPracaType(o.praca)
-      setEditOrderPracaCustom('')
-    } else {
-      setEditOrderPracaType('Vlastné')
-      setEditOrderPracaCustom(o.praca || '')
-    }
-
     setEditOrderPopis(o.popis || '')
     setEditOrderTermin(o.termin || '')
     setEditOrderPrijatieZakazky(o.prijatie_zakazky || '')
@@ -832,18 +811,11 @@ export default function Page() {
       return
     }
 
-    const finalPraca = resolvePraca(editOrderPracaType, editOrderPracaCustom)
-    if (!finalPraca) {
-      setNotice({ type: 'error', text: 'Zadaj typ práce.' })
-      return
-    }
-
     setSavingEditOrder(true)
 
     const payload = {
       nazov: editOrderNazov.trim(),
       customer_id: editOrderCustomerId,
-      praca: finalPraca,
       popis: editOrderPopis.trim() || null,
       termin: editOrderTermin || null,
       prijatie_zakazky: editOrderPrijatieZakazky || null,
@@ -1012,55 +984,65 @@ export default function Page() {
   }
 
   async function addWorkLog() {
-    if (!userId || !activeWorkLogOrderId) return
+  if (!userId || !activeWorkLogOrderId) {
+    setNotice({ type: 'error', text: 'Chýba používateľ alebo zákazka.' })
+    return
+  }
 
-    if (!workLogDate) {
-      setNotice({ type: 'error', text: 'Zadaj dátum.' })
-      return
+  if (!workLogDate) {
+    setNotice({ type: 'error', text: 'Zadaj dátum.' })
+    return
+  }
+
+  if (!workLogText.trim()) {
+    setNotice({ type: 'error', text: 'Zadaj popis vykonanej práce.' })
+    return
+  }
+
+  const normalizedHours = String(workLogHours || '').replace(',', '.').trim()
+  const hours = Number(normalizedHours)
+
+  if (!Number.isFinite(hours) || hours <= 0) {
+    setNotice({ type: 'error', text: 'Zadaj platný počet hodín.' })
+    return
+  }
+
+  setSavingWorkLog(true)
+
+  try {
+    const payload = {
+      user_id: userId,
+      order_id: activeWorkLogOrderId,
+      datum: workLogDate,
+      praca_popis: workLogText.trim(),
+      hodiny: hours,
+      zamestnanci: workLogEmployees.length > 0 ? workLogEmployees : [],
     }
 
-    if (!workLogText.trim()) {
-      setNotice({ type: 'error', text: 'Zadaj popis vykonanej práce.' })
-      return
-    }
-
-    const hours = Number(workLogHours)
-    if (!hours || hours <= 0) {
-      setNotice({ type: 'error', text: 'Zadaj počet hodín.' })
-      return
-    }
-
-    setSavingWorkLog(true)
-
-    const { data, error } = await supabase
-      .from('work_logs')
-      .insert([
-        {
-          user_id: userId,
-          order_id: activeWorkLogOrderId,
-          datum: workLogDate,
-          praca_popis: workLogText.trim(),
-          hodiny: hours,
-          zamestnanci: workLogEmployees.length ? workLogEmployees : [],
-        },
-      ])
-      .select()
-      .single()
-
-    setSavingWorkLog(false)
+    const { error } = await supabase.from('work_logs').insert([payload])
 
     if (error) {
-      setNotice({ type: 'error', text: error.message })
+      console.error('SUPABASE WORKLOG INSERT ERROR:', error)
+      setNotice({ type: 'error', text: `Výkaz sa neuložil: ${error.message}` })
       return
-    }
-
-    if (data) {
-      setWorkLogs((curr) => [data as WorkLog, ...curr])
     }
 
     setNotice({ type: 'success', text: 'Výkaz práce bol uložený.' })
+
+    const currentUserId = userId
     resetWorkLogForm()
+    closeWorkLogModal()
+
+    await loadWorkLogs(currentUserId)
+    await loadOrders(currentUserId)
+  } catch (err) {
+    console.error('ADD WORKLOG ERROR:', err)
+    const message = err instanceof Error ? err.message : 'Neznáma chyba pri ukladaní výkazu.'
+    setNotice({ type: 'error', text: message })
+  } finally {
+    setSavingWorkLog(false)
   }
+}
 
   async function deleteWorkLog(workLogId: string) {
     if (!userId) return
@@ -1081,6 +1063,7 @@ export default function Page() {
       return
     }
 
+    await loadOrders(userId)
     setNotice({ type: 'success', text: 'Výkaz práce bol zmazaný.' })
   }
 
@@ -1148,16 +1131,7 @@ export default function Page() {
     }
 
     const rows = [
-      [
-        'Zákazka',
-        'Zákazník',
-        'Prijatie zákazky',
-        'Termín',
-        'Dátum výkazu',
-        'Hodiny',
-        'Zamestnanci',
-        'Práca',
-      ],
+      ['Zákazka', 'Zákazník', 'Prijatie zákazky', 'Termín', 'Dátum výkazu', 'Hodiny', 'Zamestnanci', 'Práca'],
       ...logs.map((log) => [
         order.nazov,
         getCustomerName(order.customer_id),
@@ -1191,7 +1165,7 @@ export default function Page() {
 
       const matchesSearch = !q
         ? true
-        : [o.nazov, o.praca || '', o.popis || '', customerName, workLogTextCombined]
+        : [o.nazov, o.popis || '', customerName, workLogTextCombined]
             .join(' ')
             .toLowerCase()
             .includes(q)
@@ -1410,6 +1384,7 @@ export default function Page() {
 
             <div className="headerButtonsWrap">
               <button
+                type="button"
                 style={primaryButtonStyle}
                 onClick={() => {
                   resetAddOrderForm()
@@ -1421,6 +1396,7 @@ export default function Page() {
 
               <div className="secondaryActionsRow">
                 <button
+                  type="button"
                   style={{
                     ...buttonStyle,
                     background: 'rgba(255,255,255,0.08)',
@@ -1437,6 +1413,7 @@ export default function Page() {
                 </button>
 
                 <button
+                  type="button"
                   style={{
                     ...buttonStyle,
                     background: 'rgba(255,255,255,0.08)',
@@ -1477,6 +1454,7 @@ export default function Page() {
           }}
         >
           <button
+            type="button"
             style={{
               ...buttonStyle,
               background: '#fff',
@@ -1539,13 +1517,13 @@ export default function Page() {
         </div>
 
         <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
-          <button style={tabButton(activeTab === 'zakazky')} onClick={() => setActiveTab('zakazky')}>
+          <button type="button" style={tabButton(activeTab === 'zakazky')} onClick={() => setActiveTab('zakazky')}>
             Zákazky
           </button>
-          <button style={tabButton(activeTab === 'zakaznici')} onClick={() => setActiveTab('zakaznici')}>
+          <button type="button" style={tabButton(activeTab === 'zakaznici')} onClick={() => setActiveTab('zakaznici')}>
             Zákazníci
           </button>
-          <button style={tabButton(activeTab === 'zamestnanci')} onClick={() => setActiveTab('zamestnanci')}>
+          <button type="button" style={tabButton(activeTab === 'zamestnanci')} onClick={() => setActiveTab('zamestnanci')}>
             Zamestnanci
           </button>
         </div>
@@ -1654,8 +1632,7 @@ export default function Page() {
                             </div>
                             <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>{o.popis || '-'}</div>
                             <div style={{ fontSize: 12, color: '#475569', marginTop: 6 }}>
-                              <strong>Práca:</strong> {o.praca || '-'} | <strong>Výkazy:</strong>{' '}
-                              {(workLogsByOrder[o.id] || []).length}
+                              <strong>Výkazy:</strong> {(workLogsByOrder[o.id] || []).length}
                             </div>
                           </td>
                           <td style={{ padding: '12px 10px' }}>{getCustomerName(o.customer_id)}</td>
@@ -1684,16 +1661,13 @@ export default function Page() {
                           </td>
                           <td style={{ padding: '12px 10px' }}>
                             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                              <button style={greenButtonStyle} onClick={() => openWorkLogModal(o.id)}>
+                              <button type="button" style={greenButtonStyle} onClick={() => openWorkLogModal(o.id)}>
                                 Výkaz práce
                               </button>
-                              <button style={buttonStyle} onClick={() => exportOrderWorkLogs(o.id)}>
-                                Export CSV
-                              </button>
-                              <button style={buttonStyle} onClick={() => startEditOrder(o)}>
+                              <button type="button" style={buttonStyle} onClick={() => startEditOrder(o)}>
                                 Upraviť
                               </button>
-                              <button style={dangerButtonStyle} onClick={() => deleteOrder(o.id)}>
+                              <button type="button" style={dangerButtonStyle} onClick={() => deleteOrder(o.id)}>
                                 Zmazať
                               </button>
                             </div>
@@ -1872,7 +1846,6 @@ export default function Page() {
                         >
                           <div style={{ display: 'grid', gap: 8 }}>
                             <div><strong>Popis:</strong> {o.popis || '-'}</div>
-                            <div><strong>Typ práce:</strong> {o.praca || '-'}</div>
                             <div><strong>Prijatie zákazky:</strong> {formatDate(o.prijatie_zakazky)}</div>
                             <div><strong>Termín:</strong> {formatDate(o.termin)}</div>
                             <div><strong>Počet výkazov:</strong> {orderLogs.length}</div>
@@ -1901,16 +1874,13 @@ export default function Page() {
                           </div>
 
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 10, marginTop: 14 }}>
-                            <button style={greenButtonStyle} onClick={() => openWorkLogModal(o.id)}>
+                            <button type="button" style={greenButtonStyle} onClick={() => openWorkLogModal(o.id)}>
                               Výkaz práce
                             </button>
-                            <button style={buttonStyle} onClick={() => exportOrderWorkLogs(o.id)}>
-                              Export CSV
-                            </button>
-                            <button style={buttonStyle} onClick={() => startEditOrder(o)}>
+                            <button type="button" style={buttonStyle} onClick={() => startEditOrder(o)}>
                               Upraviť
                             </button>
-                            <button style={dangerButtonStyle} onClick={() => deleteOrder(o.id)}>
+                            <button type="button" style={dangerButtonStyle} onClick={() => deleteOrder(o.id)}>
                               Zmazať
                             </button>
                           </div>
@@ -1961,10 +1931,10 @@ export default function Page() {
                         <td style={{ padding: '12px 10px' }}>{c.email || '-'}</td>
                         <td style={{ padding: '12px 10px' }}>
                           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                            <button style={buttonStyle} onClick={() => startEditCustomer(c)}>
+                            <button type="button" style={buttonStyle} onClick={() => startEditCustomer(c)}>
                               Upraviť
                             </button>
-                            <button style={dangerButtonStyle} onClick={() => deleteCustomer(c.id)}>
+                            <button type="button" style={dangerButtonStyle} onClick={() => deleteCustomer(c.id)}>
                               Zmazať
                             </button>
                           </div>
@@ -2011,10 +1981,10 @@ export default function Page() {
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 14 }}>
-                    <button style={buttonStyle} onClick={() => startEditCustomer(c)}>
+                    <button type="button" style={buttonStyle} onClick={() => startEditCustomer(c)}>
                       Upraviť
                     </button>
-                    <button style={dangerButtonStyle} onClick={() => deleteCustomer(c.id)}>
+                    <button type="button" style={dangerButtonStyle} onClick={() => deleteCustomer(c.id)}>
                       Zmazať
                     </button>
                   </div>
@@ -2040,6 +2010,7 @@ export default function Page() {
               <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
                 <div style={{ color: '#475569', fontWeight: 700 }}>Spolu: {employees.length}</div>
                 <button
+                  type="button"
                   style={primaryButtonStyle}
                   onClick={() => {
                     resetEmployeeForm()
@@ -2074,10 +2045,10 @@ export default function Page() {
                         </td>
                         <td style={{ padding: '12px 10px' }}>
                           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                            <button style={buttonStyle} onClick={() => startEditEmployee(emp)}>
+                            <button type="button" style={buttonStyle} onClick={() => startEditEmployee(emp)}>
                               Upraviť
                             </button>
-                            <button style={dangerButtonStyle} onClick={() => deleteEmployee(emp.id)}>
+                            <button type="button" style={dangerButtonStyle} onClick={() => deleteEmployee(emp.id)}>
                               Zmazať
                             </button>
                           </div>
@@ -2124,10 +2095,10 @@ export default function Page() {
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 14 }}>
-                    <button style={buttonStyle} onClick={() => startEditEmployee(emp)}>
+                    <button type="button" style={buttonStyle} onClick={() => startEditEmployee(emp)}>
                       Upraviť
                     </button>
-                    <button style={dangerButtonStyle} onClick={() => deleteEmployee(emp.id)}>
+                    <button type="button" style={dangerButtonStyle} onClick={() => deleteEmployee(emp.id)}>
                       Zmazať
                     </button>
                   </div>
@@ -2276,22 +2247,6 @@ export default function Page() {
                 </div>
               )}
 
-              <div>
-                <label style={labelStyle} htmlFor="order-work-type">
-                  Typ práce
-                </label>
-                <select
-                  id="order-work-type"
-                  style={inputStyle}
-                  value={orderPracaType}
-                  onChange={(e) => setOrderPracaType(e.target.value as PracaType)}
-                >
-                  <option value="Montáž">Montáž</option>
-                  <option value="Servis">Servis</option>
-                  <option value="Vlastné">Vlastné</option>
-                </select>
-              </div>
-
               {customerMode === 'new' && (
                 <>
                   <div>
@@ -2333,21 +2288,6 @@ export default function Page() {
                     />
                   </div>
                 </>
-              )}
-
-              {orderPracaType === 'Vlastné' && (
-                <div>
-                  <label style={labelStyle} htmlFor="order-custom-work">
-                    Vlastný typ práce
-                  </label>
-                  <input
-                    id="order-custom-work"
-                    style={inputStyle}
-                    placeholder="Zadaj vlastný typ práce"
-                    value={orderPracaCustom}
-                    onChange={(e) => setOrderPracaCustom(e.target.value)}
-                  />
-                </div>
               )}
 
               <div>
@@ -2513,22 +2453,6 @@ export default function Page() {
               </div>
 
               <div>
-                <label style={labelStyle} htmlFor="edit-order-work-type">
-                  Typ práce
-                </label>
-                <select
-                  id="edit-order-work-type"
-                  style={inputStyle}
-                  value={editOrderPracaType}
-                  onChange={(e) => setEditOrderPracaType(e.target.value as PracaType)}
-                >
-                  <option value="Montáž">Montáž</option>
-                  <option value="Servis">Servis</option>
-                  <option value="Vlastné">Vlastné</option>
-                </select>
-              </div>
-
-              <div>
                 <label style={labelStyle} htmlFor="edit-order-accepted-date">
                   Prijatie zákazky
                 </label>
@@ -2553,21 +2477,6 @@ export default function Page() {
                   onChange={(e) => setEditOrderTermin(e.target.value)}
                 />
               </div>
-
-              {editOrderPracaType === 'Vlastné' && (
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <label style={labelStyle} htmlFor="edit-order-custom-work">
-                    Vlastný typ práce
-                  </label>
-                  <input
-                    id="edit-order-custom-work"
-                    style={inputStyle}
-                    placeholder="Zadaj vlastný typ práce"
-                    value={editOrderPracaCustom}
-                    onChange={(e) => setEditOrderPracaCustom(e.target.value)}
-                  />
-                </div>
-              )}
 
               <div style={{ gridColumn: '1 / -1' }}>
                 <label style={labelStyle} htmlFor="edit-order-description">
@@ -2771,7 +2680,7 @@ export default function Page() {
               >
                 <div style={{ fontSize: 18, fontWeight: 800 }}>{currentOrder.nazov}</div>
                 <div style={{ color: '#475569', marginTop: 6 }}>
-                  {getCustomerName(currentOrder.customer_id)} | {currentOrder.praca || '-'}
+                  {getCustomerName(currentOrder.customer_id)}
                 </div>
                 <div style={{ color: '#475569', marginTop: 6 }}>
                   Prijatie: {formatDate(currentOrder.prijatie_zakazky)} | Termín: {formatDate(currentOrder.termin)}
@@ -2784,7 +2693,7 @@ export default function Page() {
 
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
               {currentOrder && (
-                <button style={buttonStyle} onClick={() => exportOrderWorkLogs(currentOrder.id)}>
+                <button type="button" style={buttonStyle} onClick={() => exportOrderWorkLogs(currentOrder.id)}>
                   Exportovať výkazy do CSV
                 </button>
               )}
@@ -2816,11 +2725,10 @@ export default function Page() {
                   </label>
                   <input
                     id="worklog-hours"
-                    type="number"
-                    step="0.25"
-                    min="0"
+                    type="text"
+                    inputMode="decimal"
                     style={inputStyle}
-                    placeholder="Napr. 2.5"
+                    placeholder="Napr. 2.5 alebo 2,5"
                     value={workLogHours}
                     onChange={(e) => setWorkLogHours(e.target.value)}
                   />
@@ -2993,7 +2901,7 @@ export default function Page() {
                           </div>
                         </div>
 
-                        <button style={dangerButtonStyle} onClick={() => deleteWorkLog(log.id)}>
+                        <button type="button" style={dangerButtonStyle} onClick={() => deleteWorkLog(log.id)}>
                           Zmazať
                         </button>
                       </div>
