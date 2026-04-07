@@ -175,7 +175,7 @@ function Modal({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 16,
+        padding: 10,
         zIndex: 1000,
       }}
     >
@@ -255,6 +255,7 @@ export default function Page() {
 
   const [activeTab, setActiveTab] = useState<'zakazky' | 'zakaznici' | 'zamestnanci'>('zakazky')
   const [expandedOrderIds, setExpandedOrderIds] = useState<string[]>([])
+  const [pinnedOrderIds, setPinnedOrderIds] = useState<string[]>([])
 
   const [nazov, setNazov] = useState('')
   const [kontakt, setKontakt] = useState('')
@@ -365,6 +366,26 @@ export default function Page() {
     const timer = window.setTimeout(() => setNotice(null), 4000)
     return () => window.clearTimeout(timer)
   }, [notice])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      const storedPins = window.localStorage.getItem('orders-pinned-v1')
+      if (storedPins) {
+        const parsed = JSON.parse(storedPins)
+        if (Array.isArray(parsed)) {
+          setPinnedOrderIds(parsed.filter((item): item is string => typeof item === 'string'))
+        }
+      }
+    } catch {
+      // ignore localStorage read errors
+    }
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    window.localStorage.setItem('orders-pinned-v1', JSON.stringify(pinnedOrderIds))
+  }, [pinnedOrderIds])
 
   async function loadInitialData(currentUserId: string) {
     setLoading(true)
@@ -1149,6 +1170,17 @@ export default function Page() {
     setNotice({ type: 'success', text: 'Výkaz práce bol exportovaný do CSV.' })
   }
 
+  function togglePinnedOrder(orderId: string) {
+    setPinnedOrderIds((curr) =>
+      curr.includes(orderId) ? curr.filter((id) => id !== orderId) : [orderId, ...curr]
+    )
+  }
+
+  function isPinnedOrder(orderId: string) {
+    return pinnedOrderIds.includes(orderId)
+  }
+
+
   const activeOrders = useMemo(() => {
     return orders.filter((o) => AKTIVNE_STATUSY.includes(o.stav))
   }, [orders])
@@ -1218,6 +1250,52 @@ export default function Page() {
     return result
   }, [activeOrders, search, statusFilter, sortBy, workLogsByOrder])
 
+  const groupedOrders = useMemo(() => {
+    const pinned = filteredOrders.filter((o) => pinnedOrderIds.includes(o.id))
+    const rest = filteredOrders.filter((o) => !pinnedOrderIds.includes(o.id))
+
+    const sections = [
+      {
+        key: 'pinned',
+        title: 'Pripnuté',
+        description: 'Tvoje najdôležitejšie zákazky navrchu.',
+        items: pinned,
+      },
+      {
+        key: 'overdue',
+        title: 'Po termíne',
+        description: 'Zákazky, ktoré potrebujú pozornosť hneď.',
+        items: rest.filter((o) => isOverdue(o)),
+      },
+      {
+        key: 'rozpracovana',
+        title: 'Rozpracované',
+        description: 'Na týchto zákazkách sa aktuálne pracuje.',
+        items: rest.filter((o) => o.stav === 'rozpracovana' && !isOverdue(o)),
+      },
+      {
+        key: 'caka',
+        title: 'Čaká na materiál',
+        description: 'Dočasne pozastavené alebo čakajúce zákazky.',
+        items: rest.filter((o) => o.stav === 'caka' && !isOverdue(o)),
+      },
+      {
+        key: 'nova',
+        title: 'Nové',
+        description: 'Nové zákazky pripravené na začatie.',
+        items: rest.filter((o) => o.stav === 'nova' && !isOverdue(o)),
+      },
+      {
+        key: 'hotova',
+        title: 'Dokončené',
+        description: 'Hotové zákazky pred fakturáciou alebo odovzdaním.',
+        items: rest.filter((o) => o.stav === 'hotova'),
+      },
+    ]
+
+    return sections.filter((section) => section.items.length > 0)
+  }, [filteredOrders, pinnedOrderIds])
+
   const currentOrderWorkLogs = useMemo(() => {
     if (!activeWorkLogOrderId) return []
     return workLogsByOrder[activeWorkLogOrderId] || []
@@ -1230,23 +1308,23 @@ export default function Page() {
   const boxStyle: CSSProperties = {
     background: '#ffffff',
     border: '1px solid #e2e8f0',
-    borderRadius: 18,
-    padding: 20,
+    borderRadius: 12,
+    padding: 14,
     boxShadow: '0 6px 18px rgba(15, 23, 42, 0.05)',
   }
 
   const inputStyle: CSSProperties = {
     width: '100%',
-    padding: '11px 12px',
+    padding: '9px 10px',
     borderRadius: 12,
     border: '1px solid #cbd5e1',
     outline: 'none',
     background: '#fff',
-    fontSize: 14,
+    fontSize: 12,
   }
 
   const labelStyle: CSSProperties = {
-    fontSize: 13,
+    fontSize: 12,
     color: '#475569',
     fontWeight: 700,
     marginBottom: 6,
@@ -1254,7 +1332,7 @@ export default function Page() {
   }
 
   const buttonStyle: CSSProperties = {
-    padding: '10px 14px',
+    padding: '7px 10px',
     borderRadius: 12,
     border: '1px solid #cbd5e1',
     background: '#fff',
@@ -1272,9 +1350,9 @@ export default function Page() {
     background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
     color: '#fff',
     border: '1px solid #1d4ed8',
-    minHeight: 50,
-    padding: '13px 20px',
-    fontSize: 15,
+    minHeight: 40,
+    padding: '9px 14px',
+    fontSize: 13,
     fontWeight: 900,
     boxShadow: '0 10px 24px rgba(37, 99, 235, 0.35)',
   }
@@ -1301,7 +1379,7 @@ export default function Page() {
   }
 
   const tabButton = (active: boolean): CSSProperties => ({
-    padding: '10px 14px',
+    padding: '7px 10px',
     borderRadius: 12,
     border: active ? '1px solid #0f172a' : '1px solid #cbd5e1',
     background: active ? '#0f172a' : '#fff',
@@ -1315,7 +1393,7 @@ export default function Page() {
       style={{
         ...boxStyle,
         minWidth: 160,
-        padding: 16,
+        padding: 14,
         flex: 1,
       }}
     >
@@ -1327,7 +1405,7 @@ export default function Page() {
           borderRadius: 999,
           fontSize: 12,
           fontWeight: 800,
-          marginBottom: 10,
+          marginBottom: 8,
         }}
       >
         {label}
@@ -1357,7 +1435,7 @@ export default function Page() {
       style={{
         minHeight: '100vh',
         background: 'linear-gradient(180deg, #f8fafc 0%, #eef4ff 100%)',
-        padding: 16,
+        padding: 14,
         fontFamily: 'Arial, Helvetica, sans-serif',
         color: '#0f172a',
       }}
@@ -1366,26 +1444,23 @@ export default function Page() {
         <div
           style={{
             ...boxStyle,
-            marginBottom: 18,
-            padding: 24,
+            marginBottom: 8,
+            padding: 12,
             background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
             color: '#fff',
             border: 'none',
           }}
         >
-          <div className="headerWrap">
+          <div className="headerCompact">
             <div>
-              <div style={{ fontSize: 24, opacity: 0.84, marginBottom: 8, letterSpacing: 0.8 }}>ITspot s.r.o.</div>
-              <h1 style={{ margin: 0, fontSize: 32, fontWeight: 800 }}>Evidencia zákaziek</h1>
-              <div style={{ marginTop: 8, fontSize: 15, color: 'rgba(255,255,255,0.82)' }}>
-                Zákazky, zákazníci, zamestnanci a výkazy práce
-              </div>
+              <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 4, letterSpacing: 0.4 }}>ITspot s.r.o.</div>
+              <h1 style={{ margin: 0, fontSize: 15, fontWeight: 800 }}>Evidencia zákaziek</h1>
             </div>
 
-            <div className="headerButtonsWrap">
+            <div className="headerCompactActions">
               <button
                 type="button"
-                style={primaryButtonStyle}
+                style={{ ...primaryButtonStyle, minHeight: 44, padding: '10px 16px', fontSize: 14, boxShadow: '0 8px 18px rgba(37, 99, 235, 0.28)' }}
                 onClick={() => {
                   resetAddOrderForm()
                   setOpenAddOrder(true)
@@ -1394,79 +1469,89 @@ export default function Page() {
                 + Nová zákazka
               </button>
 
-              <div className="secondaryActionsRow">
-                <button
-                  type="button"
-                  style={{
-                    ...buttonStyle,
-                    background: 'rgba(255,255,255,0.08)',
-                    color: '#fff',
-                    border: '1px solid rgba(255,255,255,0.25)',
-                    minHeight: 44,
-                  }}
-                  onClick={() => {
-                    resetAddCustomerForm()
-                    setOpenAddCustomer(true)
-                  }}
-                >
-                  Nový zákazník
-                </button>
+              <button
+                type="button"
+                style={{
+                  ...buttonStyle,
+                  background: 'rgba(255,255,255,0.08)',
+                  color: '#fff',
+                  border: '1px solid rgba(255,255,255,0.25)',
+                  minHeight: 34,
+                  padding: '6px 9px',
+                }}
+                onClick={() => {
+                  resetAddCustomerForm()
+                  setOpenAddCustomer(true)
+                }}
+              >
+                Nový zákazník
+              </button>
 
-                <button
-                  type="button"
-                  style={{
-                    ...buttonStyle,
-                    background: 'rgba(255,255,255,0.08)',
-                    color: '#fff',
-                    border: '1px solid rgba(255,255,255,0.25)',
-                    minHeight: 44,
-                  }}
-                  onClick={() => {
-                    resetEmployeeForm()
-                    setOpenAddEmployee(true)
-                  }}
-                >
-                  Nový zamestnanec
-                </button>
+              <button
+                type="button"
+                style={{
+                  ...buttonStyle,
+                  background: 'rgba(255,255,255,0.08)',
+                  color: '#fff',
+                  border: '1px solid rgba(255,255,255,0.25)',
+                  minHeight: 34,
+                  padding: '6px 9px',
+                }}
+                onClick={() => {
+                  resetEmployeeForm()
+                  setOpenAddEmployee(true)
+                }}
+              >
+                Nový zamestnanec
+              </button>
 
-                <Link
-                  href="/fakturovane"
-                  style={{
-                    ...buttonStyle,
-                    background: 'rgba(255,255,255,0.08)',
-                    color: '#fff',
-                    border: '1px solid rgba(255,255,255,0.25)',
-                    minHeight: 44,
-                  }}
-                >
-                  Fakturované / Stornované
-                </Link>
-              </div>
+              <Link
+                href="/dochadzka"
+                style={{
+                  ...buttonStyle,
+                  background: 'rgba(255,255,255,0.08)',
+                  color: '#fff',
+                  border: '1px solid rgba(255,255,255,0.25)',
+                  minHeight: 34,
+                  padding: '6px 9px',
+                  fontSize: 12,
+                }}
+              >
+                Dochádzka
+              </Link>
+
+              <Link
+                href="/fakturovane"
+                style={{
+                  ...buttonStyle,
+                  background: 'rgba(255,255,255,0.08)',
+                  color: '#fff',
+                  border: '1px solid rgba(255,255,255,0.25)',
+                  minHeight: 34,
+                  padding: '6px 9px',
+                  fontSize: 12,
+                }}
+              >
+                Fakturované / Stornované
+              </Link>
+
+              <button
+                type="button"
+                style={{
+                  ...buttonStyle,
+                  background: 'rgba(255,255,255,0.08)',
+                  color: '#fff',
+                  border: '1px solid rgba(255,255,255,0.25)',
+                  minHeight: 34,
+                  padding: '6px 9px',
+                }}
+                onClick={logout}
+                disabled={loggingOut}
+              >
+                {loggingOut ? 'Odhlasujem...' : 'Odhlásiť'}
+              </button>
             </div>
           </div>
-        </div>
-
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'flex-end',
-            marginBottom: 18,
-          }}
-        >
-          <button
-            type="button"
-            style={{
-              ...buttonStyle,
-              background: '#fff',
-              color: '#475569',
-              border: '1px solid #cbd5e1',
-              minHeight: 44,
-            }}
-            onClick={logout}
-            disabled={loggingOut}
-          >
-            {loggingOut ? 'Odhlasujem...' : 'Odhlásiť'}
-          </button>
         </div>
 
         {notice && (
@@ -1500,23 +1585,36 @@ export default function Page() {
           </div>
         )}
 
-        <div className="summaryGrid" style={{ display: 'grid', gap: 14, marginBottom: 20 }}>
-          {summaryCard('Aktívne zákazky', activeOrders.length, {
-            background: '#e2e8f0',
-            color: '#0f172a',
-            border: '1px solid #cbd5e1',
-          })}
-          {summaryCard('Nové', activeOrders.filter((o) => o.stav === 'nova').length, getStatusBadgeStyle('nova'))}
-          {summaryCard(
-            'Rozpracované',
-            activeOrders.filter((o) => o.stav === 'rozpracovana').length,
-            getStatusBadgeStyle('rozpracovana'),
-          )}
-          {summaryCard('Čakajú', activeOrders.filter((o) => o.stav === 'caka').length, getStatusBadgeStyle('caka'))}
-          {summaryCard('Dokončené', activeOrders.filter((o) => o.stav === 'hotova').length, getStatusBadgeStyle('hotova'))}
+        <div
+          className="summaryStrip"
+          style={{
+            ...boxStyle,
+            marginBottom: 12,
+            padding: '8px 10px',
+            display: 'flex',
+            gap: 8,
+            flexWrap: 'wrap',
+            alignItems: 'center',
+          }}
+        >
+          <div style={{ background: '#e2e8f0', color: '#0f172a', border: '1px solid #cbd5e1', padding: '6px 10px', borderRadius: 999, fontWeight: 800 }}>
+            Aktívne {activeOrders.length}
+          </div>
+          <div style={{ ...getStatusBadgeStyle('nova'), padding: '6px 10px', borderRadius: 999, fontWeight: 800 }}>
+            Nové {activeOrders.filter((o) => o.stav === 'nova').length}
+          </div>
+          <div style={{ ...getStatusBadgeStyle('rozpracovana'), padding: '6px 10px', borderRadius: 999, fontWeight: 800 }}>
+            Rozpracované {activeOrders.filter((o) => o.stav === 'rozpracovana').length}
+          </div>
+          <div style={{ ...getStatusBadgeStyle('caka'), padding: '6px 10px', borderRadius: 999, fontWeight: 800 }}>
+            Čakajú {activeOrders.filter((o) => o.stav === 'caka').length}
+          </div>
+          <div style={{ ...getStatusBadgeStyle('hotova'), padding: '6px 10px', borderRadius: 999, fontWeight: 800 }}>
+            Dokončené {activeOrders.filter((o) => o.stav === 'hotova').length}
+          </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
           <button type="button" style={tabButton(activeTab === 'zakazky')} onClick={() => setActiveTab('zakazky')}>
             Zákazky
           </button>
@@ -1530,8 +1628,8 @@ export default function Page() {
 
         {activeTab === 'zakazky' && (
           <>
-            <div style={{ ...boxStyle, marginBottom: 20 }}>
-              <div className="filtersGrid">
+            <div style={{ ...boxStyle, marginBottom: 8, padding: 12 }}>
+              <div className="filtersGrid filtersGridOrders">
                 <div>
                   <label style={labelStyle} htmlFor="search-orders">
                     Hľadať
@@ -1539,7 +1637,7 @@ export default function Page() {
                   <input
                     id="search-orders"
                     style={inputStyle}
-                    placeholder="Zákazka, zákazník, popis, výkaz práce..."
+                    placeholder="Názov zákazky, zákazník, popis, zamestnanec..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                   />
@@ -1566,14 +1664,14 @@ export default function Page() {
                   <select id="sort-by" style={inputStyle} value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
                     <option value="newest">Najnovšie</option>
                     <option value="oldest">Najstaršie</option>
+                    <option value="deadline">Termín - od najbližších</option>
+                    <option value="deadline_desc">Termín - od najvzdialenejších</option>
                     <option value="customer">Podľa zákazníka</option>
                     <option value="status">Podľa stavu</option>
                     <option value="name">Podľa názvu</option>
+                    <option value="hours">Podľa hodín</option>
                     <option value="accepted">Prijatie - od najstarších</option>
                     <option value="accepted_desc">Prijatie - od najnovších</option>
-                    <option value="deadline">Termín - od najbližších</option>
-                    <option value="deadline_desc">Termín - od najvzdialenejších</option>
-                    <option value="hours">Podľa hodín</option>
                   </select>
                 </div>
               </div>
@@ -1586,309 +1684,273 @@ export default function Page() {
                   justifyContent: 'space-between',
                   gap: 12,
                   alignItems: 'center',
-                  marginBottom: 14,
+                  marginBottom: 12,
                   flexWrap: 'wrap',
                 }}
               >
-                <div style={{ fontWeight: 800, fontSize: 18 }}>Aktívne zákazky</div>
+                <div style={{ fontWeight: 800, fontSize: 16 }}>Aktívne zákazky</div>
                 <div style={{ color: '#475569', fontWeight: 700 }}>Zobrazené: {filteredOrders.length}</div>
               </div>
 
-              <div className="desktopTable">
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
-                    <thead>
-                      <tr style={{ textAlign: 'left', color: '#64748b', borderBottom: '1px solid #e2e8f0' }}>
-                        <th style={{ padding: '12px 10px' }}>Názov</th>
-                        <th style={{ padding: '12px 10px' }}>Zákazník</th>
-                        <th style={{ padding: '12px 10px' }}>Prijatie</th>
-                        <th style={{ padding: '12px 10px' }}>Termín</th>
-                        <th style={{ padding: '12px 10px' }}>Hodiny</th>
-                        <th style={{ padding: '12px 10px' }}>Stav</th>
-                        <th style={{ padding: '12px 10px' }}>Akcie</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredOrders.map((o) => (
-                        <tr key={o.id} style={{ borderBottom: '1px solid #e2e8f0', verticalAlign: 'top' }}>
-                          <td style={{ padding: '12px 10px' }}>
-                            <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-                              <div style={{ fontWeight: 800 }}>{o.nazov}</div>
-                              {isOverdue(o) && (
-                                <span
-                                  style={{
-                                    background: '#fff1f2',
-                                    color: '#be123c',
-                                    border: '1px solid #fecdd3',
-                                    borderRadius: 999,
-                                    padding: '3px 8px',
-                                    fontSize: 12,
-                                    fontWeight: 800,
-                                  }}
-                                >
-                                  Po termíne
-                                </span>
-                              )}
-                            </div>
-                            <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>{o.popis || '-'}</div>
-                            <div style={{ fontSize: 12, color: '#475569', marginTop: 6 }}>
-                              <strong>Výkazy:</strong> {(workLogsByOrder[o.id] || []).length}
-                            </div>
-                          </td>
-                          <td style={{ padding: '12px 10px' }}>{getCustomerName(o.customer_id)}</td>
-                          <td style={{ padding: '12px 10px' }}>{formatDate(o.prijatie_zakazky)}</td>
-                          <td style={{ padding: '12px 10px' }}>{formatDate(o.termin)}</td>
-                          <td style={{ padding: '12px 10px', fontWeight: 800 }}>{getOrderHours(o.id).toFixed(1)} h</td>
-                          <td style={{ padding: '12px 10px' }}>
-                            <select
-                              value={o.stav}
-                              onChange={(e) => updateOrderStatus(o.id, e.target.value)}
-                              style={{
-                                ...getStatusBadgeStyle(o.stav),
-                                padding: '8px 10px',
-                                borderRadius: 999,
-                                fontWeight: 800,
-                                cursor: 'pointer',
-                                outline: 'none',
-                              }}
-                            >
-                              {STATUSY.map((s) => (
-                                <option key={s.value} value={s.value}>
-                                  {s.label}
-                                </option>
-                              ))}
-                            </select>
-                          </td>
-                          <td style={{ padding: '12px 10px' }}>
-                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                              <button type="button" style={greenButtonStyle} onClick={() => openWorkLogModal(o.id)}>
-                                Výkaz práce
-                              </button>
-                              <button type="button" style={buttonStyle} onClick={() => startEditOrder(o)}>
-                                Upraviť
-                              </button>
-                              <button type="button" style={dangerButtonStyle} onClick={() => deleteOrder(o.id)}>
-                                Zmazať
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-
-                      {filteredOrders.length === 0 && (
-                        <tr>
-                          <td colSpan={7} style={{ padding: 24, textAlign: 'center', color: '#64748b' }}>
-                            Žiadne zákazky na zobrazenie
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
+              {filteredOrders.length === 0 && (
+                <div
+                  style={{
+                    padding: 18,
+                    borderRadius: 16,
+                    border: '1px dashed #cbd5e1',
+                    background: '#f8fafc',
+                    textAlign: 'center',
+                    color: '#64748b',
+                  }}
+                >
+                  Žiadne zákazky na zobrazenie.
                 </div>
-              </div>
+              )}
 
-              <div className="mobileCards">
-                {filteredOrders.length === 0 && (
-                  <div style={{ padding: 12, textAlign: 'center', color: '#64748b' }}>
-                    Žiadne zákazky na zobrazenie
-                  </div>
-                )}
-
-                {filteredOrders.map((o) => {
-                  const expanded = expandedOrderIds.includes(o.id)
-                  const orderLogs = workLogsByOrder[o.id] || []
-                  const lastLog = orderLogs[0]
-
-                  return (
+              <div style={{ display: 'grid', gap: 10 }}>
+                {groupedOrders.map((section) => (
+                  <div key={section.key}>
                     <div
-                      key={o.id}
                       style={{
-                        border: '1px solid #e2e8f0',
-                        borderRadius: 18,
-                        padding: 14,
-                        marginBottom: 12,
-                        background: '#fff',
-                        ...getStatusCardBorder(o.stav),
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        gap: 12,
+                        alignItems: 'center',
+                        marginBottom: 8,
+                        flexWrap: 'wrap',
                       }}
                     >
-                      <button
-                        type="button"
-                        onClick={() => toggleExpandedOrder(o.id)}
+                      <div>
+                        <div style={{ fontSize: 15, fontWeight: 900 }}>{section.title}</div>
+                        <div style={{ color: '#64748b', fontSize: 12, marginTop: 2 }}>{section.description}</div>
+                      </div>
+                      <div
                         style={{
-                          width: '100%',
-                          textAlign: 'left',
-                          background: 'transparent',
-                          border: 'none',
-                          padding: 0,
-                          cursor: 'pointer',
+                          minWidth: 28,
+                          height: 28,
+                          borderRadius: 999,
+                          background: '#f8fafc',
+                          border: '1px solid #e2e8f0',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: 900,
+                          color: '#334155',
                         }}
                       >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
-                          <div style={{ minWidth: 0, flex: 1 }}>
-                            <div style={{ fontWeight: 800, fontSize: 17, lineHeight: 1.25 }}>{o.nazov}</div>
-                            <div style={{ marginTop: 4, color: '#475569', fontSize: 13 }}>{getCustomerName(o.customer_id)}</div>
-                          </div>
+                        {section.items.length}
+                      </div>
+                    </div>
 
-                          <div
-                            style={{
-                              ...getStatusBadgeStyle(o.stav),
-                              padding: '6px 10px',
-                              borderRadius: 999,
-                              fontWeight: 800,
-                              fontSize: 12,
-                              whiteSpace: 'nowrap',
-                            }}
-                          >
-                            {getStatusLabel(o.stav)}
-                          </div>
-                        </div>
+                    <div style={{ display: 'grid', gap: 10 }}>
+                      {section.items.map((o) => {
+                        const expanded = expandedOrderIds.includes(o.id)
+                        const orderLogs = workLogsByOrder[o.id] || []
+                        const lastLog = orderLogs[0]
+                        const isPinned = isPinnedOrder(o.id)
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 12 }}>
+                        return (
                           <div
+                            key={o.id}
                             style={{
-                              background: '#f8fafc',
-                              border: '1px solid #e2e8f0',
                               borderRadius: 12,
-                              padding: 10,
+                              border: isOverdue(o) ? '1px solid #fecdd3' : '1px solid #e2e8f0',
+                              background: isOverdue(o) ? '#fff7f7' : '#ffffff',
+                              overflow: 'hidden',
+                              boxShadow: expanded ? '0 12px 26px rgba(15, 23, 42, 0.08)' : '0 4px 12px rgba(15, 23, 42, 0.04)',
+                              ...getStatusCardBorder(o.stav),
                             }}
                           >
-                            <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>Prijatie</div>
-                            <div style={{ fontWeight: 800 }}>{formatDate(o.prijatie_zakazky)}</div>
-                          </div>
-
-                          <div
-                            style={{
-                              background: '#f8fafc',
-                              border: '1px solid #e2e8f0',
-                              borderRadius: 12,
-                              padding: 10,
-                            }}
-                          >
-                            <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>Termín</div>
-                            <div style={{ fontWeight: 800, color: isOverdue(o) ? '#be123c' : '#0f172a' }}>
-                              {formatDate(o.termin)}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 8 }}>
-                          <div
-                            style={{
-                              background: '#f8fafc',
-                              border: '1px solid #e2e8f0',
-                              borderRadius: 12,
-                              padding: 10,
-                            }}
-                          >
-                            <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>Hodiny</div>
-                            <div style={{ fontWeight: 800 }}>{getOrderHours(o.id).toFixed(1)} h</div>
-                          </div>
-
-                          <div
-                            style={{
-                              background: '#f8fafc',
-                              border: '1px solid #e2e8f0',
-                              borderRadius: 12,
-                              padding: 10,
-                            }}
-                          >
-                            <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>Výkazy</div>
-                            <div style={{ fontWeight: 800 }}>{orderLogs.length}</div>
-                          </div>
-                        </div>
-
-                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
-                          {lastLog && (
-                            <div
+                            <button
+                              type="button"
+                              onClick={() => toggleExpandedOrder(o.id)}
                               style={{
-                                background: '#eef2ff',
-                                border: '1px solid #c7d2fe',
-                                color: '#3730a3',
-                                borderRadius: 999,
-                                padding: '5px 10px',
-                                fontSize: 12,
-                                fontWeight: 700,
+                                width: '100%',
+                                border: 'none',
+                                background: 'transparent',
+                                padding: 0,
+                                cursor: 'pointer',
+                                textAlign: 'left',
                               }}
+                              aria-expanded={expanded}
                             >
-                              Posledný výkaz: {formatDate(lastLog.datum)}
-                            </div>
-                          )}
+                              <div className="orderRowSummary">
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      togglePinnedOrder(o.id)
+                                    }}
+                                    aria-label={isPinned ? 'Odopnúť zákazku' : 'Pripnúť zákazku'}
+                                    title={isPinned ? 'Odopnúť zákazku' : 'Pripnúť zákazku'}
+                                    style={{
+                                      border: '1px solid #cbd5e1',
+                                      background: isPinned ? '#fff7ed' : '#fff',
+                                      color: isPinned ? '#c2410c' : '#64748b',
+                                      width: 30,
+                                      height: 30,
+                                      minWidth: 30,
+                                      borderRadius: 9,
+                                      cursor: 'pointer',
+                                      fontSize: 16,
+                                      fontWeight: 800,
+                                    }}
+                                  >
+                                    {isPinned ? '★' : '☆'}
+                                  </button>
 
-                          {isOverdue(o) && (
-                            <div
-                              style={{
-                                background: '#fff1f2',
-                                border: '1px solid #fecdd3',
-                                color: '#be123c',
-                                borderRadius: 999,
-                                padding: '5px 10px',
-                                fontSize: 12,
-                                fontWeight: 800,
-                              }}
-                            >
-                              Po termíne
-                            </div>
-                          )}
-                        </div>
+                                  <div style={{ minWidth: 0 }}>
+                                    <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                                      <div style={{ fontWeight: 900, fontSize: 14, lineHeight: 1.1 }}>{o.nazov}</div>
+                                      {isOverdue(o) && (
+                                        <span
+                                          style={{
+                                            background: '#fff1f2',
+                                            color: '#be123c',
+                                            border: '1px solid #fecdd3',
+                                            borderRadius: 999,
+                                            padding: '2px 7px',
+                                            fontSize: 10,
+                                            fontWeight: 800,
+                                          }}
+                                        >
+                                          Po termíne
+                                        </span>
+                                      )}
+                                      {isPinned && (
+                                        <span
+                                          style={{
+                                            background: '#fff7ed',
+                                            color: '#c2410c',
+                                            border: '1px solid #fdba74',
+                                            borderRadius: 999,
+                                            padding: '2px 7px',
+                                            fontSize: 10,
+                                            fontWeight: 800,
+                                          }}
+                                        >
+                                          Pripnuté
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div style={{ marginTop: 3, color: '#475569', fontSize: 13 }}>
+                                      {getCustomerName(o.customer_id)}
+                                    </div>
+                                  </div>
+                                </div>
 
-                        <div style={{ marginTop: 10, color: '#0f172a', fontSize: 13, fontWeight: 700 }}>
-                          {expanded ? 'Skryť detail ▲' : 'Zobraziť detail ▼'}
-                        </div>
-                      </button>
+                                <div className="orderRowMeta">
+                                  <div className="orderMetaChip">
+                                    <span className="orderMetaLabel">Termín</span>
+                                    <strong style={{ color: isOverdue(o) ? '#be123c' : '#0f172a' }}>{formatDate(o.termin)}</strong>
+                                  </div>
 
-                      {expanded && (
-                        <div
-                          style={{
-                            marginTop: 14,
-                            borderTop: '1px solid #e2e8f0',
-                            paddingTop: 14,
-                          }}
-                        >
-                          <div style={{ display: 'grid', gap: 8 }}>
-                            <div><strong>Popis:</strong> {o.popis || '-'}</div>
-                            <div><strong>Prijatie zákazky:</strong> {formatDate(o.prijatie_zakazky)}</div>
-                            <div><strong>Termín:</strong> {formatDate(o.termin)}</div>
-                            <div><strong>Počet výkazov:</strong> {orderLogs.length}</div>
-                            {lastLog && (
-                              <div><strong>Posledný záznam:</strong> {formatDate(lastLog.datum)} / {lastLog.hodiny} h</div>
+
+                                  <div
+                                    style={{
+                                      width: 30,
+                                      height: 30,
+                                      borderRadius: 9,
+                                      border: '1px solid #cbd5e1',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      fontSize: 16,
+                                      fontWeight: 700,
+                                      color: '#475569',
+                                      background: '#fff',
+                                    }}
+                                  >
+                                    {expanded ? '−' : '+'}
+                                  </div>
+                                </div>
+                              </div>
+                            </button>
+
+                            {expanded && (
+                              <div
+                                style={{
+                                  padding: 10,
+                                  borderTop: '1px solid #e2e8f0',
+                                  background: '#f8fafc',
+                                }}
+                              >
+                                <div className="orderDetailGrid">
+                                  <div style={{ ...boxStyle, padding: 12 }}>
+                                    <div style={{ fontSize: 12, fontWeight: 800, color: '#64748b', marginBottom: 8 }}>
+                                      Základné informácie
+                                    </div>
+                                    <div style={{ display: 'grid', gap: 8 }}>
+                                      <div><strong>Zákazník:</strong> {getCustomerName(o.customer_id)}</div>
+                                      <div><strong>Prijatie:</strong> {formatDate(o.prijatie_zakazky)}</div>
+                                      <div><strong>Termín:</strong> {formatDate(o.termin)}</div>
+                                      <div><strong>Výkazy:</strong> {orderLogs.length}</div>
+                                      <div><strong>Popis:</strong> {o.popis || '-'}</div>
+                                    </div>
+                                  </div>
+
+                                  <div style={{ ...boxStyle, padding: 12 }}>
+                                    <div style={{ fontSize: 12, fontWeight: 800, color: '#64748b', marginBottom: 8 }}>
+                                      Posledný výkaz práce
+                                    </div>
+                                    {lastLog ? (
+                                      <div style={{ display: 'grid', gap: 8 }}>
+                                        <div><strong>Dátum:</strong> {formatDate(lastLog.datum)}</div>
+                                        <div><strong>Hodiny:</strong> {Number(lastLog.hodiny || 0).toFixed(1)} h</div>
+                                        <div><strong>Zamestnanci:</strong> {(lastLog.zamestnanci || []).join(', ') || '-'}</div>
+                                        <div><strong>Práca:</strong> {lastLog.praca_popis}</div>
+                                      </div>
+                                    ) : (
+                                      <div style={{ color: '#64748b' }}>Zatiaľ bez výkazu práce.</div>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div style={{ marginTop: 14 }}>
+                                  <label style={labelStyle} htmlFor={`status-${o.id}`}>
+                                    Stav zákazky
+                                  </label>
+                                  <select
+                                    id={`status-${o.id}`}
+                                    value={o.stav}
+                                    onChange={(e) => updateOrderStatus(o.id, e.target.value)}
+                                    style={{
+                                      ...inputStyle,
+                                      ...getStatusBadgeStyle(o.stav),
+                                      fontWeight: 800,
+                                    }}
+                                  >
+                                    {STATUSY.map((s) => (
+                                      <option key={s.value} value={s.value}>
+                                        {s.label}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+
+                                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 14 }}>
+                                  <button type="button" style={greenButtonStyle} onClick={() => openWorkLogModal(o.id)}>
+                                    Výkaz práce
+                                  </button>
+                                  <button type="button" style={buttonStyle} onClick={() => startEditOrder(o)}>
+                                    Upraviť
+                                  </button>
+                                  <button type="button" style={buttonStyle} onClick={() => exportOrderWorkLogs(o.id)}>
+                                    Export CSV
+                                  </button>
+                                  <button type="button" style={dangerButtonStyle} onClick={() => deleteOrder(o.id)}>
+                                    Zmazať
+                                  </button>
+                                </div>
+                              </div>
                             )}
                           </div>
-
-                          <div style={{ marginTop: 12 }}>
-                            <label style={labelStyle}>Stav</label>
-                            <select
-                              value={o.stav}
-                              onChange={(e) => updateOrderStatus(o.id, e.target.value)}
-                              style={{
-                                ...inputStyle,
-                                ...getStatusBadgeStyle(o.stav),
-                                fontWeight: 800,
-                              }}
-                            >
-                              {STATUSY.map((s) => (
-                                <option key={s.value} value={s.value}>
-                                  {s.label}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 10, marginTop: 14 }}>
-                            <button type="button" style={greenButtonStyle} onClick={() => openWorkLogModal(o.id)}>
-                              Výkaz práce
-                            </button>
-                            <button type="button" style={buttonStyle} onClick={() => startEditOrder(o)}>
-                              Upraviť
-                            </button>
-                            <button type="button" style={dangerButtonStyle} onClick={() => deleteOrder(o.id)}>
-                              Zmazať
-                            </button>
-                          </div>
-                        </div>
-                      )}
+                        )
+                      })}
                     </div>
-                  )
-                })}
+                  </div>
+                ))}
               </div>
             </div>
           </>
@@ -1906,7 +1968,7 @@ export default function Page() {
                 flexWrap: 'wrap',
               }}
             >
-              <div style={{ fontWeight: 800, fontSize: 18 }}>Zoznam zákazníkov</div>
+              <div style={{ fontWeight: 800, fontSize: 16 }}>Zoznam zákazníkov</div>
               <div style={{ color: '#475569', fontWeight: 700 }}>Spolu: {customers.length}</div>
             </div>
 
@@ -1966,21 +2028,21 @@ export default function Page() {
                   key={c.id}
                   style={{
                     border: '1px solid #e2e8f0',
-                    borderRadius: 18,
+                    borderRadius: 12,
                     padding: 14,
                     marginBottom: 12,
                     background: '#fff',
                   }}
                 >
-                  <div style={{ fontWeight: 800, fontSize: 17 }}>{c.nazov}</div>
+                  <div style={{ fontWeight: 800, fontSize: 15 }}>{c.nazov}</div>
 
-                  <div style={{ display: 'grid', gap: 8, marginTop: 14 }}>
+                  <div style={{ display: 'grid', gap: 6, marginTop: 10, fontSize: 13 }}>
                     <div><strong>Kontakt:</strong> {c.kontakt || '-'}</div>
                     <div><strong>Telefón:</strong> {c.telefon || '-'}</div>
                     <div><strong>Email:</strong> {c.email || '-'}</div>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 14 }}>
+                  <div className="mobileActionRow" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 10 }}>
                     <button type="button" style={buttonStyle} onClick={() => startEditCustomer(c)}>
                       Upraviť
                     </button>
@@ -2006,7 +2068,7 @@ export default function Page() {
                 flexWrap: 'wrap',
               }}
             >
-              <div style={{ fontWeight: 800, fontSize: 18 }}>Zoznam zamestnancov</div>
+              <div style={{ fontWeight: 800, fontSize: 16 }}>Zoznam zamestnancov</div>
               <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
                 <div style={{ color: '#475569', fontWeight: 700 }}>Spolu: {employees.length}</div>
                 <button
@@ -2080,21 +2142,21 @@ export default function Page() {
                   key={emp.id}
                   style={{
                     border: '1px solid #e2e8f0',
-                    borderRadius: 18,
+                    borderRadius: 12,
                     padding: 14,
                     marginBottom: 12,
                     background: '#fff',
                   }}
                 >
-                  <div style={{ fontWeight: 800, fontSize: 17 }}>{emp.name}</div>
+                  <div style={{ fontWeight: 800, fontSize: 15 }}>{emp.name}</div>
 
-                  <div style={{ display: 'grid', gap: 8, marginTop: 14 }}>
+                  <div style={{ display: 'grid', gap: 6, marginTop: 10, fontSize: 13 }}>
                     <div><strong>Telefón:</strong> {emp.telefon || '-'}</div>
                     <div><strong>Email:</strong> {emp.email || '-'}</div>
                     <div><strong>Mazanie:</strong> {emp.can_delete === false ? 'Zakázané' : 'Povolené'}</div>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 14 }}>
+                  <div className="mobileActionRow" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 10 }}>
                     <button type="button" style={buttonStyle} onClick={() => startEditEmployee(emp)}>
                       Upraviť
                     </button>
@@ -2668,7 +2730,7 @@ export default function Page() {
           title={currentOrder ? `Výkaz práce: ${currentOrder.nazov}` : 'Výkaz práce'}
           onClose={closeWorkLogModal}
         >
-          <div style={{ display: 'grid', gap: 18 }}>
+          <div style={{ display: 'grid', gap: 10 }}>
             {currentOrder && (
               <div
                 style={{
@@ -2759,7 +2821,7 @@ export default function Page() {
                     <div
                       style={{
                         border: '1px dashed #cbd5e1',
-                        borderRadius: 14,
+                        borderRadius: 12,
                         padding: 14,
                         color: '#64748b',
                         background: '#f8fafc',
@@ -2771,7 +2833,7 @@ export default function Page() {
                     <div
                       style={{
                         border: '1px solid #cbd5e1',
-                        borderRadius: 14,
+                        borderRadius: 12,
                         padding: 12,
                         maxHeight: 220,
                         overflowY: 'auto',
@@ -2828,7 +2890,7 @@ export default function Page() {
                 <div
                   style={{
                     border: '1px dashed #cbd5e1',
-                    borderRadius: 14,
+                    borderRadius: 12,
                     padding: 14,
                     color: '#64748b',
                     background: '#f8fafc',
@@ -2921,6 +2983,29 @@ export default function Page() {
       </div>
 
       <style jsx>{`
+        .headerCompact {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 12px;
+          flex-wrap: wrap;
+        }
+
+        .headerCompactActions {
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+
+        .desktopTable {
+          display: block;
+        }
+
+        .mobileCards {
+          display: none;
+        }
         .headerWrap {
           display: flex;
           justify-content: space-between;
@@ -2954,6 +3039,10 @@ export default function Page() {
           gap: 12px;
         }
 
+        .filtersGridOrders {
+          grid-template-columns: 2fr 1fr 1.2fr;
+        }
+
         .modalGrid {
           display: grid;
           grid-template-columns: 1fr 1fr;
@@ -2966,12 +3055,49 @@ export default function Page() {
           gap: 12px;
         }
 
-        .mobileCards {
-          display: none;
+        .orderRowSummary {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          padding: 10px 12px;
+          flex-wrap: wrap;
         }
 
-        .desktopTable {
-          display: block;
+        .orderRowMeta {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-wrap: wrap;
+          justify-content: flex-end;
+        }
+
+        .orderMetaChip {
+          min-height: 38px;
+          padding: 8px 10px;
+          border-radius: 12px;
+          border: 1px solid #e2e8f0;
+          background: #fff;
+          display: inline-flex;
+          align-items: flex-start;
+          justify-content: center;
+          flex-direction: column;
+          gap: 2px;
+        }
+
+        .orderMetaLabel {
+          font-size: 11px;
+          line-height: 1;
+          color: #64748b;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+        }
+
+        .orderDetailGrid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
         }
 
         @media (max-width: 1150px) {
@@ -2980,8 +3106,23 @@ export default function Page() {
           }
         }
 
+        @media (max-width: 900px) {
+          .orderDetailGrid {
+            grid-template-columns: 1fr;
+          }
+
+          .orderRowSummary {
+            align-items: stretch;
+          }
+
+          .orderRowMeta {
+            justify-content: flex-start;
+          }
+        }
+
         @media (max-width: 768px) {
           .filtersGrid,
+          .filtersGridOrders,
           .modalGrid,
           .summaryGrid,
           .workLogGrid {
@@ -2996,21 +3137,80 @@ export default function Page() {
             display: block;
           }
 
-          .headerButtonsWrap,
-          .secondaryActionsRow {
-            width: 100%;
-            align-items: stretch;
-            justify-content: stretch;
+          .headerCompact {
+            align-items: flex-start;
+            gap: 10px;
           }
 
-          .secondaryActionsRow {
-            flex-direction: column;
+          .headerCompactActions {
+            width: 100%;
+            justify-content: flex-start;
+            gap: 5px;
           }
 
-          .secondaryActionsRow :global(a),
-          .secondaryActionsRow button,
-          .headerButtonsWrap > button {
+          .headerCompactActions :global(a),
+          .headerCompactActions button {
+            width: auto;
+            min-width: 0;
+            flex: 0 0 auto;
+            font-size: 11px;
+          }
+
+          .summaryStrip {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 8px 10px !important;
+          }
+
+          .orderRowSummary {
+            padding: 7px;
+            gap: 5px;
+          }
+
+          .orderRowMeta {
             width: 100%;
+            gap: 6px;
+          }
+
+          .orderMetaChip {
+            flex: 0 1 auto;
+            min-width: 84px;
+            min-height: 28px;
+            padding: 4px 6px;
+            border-radius: 8px;
+          }
+
+          .orderMetaLabel {
+            font-size: 10px;
+          }
+
+          .mobileListCard {
+            border-radius: 14px;
+            padding: 12px;
+            margin-bottom: 10px;
+          }
+
+          .mobileActionRow {
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+          }
+        }
+
+        @media (max-width: 520px) {
+          .headerCompactActions {
+            overflow-x: auto;
+            flex-wrap: nowrap;
+            padding-bottom: 2px;
+          }
+
+          .headerCompactActions :global(a),
+          .headerCompactActions button {
+            white-space: nowrap;
+          }
+
+          .orderMetaChip {
+            flex: 1 1 calc(50% - 6px);
           }
         }
       `}</style>
