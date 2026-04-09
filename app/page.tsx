@@ -1916,9 +1916,16 @@ export default function Page() {
                               ...getStatusCardBorder(o.stav),
                             }}
                           >
-                            <button
-                              type="button"
+                            <div
+                              role="button"
+                              tabIndex={0}
                               onClick={() => toggleExpandedOrder(o.id)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault()
+                                  toggleExpandedOrder(o.id)
+                                }
+                              }}
                               style={{
                                 width: '100%',
                                 border: 'none',
@@ -2021,7 +2028,7 @@ export default function Page() {
                                   </div>
                                 </div>
                               </div>
-                            </button>
+                            </div>
 
                             {expanded && (
                               <div
