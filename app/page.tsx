@@ -1222,14 +1222,27 @@ export default function Page() {
   }
 
   if (logs.length === 0) {
-    setNotice({ type: 'error', text: 'Táto zákazka zatiaľ nemá žiadny výkaz práce.' })
+    setNotice({
+      type: 'error',
+      text: 'Táto zákazka zatiaľ nemá žiadny výkaz práce.',
+    })
     return
   }
 
   try {
     const [logoDataUrl, stampDataUrl] = await Promise.all([
-      loadFirstAvailableImage(['/logo.png', '/logo.jpg', '/logo.jpeg', '/logo.webp']),
-      loadFirstAvailableImage(['/stamp.png', '/stamp.jpg', '/stamp.jpeg', '/stamp.webp']),
+      loadFirstAvailableImage([
+        '/logo.png',
+        '/logo.jpg',
+        '/logo.jpeg',
+        '/logo.webp',
+      ]),
+      loadFirstAvailableImage([
+        '/stamp.png',
+        '/stamp.jpg',
+        '/stamp.jpeg',
+        '/stamp.webp',
+      ]),
     ])
 
     if (!logoDataUrl) {
@@ -1317,8 +1330,10 @@ export default function Page() {
         8: { cellWidth: 50 },
       },
 
-      didDrawPage: (data) => {
+      didDrawPage: () => {
         const pageNum = doc.getCurrentPageInfo().pageNumber
+        const totalPages = doc.getNumberOfPages()
+        const isLastPage = pageNum === totalPages
 
         doc.setTextColor(15, 23, 42)
         doc.setFont('helvetica', 'normal')
@@ -1335,6 +1350,7 @@ export default function Page() {
 
           doc.setFont('helvetica', 'bold')
           doc.setFontSize(10.5)
+
           doc.text('ITspot s. r. o.', pageWidth - margin, 16, {
             align: 'right',
           })
@@ -1365,28 +1381,36 @@ export default function Page() {
 
           doc.setFont('helvetica', 'bold')
           doc.setFontSize(18)
+
           doc.text('Servisny vykaz', margin, 38)
 
           doc.setFontSize(11)
+
           doc.text('Zakazka:', margin, 44)
 
           doc.setFont('helvetica', 'normal')
+
           doc.text(safeOrderName, margin + 20, 44)
 
           doc.setFont('helvetica', 'bold')
+
           doc.text('Zakaznik:', 105, 44)
 
           doc.setFont('helvetica', 'normal')
+
           doc.text(customerName || '-', 128, 44)
 
           doc.setFont('helvetica', 'bold')
+
           doc.text('Prijatie zakazky:', margin, 51)
 
           doc.setFont('helvetica', 'normal')
+
           doc.text(formatDate(order.prijatie_zakazky), margin + 33, 51)
 
           doc.setDrawColor(15, 23, 42)
           doc.setLineWidth(0.6)
+
           doc.line(margin, 57, pageWidth - margin, 57)
 
           doc.setDrawColor(203, 213, 225)
@@ -1415,54 +1439,60 @@ export default function Page() {
         }
 
         // =====================================================
-        // FOOTER NA VŠETKÝCH STRANÁCH
+        // PODPIS + PEČIATKA LEN NA POSLEDNEJ STRANE
         // =====================================================
 
-        const signTitleY = pageHeight - 40
-        const stampY = pageHeight - 33
-        const lineY = pageHeight - 16
+        if (isLastPage) {
+          const signTitleY = pageHeight - 40
+          const stampY = pageHeight - 33
+          const lineY = pageHeight - 16
 
-        doc.setFont('helvetica', 'bold')
-        doc.setFontSize(11)
+          doc.setFont('helvetica', 'bold')
+          doc.setFontSize(11)
 
-        doc.text('Vystavil:', 52, signTitleY, {
-          align: 'center',
-        })
+          doc.text('Vystavil:', 52, signTitleY, {
+            align: 'center',
+          })
 
-        doc.text('Prevzal zakaznik:', pageWidth - 52, signTitleY, {
-          align: 'center',
-        })
+          doc.text('Prevzal zakaznik:', pageWidth - 52, signTitleY, {
+            align: 'center',
+          })
 
-        if (stampDataUrl && pageNum === 1) {
-          try {
-            const stampFormat = stampDataUrl.includes('image/jpeg')
-              ? 'JPEG'
-              : stampDataUrl.includes('image/webp')
-              ? 'WEBP'
-              : 'PNG'
+          if (stampDataUrl) {
+            try {
+              const stampFormat = stampDataUrl.includes('image/jpeg')
+                ? 'JPEG'
+                : stampDataUrl.includes('image/webp')
+                ? 'WEBP'
+                : 'PNG'
 
-            doc.addImage(
-              stampDataUrl,
-              stampFormat,
-              33,
-              stampY,
-              38,
-              16
-            )
-          } catch {}
+              doc.addImage(
+                stampDataUrl,
+                stampFormat,
+                33,
+                stampY,
+                38,
+                16
+              )
+            } catch {}
+          }
+
+          doc.setDrawColor(15, 23, 42)
+          doc.setLineWidth(0.45)
+
+          doc.line(margin, lineY, 94, lineY)
+
+          doc.line(
+            pageWidth - 94,
+            lineY,
+            pageWidth - margin,
+            lineY
+          )
         }
 
-        doc.setDrawColor(15, 23, 42)
-        doc.setLineWidth(0.45)
-
-        doc.line(margin, lineY, 94, lineY)
-
-        doc.line(
-          pageWidth - 94,
-          lineY,
-          pageWidth - margin,
-          lineY
-        )
+        // =====================================================
+        // FOOTER NA VŠETKÝCH STRANÁCH
+        // =====================================================
 
         doc.setFont('helvetica', 'normal')
         doc.setFontSize(9)
@@ -1473,10 +1503,8 @@ export default function Page() {
           pageHeight - 4
         )
 
-        const pageCount = doc.getNumberOfPages()
-
         doc.text(
-          `${pageNum}/${pageCount}`,
+          `${pageNum}/${totalPages}`,
           pageWidth - margin,
           pageHeight - 4,
           {
@@ -1487,7 +1515,7 @@ export default function Page() {
     })
 
     const safeName =
-      safeOrderName.replace(/[^a-zA-Z0-9\\-_ ]/g, '').trim() ||
+      safeOrderName.replace(/[^a-zA-Z0-9\-_ ]/g, '').trim() ||
       'servisny-vykaz'
 
     const blob = doc.output('blob')
