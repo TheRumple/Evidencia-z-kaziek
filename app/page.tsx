@@ -1213,108 +1213,155 @@ export default function Page() {
   }
 
   async function exportOrderWorkLogsPdf(orderId: string) {
-    const order = orders.find((o) => o.id === orderId)
-    const logs = workLogsByOrder[orderId] || []
+  const order = orders.find((o) => o.id === orderId)
+  const logs = workLogsByOrder[orderId] || []
 
-    if (!order) {
-      setNotice({ type: 'error', text: 'Zákazka nebola nájdená.' })
+  if (!order) {
+    setNotice({ type: 'error', text: 'Zákazka nebola nájdená.' })
+    return
+  }
+
+  if (logs.length === 0) {
+    setNotice({ type: 'error', text: 'Táto zákazka zatiaľ nemá žiadny výkaz práce.' })
+    return
+  }
+
+  try {
+    const [logoDataUrl, stampDataUrl] = await Promise.all([
+      loadFirstAvailableImage(['/logo.png', '/logo.jpg', '/logo.jpeg', '/logo.webp']),
+      loadFirstAvailableImage(['/stamp.png', '/stamp.jpg', '/stamp.jpeg', '/stamp.webp']),
+    ])
+
+    if (!logoDataUrl) {
+      setNotice({
+        type: 'error',
+        text: 'Chýba logo v public/logo.png (alebo .jpg/.jpeg/.webp).',
+      })
       return
     }
 
-    if (logs.length === 0) {
-      setNotice({ type: 'error', text: 'Táto zákazka zatiaľ nemá žiadny výkaz práce.' })
-      return
-    }
+    const customerName = pdfSafeText(getCustomerName(order.customer_id))
+    const totalHours = getOrderHours(order.id).toFixed(1)
+    const totalKm = getOrderKilometres(order.id).toFixed(0)
 
-    try {
-      const [logoDataUrl, stampDataUrl] = await Promise.all([
-        loadFirstAvailableImage(['/logo.png', '/logo.jpg', '/logo.jpeg', '/logo.webp']),
-        loadFirstAvailableImage(['/stamp.png', '/stamp.jpg', '/stamp.jpeg', '/stamp.webp']),
-      ])
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4',
+    })
 
-      if (!logoDataUrl) {
-        setNotice({ type: 'error', text: 'Chýba logo v public/logo.png (alebo .jpg/.jpeg/.webp).' })
-        return
-      }
+    const pageWidth = doc.internal.pageSize.getWidth()
+    const pageHeight = doc.internal.pageSize.getHeight()
+    const margin = 14
+    const safeOrderName = pdfSafeText(order.nazov || '-')
 
-      const customerName = pdfSafeText(getCustomerName(order.customer_id))
-      const totalHours = getOrderHours(order.id).toFixed(1)
-      const totalKm = getOrderKilometres(order.id).toFixed(0)
+    autoTable(doc, {
+      startY: 72,
 
-      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
-      const pageWidth = doc.internal.pageSize.getWidth()
-      const pageHeight = doc.internal.pageSize.getHeight()
-      const margin = 14
-      const safeOrderName = pdfSafeText(order.nazov || '-')
+      margin: {
+        left: margin,
+        right: margin,
+        bottom: 50,
+      },
 
-      autoTable(doc, {
-        startY: 72,
-        margin: { left: margin, right: margin, bottom: 50 },
-        head: [[
-          '#',
-          'Dátum',
-          'Názov zásahu',
-          'Štart',
-          'Stop',
-          'Čas',
-          'Km',
-          'Technik',
-          'Popis vykonanej práce',
-        ]],
-        body: logs.map((log, index) => [
-          String(index + 1),
-          formatDate(log.datum),
-          pdfSafeText(log.nazov_vykazu || '-'),
-          formatTimeShort(log.start_time),
-          formatTimeShort(log.end_time),
-          `${Number(log.hodiny || 0).toFixed(2)} h`,
-          `${Number(log.kilometre || 0).toFixed(0)} km`,
-          pdfSafeText((log.zamestnanci || []).join(', ') || '-'),
-          pdfSafeText(log.praca_popis || ''),
-        ]),
-        styles: {
-          font: 'helvetica',
-          fontSize: 9,
-          cellPadding: 2.2,
-          textColor: [15, 23, 42],
-          lineColor: [203, 213, 225],
-          lineWidth: 0.25,
-          valign: 'top',
-          overflow: 'linebreak',
-        },
-        headStyles: {
-          fillColor: [239, 246, 255],
-          textColor: [15, 23, 42],
-          fontStyle: 'bold',
-        },
-        columnStyles: {
-          0: { cellWidth: 7 },
-          1: { cellWidth: 19 },
-          2: { cellWidth: 29 },
-          3: { cellWidth: 13 },
-          4: { cellWidth: 13 },
-          5: { cellWidth: 14 },
-          6: { cellWidth: 13 },
-          7: { cellWidth: 21 },
-          8: { cellWidth: 50 },
-        },
-        didDrawPage: () => {
-          doc.setTextColor(15, 23, 42)
-          doc.setFont('helvetica', 'normal')
-          doc.setCharSpace(0)
+      head: [[
+        '#',
+        'Dátum',
+        'Názov zásahu',
+        'Štart',
+        'Stop',
+        'Čas',
+        'Km',
+        'Technik',
+        'Popis vykonanej práce',
+      ]],
 
+      body: logs.map((log, index) => [
+        String(index + 1),
+        formatDate(log.datum),
+        pdfSafeText(log.nazov_vykazu || '-'),
+        formatTimeShort(log.start_time),
+        formatTimeShort(log.end_time),
+        `${Number(log.hodiny || 0).toFixed(2)} h`,
+        `${Number(log.kilometre || 0).toFixed(0)} km`,
+        pdfSafeText((log.zamestnanci || []).join(', ') || '-'),
+        pdfSafeText(log.praca_popis || ''),
+      ]),
+
+      styles: {
+        font: 'helvetica',
+        fontSize: 9,
+        cellPadding: 2.2,
+        textColor: [15, 23, 42],
+        lineColor: [203, 213, 225],
+        lineWidth: 0.25,
+        valign: 'top',
+        overflow: 'linebreak',
+      },
+
+      headStyles: {
+        fillColor: [239, 246, 255],
+        textColor: [15, 23, 42],
+        fontStyle: 'bold',
+      },
+
+      columnStyles: {
+        0: { cellWidth: 7 },
+        1: { cellWidth: 19 },
+        2: { cellWidth: 29 },
+        3: { cellWidth: 13 },
+        4: { cellWidth: 13 },
+        5: { cellWidth: 14 },
+        6: { cellWidth: 13 },
+        7: { cellWidth: 21 },
+        8: { cellWidth: 50 },
+      },
+
+      didDrawPage: (data) => {
+        const pageNum = doc.getCurrentPageInfo().pageNumber
+
+        doc.setTextColor(15, 23, 42)
+        doc.setFont('helvetica', 'normal')
+        doc.setCharSpace(0)
+
+        // =====================================================
+        // HLAVIČKA LEN NA PRVEJ STRANE
+        // =====================================================
+
+        if (pageNum === 1) {
           try {
             doc.addImage(logoDataUrl, 'PNG', margin, 12, 18, 18)
           } catch {}
 
           doc.setFont('helvetica', 'bold')
           doc.setFontSize(10.5)
-          doc.text('ITspot s. r. o.', pageWidth - margin, 16, { align: 'right' })
+          doc.text('ITspot s. r. o.', pageWidth - margin, 16, {
+            align: 'right',
+          })
+
           doc.setFont('helvetica', 'normal')
           doc.setFontSize(9)
-          doc.text('Hajles 1703/6, 968 01 Nova Bana', pageWidth - margin, 20.5, { align: 'right' })
-          doc.text('ICO: 56430388   DIC: 2122307462', pageWidth - margin, 24.8, { align: 'right' })
-          doc.text('IC DPH: SK2122307462', pageWidth - margin, 29.1, { align: 'right' })
+
+          doc.text(
+            'Hajles 1703/6, 968 01 Nova Bana',
+            pageWidth - margin,
+            20.5,
+            { align: 'right' }
+          )
+
+          doc.text(
+            'ICO: 56430388   DIC: 2122307462',
+            pageWidth - margin,
+            24.8,
+            { align: 'right' }
+          )
+
+          doc.text(
+            'IC DPH: SK2122307462',
+            pageWidth - margin,
+            29.1,
+            { align: 'right' }
+          )
 
           doc.setFont('helvetica', 'bold')
           doc.setFontSize(18)
@@ -1322,16 +1369,19 @@ export default function Page() {
 
           doc.setFontSize(11)
           doc.text('Zakazka:', margin, 44)
+
           doc.setFont('helvetica', 'normal')
           doc.text(safeOrderName, margin + 20, 44)
 
           doc.setFont('helvetica', 'bold')
           doc.text('Zakaznik:', 105, 44)
+
           doc.setFont('helvetica', 'normal')
           doc.text(customerName || '-', 128, 44)
 
           doc.setFont('helvetica', 'bold')
           doc.text('Prijatie zakazky:', margin, 51)
+
           doc.setFont('helvetica', 'normal')
           doc.text(formatDate(order.prijatie_zakazky), margin + 33, 51)
 
@@ -1340,62 +1390,132 @@ export default function Page() {
           doc.line(margin, 57, pageWidth - margin, 57)
 
           doc.setDrawColor(203, 213, 225)
-          doc.roundedRect(margin, 61, pageWidth - margin * 2, 10, 2, 2)
+
+          doc.roundedRect(
+            margin,
+            61,
+            pageWidth - margin * 2,
+            10,
+            2,
+            2
+          )
+
           doc.setFont('helvetica', 'bold')
           doc.setFontSize(10)
+
           doc.text(`Pocet zaznamov: ${logs.length}`, margin + 4, 67.5)
+
           doc.text('|', 56, 67.5)
+
           doc.text(`Hodiny spolu: ${totalHours} h`, 62, 67.5)
+
           doc.text('|', 108, 67.5)
+
           doc.text(`Kilometre spolu: ${totalKm} km`, 114, 67.5)
+        }
 
-          const signTitleY = pageHeight - 40
-          const stampY = pageHeight - 33
-          const lineY = pageHeight - 16
+        // =====================================================
+        // FOOTER NA VŠETKÝCH STRANÁCH
+        // =====================================================
 
-          doc.setFont('helvetica', 'bold')
-          doc.setFontSize(11)
-          doc.text('Vystavil:', 52, signTitleY, { align: 'center' })
-          doc.text('Prevzal zakaznik:', pageWidth - 52, signTitleY, { align: 'center' })
+        const signTitleY = pageHeight - 40
+        const stampY = pageHeight - 33
+        const lineY = pageHeight - 16
 
-          if (stampDataUrl) {
-            try {
-              const stampFormat = stampDataUrl.includes('image/jpeg') ? 'JPEG' : stampDataUrl.includes('image/webp') ? 'WEBP' : 'PNG'
-              doc.addImage(stampDataUrl, stampFormat, 33, stampY, 38, 16)
-            } catch {}
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(11)
+
+        doc.text('Vystavil:', 52, signTitleY, {
+          align: 'center',
+        })
+
+        doc.text('Prevzal zakaznik:', pageWidth - 52, signTitleY, {
+          align: 'center',
+        })
+
+        if (stampDataUrl && pageNum === 1) {
+          try {
+            const stampFormat = stampDataUrl.includes('image/jpeg')
+              ? 'JPEG'
+              : stampDataUrl.includes('image/webp')
+              ? 'WEBP'
+              : 'PNG'
+
+            doc.addImage(
+              stampDataUrl,
+              stampFormat,
+              33,
+              stampY,
+              38,
+              16
+            )
+          } catch {}
+        }
+
+        doc.setDrawColor(15, 23, 42)
+        doc.setLineWidth(0.45)
+
+        doc.line(margin, lineY, 94, lineY)
+
+        doc.line(
+          pageWidth - 94,
+          lineY,
+          pageWidth - margin,
+          lineY
+        )
+
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(9)
+
+        doc.text(
+          'Vygenerovane z aplikacie ITspot',
+          margin,
+          pageHeight - 4
+        )
+
+        const pageCount = doc.getNumberOfPages()
+
+        doc.text(
+          `${pageNum}/${pageCount}`,
+          pageWidth - margin,
+          pageHeight - 4,
+          {
+            align: 'right',
           }
+        )
+      },
+    })
 
-          doc.setDrawColor(15, 23, 42)
-          doc.setLineWidth(0.45)
-          doc.line(margin, lineY, 94, lineY)
-          doc.line(pageWidth - 94, lineY, pageWidth - margin, lineY)
+    const safeName =
+      safeOrderName.replace(/[^a-zA-Z0-9\\-_ ]/g, '').trim() ||
+      'servisny-vykaz'
 
-          doc.setFont('helvetica', 'normal')
-          doc.setFontSize(9)
-          doc.text('Vygenerovane z aplikacie ITspot', margin, pageHeight - 4)
+    const blob = doc.output('blob')
+    const url = URL.createObjectURL(blob)
 
-          const pageNum = doc.getCurrentPageInfo().pageNumber
-          const pageCount = doc.getNumberOfPages()
-          doc.text(`${pageNum}/${pageCount}`, pageWidth - margin, pageHeight - 4, { align: 'right' })
-        },
-      })
+    const win = window.open(url, '_blank')
 
-      const safeName = safeOrderName.replace(/[^a-zA-Z0-9\-_ ]/g, '').trim() || 'servisny-vykaz'
-      const blob = doc.output('blob')
-      const url = URL.createObjectURL(blob)
-      const win = window.open(url, '_blank')
-      if (!win) {
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `servisny-vykaz-${safeName}.pdf`
-        a.click()
-      }
-      setNotice({ type: 'success', text: 'PDF nahlad bol otvoreny.' })
-    } catch (error) {
-      console.error(error)
-      setNotice({ type: 'error', text: 'Nepodarilo sa vygenerovať PDF. Skontroluj súbory v public/logo.png a public/stamp.png.' })
+    if (!win) {
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `servisny-vykaz-${safeName}.pdf`
+      a.click()
     }
+
+    setNotice({
+      type: 'success',
+      text: 'PDF nahlad bol otvoreny.',
+    })
+  } catch (error) {
+    console.error(error)
+
+    setNotice({
+      type: 'error',
+      text:
+        'Nepodarilo sa vygenerovať PDF. Skontroluj súbory v public/logo.png a public/stamp.png.',
+    })
   }
+}
 
   async function addWorkLog() {
     if (!userId || !activeWorkLogOrderId) {
