@@ -550,7 +550,7 @@ export default function Page() {
       console.error('Chyba pri načítaní počtu požiadaviek:', err)
     }
   }
-  
+
   async function loadInitialData(currentUserId: string) {
     setLoading(true)
     try {
@@ -559,7 +559,6 @@ export default function Page() {
         loadOrders(currentUserId),
         loadEmployees(currentUserId),
         loadWorkLogs(currentUserId),
-        loadPendingCount(),
         loadPendingCount(),
       ])
     } finally {
@@ -2273,37 +2272,6 @@ export default function Page() {
             alignItems: 'center',
           }}
         >
-          {/* 📋 ČIP: ČAKAJÚCE POŽIADAVKY OD KLIENTOV */}
-          <Link 
-            href="/admin/requests" 
-            style={{ 
-              textDecoration: 'none',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              background: pendingRequestsCount > 0 ? '#ffedd5' : '#ffffff',
-              border: pendingRequestsCount > 0 ? '2px solid #ea580c' : '1px solid #cbd5e1',
-              color: pendingRequestsCount > 0 ? '#c2410c' : '#475569',
-              padding: '4px 10px', 
-              borderRadius: '999px', 
-              fontSize: '11px',
-              fontWeight: 800,
-              boxShadow: pendingRequestsCount > 0 ? '0 0 10px rgba(234, 88, 12, 0.15)' : 'none',
-              transition: 'all 0.2s ease',
-              cursor: 'pointer',
-              marginRight: '4px'
-            }}
-          >
-            📋 Čaká na schválenie: <span style={{ 
-              background: pendingRequestsCount > 0 ? '#ea580c' : '#64748b', 
-              color: '#fff', 
-              padding: '1px 6px', 
-              borderRadius: '999px',
-              fontSize: '10px',
-              marginLeft: '3px'
-            }}>{pendingRequestsCount}</span>
-            {pendingRequestsCount > 0 && " 🔥"}
-          </Link>
           {/* 📋 KARTIČKA: ČAKAJÚCE POŽIADAVKY OD KLIENTOV */}
           <Link 
             href="/admin/requests" 
@@ -2736,7 +2704,6 @@ export default function Page() {
                   <thead>
                     <tr style={{ textAlign: 'left', color: '#64748b', borderBottom: '1px solid #e2e8f0' }}>
                       <th style={{ padding: '12px 10px' }}>Názov</th>
-                      <th style={{ padding: '12px 10px' }}>Klientsky Link (ID)</th>
                       <th style={{ padding: '12px 10px' }}>Kontakt</th>
                       <th style={{ padding: '12px 10px' }}>Telefón</th>
                       <th style={{ padding: '12px 10px' }}>Email</th>
@@ -2747,33 +2714,6 @@ export default function Page() {
                     {customers.map((c) => (
                       <tr key={c.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
                         <td style={{ padding: '12px 10px', fontWeight: 800 }}>{c.nazov}</td>
-                        <td style={{ padding: '12px 10px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <button
-                              type="button"
-                              style={{
-                                background: '#f1f5f9',
-                                border: '1px solid #cbd5e1',
-                                padding: '4px 8px',
-                                borderRadius: 6,
-                                cursor: 'pointer',
-                                fontSize: 11,
-                                fontWeight: 700,
-                                color: '#334155'
-                              }}
-                              onClick={() => {
-                                const link = `https://app.itspot.sk/customer-portal?customer_id=${c.id}`;
-                                navigator.clipboard.writeText(link);
-                                alert(`Odkaz pre klientsky portál bol skopírovaný!\n\n${link}`);
-                              }}
-                            >
-                              📋 Kopírovať odkaz
-                            </button>
-                            <span style={{ fontSize: 11, color: '#94a3b8', fontFamily: 'monospace' }}>
-                              ({c.id.slice(0, 8)}...)
-                            </span>
-                          </div>
-                        </td>
                         <td style={{ padding: '12px 10px' }}>{c.kontakt || '-'}</td>
                         <td style={{ padding: '12px 10px' }}>{c.telefon || '-'}</td>
                         <td style={{ padding: '12px 10px' }}>{c.email || '-'}</td>
