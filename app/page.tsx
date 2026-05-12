@@ -2730,7 +2730,7 @@ export default function Page() {
                                 color: '#334155'
                               }}
                               onClick={() => {
-                                const link = `https://app.itspot.sk/portal?id=${c.id}`;
+                                const link = `https://app.itspot.sk/customer-portal?customer_id=${c.id}`;
                                 navigator.clipboard.writeText(link);
                                 alert(`Odkaz pre klientsky portál bol skopírovaný!\n\n${link}`);
                               }}
