@@ -550,7 +550,7 @@ export default function Page() {
       console.error('Chyba pri načítaní počtu požiadaviek:', err)
     }
   }
-
+  
   async function loadInitialData(currentUserId: string) {
     setLoading(true)
     try {
@@ -559,6 +559,7 @@ export default function Page() {
         loadOrders(currentUserId),
         loadEmployees(currentUserId),
         loadWorkLogs(currentUserId),
+        loadPendingCount(),
         loadPendingCount(),
       ])
     } finally {
@@ -2272,6 +2273,37 @@ export default function Page() {
             alignItems: 'center',
           }}
         >
+          {/* 📋 ČIP: ČAKAJÚCE POŽIADAVKY OD KLIENTOV */}
+          <Link 
+            href="/admin/requests" 
+            style={{ 
+              textDecoration: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: pendingRequestsCount > 0 ? '#ffedd5' : '#ffffff',
+              border: pendingRequestsCount > 0 ? '2px solid #ea580c' : '1px solid #cbd5e1',
+              color: pendingRequestsCount > 0 ? '#c2410c' : '#475569',
+              padding: '4px 10px', 
+              borderRadius: '999px', 
+              fontSize: '11px',
+              fontWeight: 800,
+              boxShadow: pendingRequestsCount > 0 ? '0 0 10px rgba(234, 88, 12, 0.15)' : 'none',
+              transition: 'all 0.2s ease',
+              cursor: 'pointer',
+              marginRight: '4px'
+            }}
+          >
+            📋 Čaká na schválenie: <span style={{ 
+              background: pendingRequestsCount > 0 ? '#ea580c' : '#64748b', 
+              color: '#fff', 
+              padding: '1px 6px', 
+              borderRadius: '999px',
+              fontSize: '10px',
+              marginLeft: '3px'
+            }}>{pendingRequestsCount}</span>
+            {pendingRequestsCount > 0 && " 🔥"}
+          </Link>
           {/* 📋 KARTIČKA: ČAKAJÚCE POŽIADAVKY OD KLIENTOV */}
           <Link 
             href="/admin/requests" 
