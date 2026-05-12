@@ -2704,6 +2704,7 @@ export default function Page() {
                   <thead>
                     <tr style={{ textAlign: 'left', color: '#64748b', borderBottom: '1px solid #e2e8f0' }}>
                       <th style={{ padding: '12px 10px' }}>Názov</th>
+                      <th style={{ padding: '12px 10px' }}>Klientsky Link (ID)</th>
                       <th style={{ padding: '12px 10px' }}>Kontakt</th>
                       <th style={{ padding: '12px 10px' }}>Telefón</th>
                       <th style={{ padding: '12px 10px' }}>Email</th>
@@ -2714,6 +2715,33 @@ export default function Page() {
                     {customers.map((c) => (
                       <tr key={c.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
                         <td style={{ padding: '12px 10px', fontWeight: 800 }}>{c.nazov}</td>
+                        <td style={{ padding: '12px 10px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <button
+                              type="button"
+                              style={{
+                                background: '#f1f5f9',
+                                border: '1px solid #cbd5e1',
+                                padding: '4px 8px',
+                                borderRadius: 6,
+                                cursor: 'pointer',
+                                fontSize: 11,
+                                fontWeight: 700,
+                                color: '#334155'
+                              }}
+                              onClick={() => {
+                                const link = `https://app.itspot.sk/portal?id=${c.id}`;
+                                navigator.clipboard.writeText(link);
+                                alert(`Odkaz pre klientsky portál bol skopírovaný!\n\n${link}`);
+                              }}
+                            >
+                              📋 Kopírovať odkaz
+                            </button>
+                            <span style={{ fontSize: 11, color: '#94a3b8', fontFamily: 'monospace' }}>
+                              ({c.id.slice(0, 8)}...)
+                            </span>
+                          </div>
+                        </td>
                         <td style={{ padding: '12px 10px' }}>{c.kontakt || '-'}</td>
                         <td style={{ padding: '12px 10px' }}>{c.telefon || '-'}</td>
                         <td style={{ padding: '12px 10px' }}>{c.email || '-'}</td>
