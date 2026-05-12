@@ -339,6 +339,7 @@ export default function Page() {
   const [userId, setUserId] = useState<string | null>(null)
   const [checkingAuth, setCheckingAuth] = useState(true)
   const [loading, setLoading] = useState(false)
+  const [pendingRequestsCount, setPendingRequestsCount] = useState<number>(0)
 
   const [savingCustomer, setSavingCustomer] = useState(false)
   const [savingOrder, setSavingOrder] = useState(false)
@@ -536,6 +537,20 @@ export default function Page() {
     window.localStorage.setItem('orders-pinned-v1', JSON.stringify(pinnedOrderIds))
   }, [pinnedOrderIds])
 
+  async function loadPendingCount() {
+    try {
+      const { count, error } = await supabase
+        .from('customer_requests')
+        .select('*', { count: 'exact', head: true })
+        .eq('stav', 'na_schvalenie')
+      if (!error && count !== null) {
+        setPendingRequestsCount(count)
+      }
+    } catch (err) {
+      console.error('Chyba pri načítaní počtu požiadaviek:', err)
+    }
+  }
+
   async function loadInitialData(currentUserId: string) {
     setLoading(true)
     try {
@@ -544,6 +559,7 @@ export default function Page() {
         loadOrders(currentUserId),
         loadEmployees(currentUserId),
         loadWorkLogs(currentUserId),
+        loadPendingCount(),
       ])
     } finally {
       setLoading(false)
@@ -2256,6 +2272,37 @@ export default function Page() {
             alignItems: 'center',
           }}
         >
+          {/* 📋 KARTIČKA: ČAKAJÚCE POŽIADAVKY OD KLIENTOV */}
+          <Link 
+            href="/admin/requests" 
+            style={{ 
+              textDecoration: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: pendingRequestsCount > 0 ? '#ffedd5' : '#ffffff',
+              border: pendingRequestsCount > 0 ? '2px solid #ea580c' : '1px solid #cbd5e1',
+              color: pendingRequestsCount > 0 ? '#c2410c' : '#475569',
+              padding: '4px 10px', 
+              borderRadius: '999px', 
+              fontSize: '11px',
+              fontWeight: 800,
+              boxShadow: pendingRequestsCount > 0 ? '0 0 10px rgba(234, 88, 12, 0.15)' : 'none',
+              transition: 'all 0.2s ease',
+              cursor: 'pointer',
+              marginRight: '4px'
+            }}
+          >
+            📋 Čaká na schválenie: <span style={{ 
+              background: pendingRequestsCount > 0 ? '#ea580c' : '#64748b', 
+              color: '#fff', 
+              padding: '1px 6px', 
+              borderRadius: '999px',
+              fontSize: '10px',
+              marginLeft: '3px'
+            }}>{pendingRequestsCount}</span>
+            {pendingRequestsCount > 0 && " 🔥"}
+          </Link>
           <div style={{ background: '#e2e8f0', color: '#0f172a', border: '1px solid #cbd5e1', padding: '6px 10px', borderRadius: 999, fontWeight: 800 }}>
             Aktívne {activeOrders.length}
           </div>
