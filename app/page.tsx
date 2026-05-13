@@ -2052,6 +2052,24 @@ export default function Page() {
     return order.termin < getTodayDate()
   }
 
+
+  async function copyCustomerPortalLink(customerId: string) {
+    const link = `https://app.itspot.sk/customer-portal?customer_id=${customerId}`
+
+    try {
+      await navigator.clipboard.writeText(link)
+      setNotice({
+        type: 'success',
+        text: 'Link do zákazníckeho portálu bol skopírovaný.',
+      })
+    } catch {
+      setNotice({
+        type: 'error',
+        text: 'Nepodarilo sa skopírovať link.',
+      })
+    }
+  }
+
   if (checkingAuth) {
     return <div style={{ padding: 24, fontFamily: 'Arial, Helvetica, sans-serif' }}>Načítavam...</div>
   }
@@ -2707,6 +2725,7 @@ export default function Page() {
                       <th style={{ padding: '12px 10px' }}>Kontakt</th>
                       <th style={{ padding: '12px 10px' }}>Telefón</th>
                       <th style={{ padding: '12px 10px' }}>Email</th>
+                      <th style={{ padding: '12px 10px' }}>ID / Portál</th>
                       <th style={{ padding: '12px 10px' }}>Akcie</th>
                     </tr>
                   </thead>
@@ -2717,6 +2736,33 @@ export default function Page() {
                         <td style={{ padding: '12px 10px' }}>{c.kontakt || '-'}</td>
                         <td style={{ padding: '12px 10px' }}>{c.telefon || '-'}</td>
                         <td style={{ padding: '12px 10px' }}>{c.email || '-'}</td>
+
+                        <td style={{ padding: '12px 10px' }}>
+                          <div style={{ display: 'grid', gap: 6 }}>
+                            <div
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 700,
+                                color: '#475569',
+                                wordBreak: 'break-all',
+                              }}
+                            >
+                              {c.id}
+                            </div>
+
+                            <button
+                              type="button"
+                              style={{
+                                ...buttonStyle,
+                                fontSize: 12,
+                              }}
+                              onClick={() => copyCustomerPortalLink(c.id)}
+                            >
+                              Skopírovať ID link
+                            </button>
+                          </div>
+                        </td>
+
                         <td style={{ padding: '12px 10px' }}>
                           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                             <button type="button" style={buttonStyle} onClick={() => startEditCustomer(c)}>
@@ -2732,7 +2778,7 @@ export default function Page() {
 
                     {customers.length === 0 && (
                       <tr>
-                        <td colSpan={5} style={{ padding: 24, textAlign: 'center', color: '#64748b' }}>
+                        <td colSpan={6} style={{ padding: 24, textAlign: 'center', color: '#64748b' }}>
                           Zatiaľ nemáš žiadnych zákazníkov
                         </td>
                       </tr>
@@ -2766,6 +2812,34 @@ export default function Page() {
                     <div><strong>Kontakt:</strong> {c.kontakt || '-'}</div>
                     <div><strong>Telefón:</strong> {c.telefon || '-'}</div>
                     <div><strong>Email:</strong> {c.email || '-'}</div>
+
+                    <div>
+                      <strong>ID:</strong>
+
+                      <div
+                        style={{
+                          marginTop: 4,
+                          fontSize: 11,
+                          color: '#475569',
+                          wordBreak: 'break-all',
+                        }}
+                      >
+                        {c.id}
+                      </div>
+
+                      <button
+                        type="button"
+                        style={{
+                          ...buttonStyle,
+                          marginTop: 8,
+                          width: '100%',
+                          fontSize: 12,
+                        }}
+                        onClick={() => copyCustomerPortalLink(c.id)}
+                      >
+                        Skopírovať ID link
+                      </button>
+                    </div>
                   </div>
 
                   <div className="mobileActionRow" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 10 }}>
