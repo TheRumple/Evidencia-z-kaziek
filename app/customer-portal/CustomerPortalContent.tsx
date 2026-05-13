@@ -25,6 +25,14 @@ type Order = {
   created_at?: string
 }
 
+
+type OrderSubtask = {
+  id: string
+  order_id: string
+  nazov: string
+  completed: boolean
+}
+
 const STATUSY = [
   { value: 'nova', label: 'Nová' },
   { value: 'rozpracovana', label: 'Rozpracovaná' },
@@ -91,6 +99,7 @@ export default function CustomerPortalPage() {
   
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [orders, setOrders] = useState<Order[]>([])
+  const [subtasks, setSubtasks] = useState<OrderSubtask[]>([])
   
   const [expandedOrderIds, setExpandedOrderIds] = useState<string[]>([])
   const [priorityOrderIds, setPriorityOrderIds] = useState<string[]>([])
@@ -145,6 +154,17 @@ export default function CustomerPortalPage() {
         return
       }
       setOrders((ordersData || []) as Order[])
+
+      const orderIds = (ordersData || []).map((o) => o.id)
+
+      if (orderIds.length > 0) {
+        const { data: subtasksData } = await supabase
+          .from('order_subtasks')
+          .select('*')
+          .in('order_id', orderIds)
+
+        setSubtasks((subtasksData || []) as OrderSubtask[])
+      }
 
     } catch (e: any) {
       setErrorMsg(`Chyba autorizácie: Spojenie so serverom bolo prerušené.`)
@@ -410,6 +430,73 @@ export default function CustomerPortalPage() {
                     <div style={{ padding: '24px 28px', borderTop: isPriority ? '1px solid #fef08a' : '1px solid #f1f5f9', background: isPriority ? '#fffde7' : '#f8fafc' }}>
                       <span style={{ fontSize: 13, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Popis požiadavky / rozsah prác:</span>
                       <p style={{ fontSize: 15, color: '#334155', margin: '6px 0 0 0', lineHeight: '1.6', whiteSpace: 'pre-line' }}>{order.popis}</p>
+
+                      {subtasks.filter((s) => s.order_id === order.id).length > 0 && (
+                        <div style={{ marginTop: 20 }}>
+                          <div
+                            style={{
+                              fontSize: 13,
+                              fontWeight: 700,
+                              color: '#64748b',
+                              marginBottom: 10,
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.05em',
+                            }}
+                          >
+                            Podúlohy
+                          </div>
+
+                          <div style={{ display: 'grid', gap: 10 }}>
+                            {subtasks
+                              .filter((s) => s.order_id === order.id)
+                              .map((subtask) => (
+                                <div
+                                  key={subtask.id}
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 12,
+                                    padding: '10px 14px',
+                                    borderRadius: 10,
+                                    background: subtask.completed ? '#ecfdf5' : '#fff',
+                                    border: subtask.completed
+                                      ? '1px solid #a7f3d0'
+                                      : '1px solid #e2e8f0',
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      width: 20,
+                                      height: 20,
+                                      borderRadius: 999,
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      background: subtask.completed ? '#10b981' : '#e2e8f0',
+                                      color: '#fff',
+                                      fontSize: 12,
+                                      fontWeight: 900,
+                                    }}
+                                  >
+                                    {subtask.completed ? '✓' : ''}
+                                  </div>
+
+                                  <div
+                                    style={{
+                                      fontSize: 14,
+                                      fontWeight: 600,
+                                      color: subtask.completed ? '#065f46' : '#334155',
+                                      textDecoration: subtask.completed ? 'line-through' : 'none',
+                                    }}
+                                  >
+                                    {subtask.nazov}
+                                  </div>
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+                      )}
+
                     </div>
                   )}
                 </div>

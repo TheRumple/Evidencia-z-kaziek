@@ -43,6 +43,14 @@ type Employee = {
   created_at?: string
 }
 
+type OrderSubtask = {
+  id: string
+  order_id: string
+  nazov: string
+  completed: boolean
+  created_at?: string
+}
+
 type WorkLog = {
   id: string
   user_id: string
@@ -356,6 +364,8 @@ export default function Page() {
   const [orders, setOrders] = useState<Order[]>([])
   const [employees, setEmployees] = useState<Employee[]>([])
   const [workLogs, setWorkLogs] = useState<WorkLog[]>([])
+  const [subtasks, setSubtasks] = useState<OrderSubtask[]>([])
+  const [newSubtaskText, setNewSubtaskText] = useState<Record<string, string>>({})
 
   const [activeTab, setActiveTab] = useState<'zakazky' | 'zakaznici' | 'zamestnanci'>('zakazky')
   const [expandedOrderIds, setExpandedOrderIds] = useState<string[]>([])
@@ -559,6 +569,7 @@ export default function Page() {
         loadOrders(currentUserId),
         loadEmployees(currentUserId),
         loadWorkLogs(currentUserId),
+        loadSubtasks(),
         loadPendingCount(),
       ])
     } finally {
@@ -725,6 +736,88 @@ export default function Page() {
     setActiveWorkLogOrderId('')
     resetWorkLogForm()
     setOpenWorkLog(false)
+  }
+
+
+  async function loadSubtasks() {
+    const { data, error } = await supabase
+      .from('order_subtasks')
+      .select('*')
+      .order('created_at', { ascending: true })
+
+    if (error) {
+      setNotice({ type: 'error', text: `Subtasks: ${error.message}` })
+      return
+    }
+
+    setSubtasks((data || []) as OrderSubtask[])
+  }
+
+  async function addSubtask(orderId: string) {
+    const textValue = (newSubtaskText[orderId] || '').trim()
+
+    if (!textValue) return
+
+    const { data, error } = await supabase
+      .from('order_subtasks')
+      .insert([
+        {
+          order_id: orderId,
+          nazov: textValue,
+          completed: false,
+        },
+      ])
+      .select()
+      .single()
+
+    if (error) {
+      setNotice({ type: 'error', text: error.message })
+      return
+    }
+
+    if (data) {
+      setSubtasks((curr) => [...curr, data as OrderSubtask])
+      setNewSubtaskText((curr) => ({
+        ...curr,
+        [orderId]: '',
+      }))
+    }
+  }
+
+  async function toggleSubtask(subtaskId: string, completed: boolean) {
+    const previous = subtasks
+
+    setSubtasks((curr) =>
+      curr.map((s) =>
+        s.id === subtaskId ? { ...s, completed } : s
+      )
+    )
+
+    const { error } = await supabase
+      .from('order_subtasks')
+      .update({ completed })
+      .eq('id', subtaskId)
+
+    if (error) {
+      setSubtasks(previous)
+      setNotice({ type: 'error', text: error.message })
+    }
+  }
+
+  async function deleteSubtask(subtaskId: string) {
+    const previous = subtasks
+
+    setSubtasks((curr) => curr.filter((s) => s.id !== subtaskId))
+
+    const { error } = await supabase
+      .from('order_subtasks')
+      .delete()
+      .eq('id', subtaskId)
+
+    if (error) {
+      setSubtasks(previous)
+      setNotice({ type: 'error', text: error.message })
+    }
   }
 
   async function addCustomer() {
@@ -2279,66 +2372,48 @@ export default function Page() {
         )}
 
         <div
-          className="summaryStrip"
           style={{
-            ...boxStyle,
-            marginBottom: 12,
-            padding: '8px 10px',
             display: 'flex',
-            gap: 8,
-            flexWrap: 'wrap',
-            alignItems: 'center',
+            justifyContent: 'flex-end',
+            marginBottom: 12,
           }}
         >
-          {/* 📋 KARTIČKA: ČAKAJÚCE POŽIADAVKY OD KLIENTOV */}
-          <Link 
-            href="/admin/requests" 
-            style={{ 
+          <Link
+            href="/admin/requests"
+            style={{
               textDecoration: 'none',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '6px',
-              background: pendingRequestsCount > 0 ? '#ffedd5' : '#ffffff',
-              border: pendingRequestsCount > 0 ? '2px solid #ea580c' : '1px solid #cbd5e1',
+              gap: 8,
+              background: pendingRequestsCount > 0 ? '#ffedd5' : '#fff',
+              border: pendingRequestsCount > 0
+                ? '2px solid #ea580c'
+                : '1px solid #cbd5e1',
               color: pendingRequestsCount > 0 ? '#c2410c' : '#475569',
-              padding: '4px 10px', 
-              borderRadius: '999px', 
-              fontSize: '11px',
+              padding: '8px 14px',
+              borderRadius: 999,
               fontWeight: 800,
-              boxShadow: pendingRequestsCount > 0 ? '0 0 10px rgba(234, 88, 12, 0.15)' : 'none',
-              transition: 'all 0.2s ease',
-              cursor: 'pointer',
-              marginRight: '4px'
+              boxShadow:
+                pendingRequestsCount > 0
+                  ? '0 0 16px rgba(234,88,12,0.18)'
+                  : 'none',
             }}
           >
-            📋 Čaká na schválenie: <span style={{ 
-              background: pendingRequestsCount > 0 ? '#ea580c' : '#64748b', 
-              color: '#fff', 
-              padding: '1px 6px', 
-              borderRadius: '999px',
-              fontSize: '10px',
-              marginLeft: '3px'
-            }}>{pendingRequestsCount}</span>
-            {pendingRequestsCount > 0 && " 🔥"}
+            🔔 Čaká na schválenie
+
+            <span
+              style={{
+                background: pendingRequestsCount > 0 ? '#ea580c' : '#64748b',
+                color: '#fff',
+                padding: '2px 8px',
+                borderRadius: 999,
+                fontSize: 12,
+              }}
+            >
+              {pendingRequestsCount}
+            </span>
           </Link>
-          <div style={{ background: '#e2e8f0', color: '#0f172a', border: '1px solid #cbd5e1', padding: '6px 10px', borderRadius: 999, fontWeight: 800 }}>
-            Aktívne {activeOrders.length}
-          </div>
-          <div style={{ ...getStatusBadgeStyle('nova'), padding: '6px 10px', borderRadius: 999, fontWeight: 800 }}>
-            Nové {activeOrders.filter((o) => o.stav === 'nova').length}
-          </div>
-          <div style={{ ...getStatusBadgeStyle('rozpracovana'), padding: '6px 10px', borderRadius: 999, fontWeight: 800 }}>
-            Rozpracované {activeOrders.filter((o) => o.stav === 'rozpracovana').length}
-          </div>
-          <div style={{ ...getStatusBadgeStyle('caka'), padding: '6px 10px', borderRadius: 999, fontWeight: 800 }}>
-            Čakajú {activeOrders.filter((o) => o.stav === 'caka').length}
-          </div>
-          <div style={{ ...getStatusBadgeStyle('hotova'), padding: '6px 10px', borderRadius: 999, fontWeight: 800 }}>
-            Dokončené {activeOrders.filter((o) => o.stav === 'hotova').length}
-          </div>
         </div>
-
-
 
         {activeTab === 'zakazky' && (
           <>
@@ -2422,7 +2497,10 @@ export default function Page() {
               )}
 
               <div style={{ display: 'grid', gap: 10 }}>
-                {groupedOrders.map((section) => (
+    
+            
+
+            {groupedOrders.map((section) => (
                   <div key={section.key}>
                     <div
                       style={{
