@@ -16,6 +16,7 @@ type CalendarViewProps = {
   calendarPlans: CalendarPlan[]
   deleteCalendarPlan: (planId: string) => Promise<void>
   getCustomerName: (customerId: string) => string
+  onBackToOrders: () => void
   orders: Order[]
   startEditOrder: (order: Order) => void
 }
@@ -73,6 +74,7 @@ export function CalendarView({
   calendarPlans,
   deleteCalendarPlan,
   getCustomerName,
+  onBackToOrders,
   orders,
   startEditOrder,
 }: CalendarViewProps) {
@@ -144,6 +146,19 @@ export function CalendarView({
           </div>
 
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={onBackToOrders}
+              style={{
+                ...buttonStyle,
+                background: '#fff',
+                borderColor: '#fff',
+                color: '#0f172a',
+                fontWeight: 900,
+              }}
+            >
+              Späť na zákazky
+            </button>
             <div style={{ border: '1px solid rgba(255,255,255,0.18)', borderRadius: 12, padding: '9px 12px' }}>
               <strong>{calendarPlans.length}</strong> v pláne
             </div>

@@ -1801,23 +1801,6 @@ export default function DashboardPage() {
   }
 
 
-  async function copyPublicRequestLink() {
-    const link = 'https://app.itspot.sk/ziadost'
-
-    try {
-      await navigator.clipboard.writeText(link)
-      setNotice({
-        type: 'success',
-        text: 'Verejný formulár požiadaviek bol skopírovaný.',
-      })
-    } catch {
-      setNotice({
-        type: 'error',
-        text: 'Nepodarilo sa skopírovať link.',
-      })
-    }
-  }
-
   if (checkingAuth) {
     return <div style={{ padding: 24, fontFamily: 'Arial, Helvetica, sans-serif' }}>Načítavam...</div>
   }
@@ -1986,6 +1969,7 @@ export default function DashboardPage() {
             calendarPlans={calendarPlans}
             deleteCalendarPlan={deleteCalendarPlan}
             getCustomerName={getCustomerName}
+            onBackToOrders={() => setActiveTab('zakazky')}
             orders={orders}
             startEditOrder={startEditOrder}
           />
@@ -2011,10 +1995,6 @@ export default function DashboardPage() {
           </div>
 
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button type="button" style={buttonStyle} onClick={copyPublicRequestLink}>
-              Skopírovať verejný formulár
-            </button>
-
             <button type="button" style={tabButton(activeTab === 'zakazky')} onClick={() => setActiveTab('zakazky')}>
               Zákazky
             </button>
