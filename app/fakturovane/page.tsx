@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
 import Link from 'next/link'
+import { BrandLogo } from '@/components/BrandLogo'
 import { supabase } from '@/lib/supabase'
 
 type Customer = {
@@ -320,6 +321,7 @@ export default function FakturovanePage() {
         >
           <div className="headerWrap">
             <div>
+              <BrandLogo size="sm" tone="dark" style={{ marginBottom: 14 }} />
               <div style={{ fontSize: 13, opacity: 0.8, marginBottom: 8, letterSpacing: 1 }}>
                 ARCHÍV ZÁKAZIEK
               </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { BrandLogo } from '@/components/BrandLogo'
 import { supabase } from '@/lib/supabase'
 
 export default function LoginPage() {
@@ -269,16 +270,7 @@ export default function LoginPage() {
         <div style={backgroundBlurOne} />
         <div style={backgroundBlurTwo} />
         <div style={loadingBoxStyle}>
-          <div
-            style={{
-              fontSize: 28,
-              fontWeight: 800,
-              color: '#0f172a',
-              marginBottom: 8,
-            }}
-          >
-            ITspot s.r.o.
-          </div>
+          <BrandLogo size="lg" style={{ marginBottom: 12 }} />
           <div style={{ fontSize: 15, color: '#64748b' }}>
             Načítavam prihlásenie...
           </div>
@@ -294,7 +286,8 @@ export default function LoginPage() {
 
       <div style={cardStyle}>
         <div style={brandBadgeStyle}>Prihlásenie do systému</div>
-        <h1 style={titleStyle}>ITspot s.r.o.</h1>
+        <BrandLogo size="lg" style={{ marginBottom: 18 }} />
+        <h1 style={titleStyle}>Evidencia zákaziek</h1>
         <p style={subtitleStyle}>
           Prihlás sa do interného systému evidencie zákaziek pomocou svojich
           prihlasovacích údajov.

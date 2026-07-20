@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { BrandLogo } from '@/components/BrandLogo'
 import { supabase } from '@/lib/supabase'
 
 type Customer = {
@@ -249,7 +250,7 @@ export default function CustomerPortalPage() {
   if (loading) {
     return (
       <div style={{ padding: 60, textAlign: 'center', fontFamily: 'sans-serif', color: '#64748b', background: '#f8fafc', minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-        <div style={{ fontSize: 24, fontWeight: 800, marginBottom: 12, color: '#0f172a', letterSpacing: '-0.02em' }}>ITspot s.r.o.</div>
+        <BrandLogo size="lg" style={{ marginBottom: 14 }} />
         <div style={{ fontSize: 16, color: '#64748b' }}>Zabezpečujem šifrované pripojenie a načítavam zákaznícku zónu...</div>
       </div>
     )
@@ -280,9 +281,7 @@ export default function CustomerPortalPage() {
         <div style={{ background: '#fff', borderRadius: 16, padding: '32px 36px', marginBottom: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 24 }}>
           <div style={{ flex: '1 1 450px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-              <span style={{ background: '#4f46e5', color: '#fff', fontSize: 13, fontWeight: 800, padding: '4px 10px', borderRadius: 5, letterSpacing: '0.02em' }}>
-                ITspot s.r.o.
-              </span>
+              <BrandLogo size="sm" />
               <span style={{ fontSize: 15, color: '#64748b', fontWeight: 600 }}>
                 • Klientsky portál
               </span>

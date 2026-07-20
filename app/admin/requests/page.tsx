@@ -6,19 +6,27 @@ import Link from 'next/link'
 
 type PendingRequest = {
   id: string
-  customer_id: string
+  customer_id: string | null
   nazov: string
   popis: string
   termin: string | null
   created_at: string
   customers: {
     nazov: string
-    user_id: string // 🌟 Načítame user_id admina, ktoré je priradené k zákazníkovi
+    user_id: string
   } | null
+}
+
+type Customer = {
+  id: string
+  nazov: string
+  user_id: string
 }
 
 export default function AdminRequestsPage() {
   const [requests, setRequests] = useState<PendingRequest[]>([])
+  const [customers, setCustomers] = useState<Customer[]>([])
+  const [selectedCustomerIds, setSelectedCustomerIds] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
 
   // Stavy pre úpravu požiadavky v modálnom okne
@@ -26,6 +34,7 @@ export default function AdminRequestsPage() {
   const [editNazov, setEditNazov] = useState('')
   const [editPopis, setEditPopis] = useState('')
   const [editTermin, setEditTermin] = useState('')
+  const [editCustomerId, setEditCustomerId] = useState('')
 
   useEffect(() => {
     void loadPendingRequests()
@@ -35,7 +44,8 @@ export default function AdminRequestsPage() {
   async function loadPendingRequests() {
     setLoading(true)
     try {
-      const { data, error } = await supabase
+      const [{ data, error }, { data: customersData, error: customersError }] = await Promise.all([
+        supabase
         .from('customer_requests')
         .select(`
           id,
@@ -50,13 +60,32 @@ export default function AdminRequestsPage() {
           )
         `)
         .eq('stav', 'na_schvalenie')
-        .order('created_at', { ascending: false })
+        .order('created_at', { ascending: false }),
+        supabase
+          .from('customers')
+          .select('id, nazov, user_id')
+          .order('nazov', { ascending: true }),
+      ])
 
       if (error) {
         alert(`Chyba pri načítaní požiadaviek: ${error.message}`)
         return
       }
-      setRequests((data as any) || [])
+      if (customersError) {
+        alert(`Chyba pri načítaní zákazníkov: ${customersError.message}`)
+        return
+      }
+
+      const nextRequests = ((data as any) || []) as PendingRequest[]
+      setRequests(nextRequests)
+      setCustomers(((customersData as any) || []) as Customer[])
+      setSelectedCustomerIds((current) => {
+        const next = { ...current }
+        for (const req of nextRequests) {
+          if (!next[req.id] && req.customer_id) next[req.id] = req.customer_id
+        }
+        return next
+      })
     } catch (err: any) {
       alert(`Chyba: ${err.message}`)
     } finally {
@@ -70,16 +99,23 @@ export default function AdminRequestsPage() {
     setEditNazov(req.nazov)
     setEditPopis(req.popis)
     setEditTermin(req.termin || '')
+    setEditCustomerId(selectedCustomerIds[req.id] || req.customer_id || '')
   }
 
   // 🚀 Schválenie požiadavky s automatickým priradením user_id a stavu 'nova'
-  async function handleApprove(reqId: string, finalNazov: string, finalPopis: string, finalTermin: string) {
+  async function handleApprove(reqId: string, finalNazov: string, finalPopis: string, finalTermin: string, assignedCustomerId?: string) {
     const targetRequest = requests.find(r => r.id === reqId)
     if (!targetRequest) return
 
+    const finalCustomerId = assignedCustomerId || selectedCustomerIds[reqId] || targetRequest.customer_id || ''
+    const selectedCustomer = customers.find((customer) => customer.id === finalCustomerId)
+    if (!selectedCustomer) {
+      alert('Najprv priraďte požiadavku ku konkrétnemu zákazníkovi.')
+      return
+    }
+
     const dnesnyDatum = new Date().toISOString().slice(0, 10)
-    // Získame priradené user_id z načítaného zákazníka
-    const adminUserId = targetRequest.customers?.user_id || null
+    const adminUserId = selectedCustomer.user_id
 
     try {
       console.log('Pokus o zápis do orders so priradeným user_id:', adminUserId)
@@ -89,7 +125,7 @@ export default function AdminRequestsPage() {
         .from('orders')
         .insert([
           {
-            customer_id: targetRequest.customer_id,
+            customer_id: selectedCustomer.id,
             user_id: adminUserId, // 🌟 Automaticky priradíme tvoje ID, aby si ju hneď videl
             nazov: finalNazov.trim(),
             popis: finalPopis.trim(),
@@ -226,6 +262,37 @@ export default function AdminRequestsPage() {
                   {req.popis}
                 </p>
 
+                <div style={{ marginBottom: 16, maxWidth: 360 }}>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 800, color: '#475569', marginBottom: 6 }}>
+                    Priradiť ku zákazníkovi
+                  </label>
+                  <select
+                    value={selectedCustomerIds[req.id] || req.customer_id || ''}
+                    onChange={(event) =>
+                      setSelectedCustomerIds((current) => ({
+                        ...current,
+                        [req.id]: event.target.value,
+                      }))
+                    }
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: 8,
+                      border: '1px solid #cbd5e1',
+                      color: '#0f172a',
+                      background: '#fff',
+                      fontWeight: 700,
+                    }}
+                  >
+                    <option value="">Vyberte zákazníka</option>
+                    {customers.map((customer) => (
+                      <option key={customer.id} value={customer.id}>
+                        {customer.nazov}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 {/* Akčné tlačidlá */}
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
                   <button
@@ -241,7 +308,7 @@ export default function AdminRequestsPage() {
                     ✏️ Upraviť detaily
                   </button>
                   <button
-                    onClick={() => handleApprove(req.id, req.nazov, req.popis, req.termin || '')}
+                    onClick={() => handleApprove(req.id, req.nazov, req.popis, req.termin || '', selectedCustomerIds[req.id])}
                     style={{ background: '#16a34a', color: '#fff', border: 'none', padding: '8px 18px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 4px rgba(22, 163, 74, 0.2)' }}
                   >
                     🚀 Schváliť & Publikovať
@@ -262,7 +329,23 @@ export default function AdminRequestsPage() {
             <h3 style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', margin: '0 0 4px 0' }}>✏️ Úprava požiadavky pred publikovaním</h3>
             <p style={{ color: '#64748b', fontSize: 13, margin: '0 0 20px 0' }}>Upravte texty podľa potreby. Kliknutím na zelené tlačidlo sa požiadavka rovno schváli.</p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label style={{ fontSize: 12, fontWeight: 700, color: '#475569' }}>Zákazník</label>
+                <select
+                  value={editCustomerId}
+                  onChange={(e) => setEditCustomerId(e.target.value)}
+                  style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 14, color: '#0f172a', background: '#fff' }}
+                >
+                  <option value="">Vyberte zákazníka</option>
+                  {customers.map((customer) => (
+                    <option key={customer.id} value={customer.id}>
+                      {customer.nazov}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <label style={{ fontSize: 12, fontWeight: 700, color: '#475569' }}>Názov zákazky</label>
                 <input
@@ -293,7 +376,7 @@ export default function AdminRequestsPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleApprove(editingRequest.id, editNazov, editPopis, editTermin)}
+                  onClick={() => handleApprove(editingRequest.id, editNazov, editPopis, editTermin, editCustomerId)}
                   style={{ background: '#16a34a', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
                 >
                   💾 Uložiť & Schváliť
