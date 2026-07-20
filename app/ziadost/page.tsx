@@ -107,6 +107,7 @@ export default function PublicRequestPage() {
 
   return (
     <main
+      className="requestPage"
       style={{
         minHeight: '100vh',
         background:
@@ -118,6 +119,7 @@ export default function PublicRequestPage() {
     >
       <div style={{ maxWidth: 980, margin: '0 auto' }}>
         <section
+          className="requestHero"
           style={{
             background: 'rgba(15, 23, 42, 0.82)',
             color: '#fff',
@@ -133,6 +135,7 @@ export default function PublicRequestPage() {
         >
           <div>
             <img
+              className="requestLogo"
               src="/logo-new.png"
               alt="ITspot"
               style={{
@@ -145,10 +148,10 @@ export default function PublicRequestPage() {
                 margin: '0 auto 8px',
               }}
             />
-            <h1 style={{ margin: 0, fontSize: 30, fontWeight: 900, lineHeight: 1.18 }}>
+            <h1 className="requestTitle" style={{ margin: 0, fontSize: 30, fontWeight: 900, lineHeight: 1.18 }}>
               Formulár pre servis, montáž a cenovú ponuku
             </h1>
-            <div style={{ marginTop: 10, color: 'rgba(226,232,240,0.72)', fontSize: 15, fontWeight: 800 }}>
+            <div className="requestSubtitle" style={{ marginTop: 10, color: 'rgba(226,232,240,0.72)', fontSize: 15, fontWeight: 800 }}>
               Napíšte nám, čo potrebujete vyriešiť. Požiadavku preveríme a ozveme sa vám s ďalším postupom.
             </div>
           </div>
@@ -295,6 +298,36 @@ export default function PublicRequestPage() {
           <div>Technická podpora: info@itspot.sk, +421 908 806 691</div>
         </div>
       </div>
+      <style jsx>{`
+        @media (max-width: 640px) {
+          .requestPage {
+            padding: 12px 10px !important;
+          }
+
+          .requestHero {
+            padding: 14px 14px 16px !important;
+            margin-bottom: 10px !important;
+            border-radius: 14px !important;
+          }
+
+          .requestLogo {
+            width: 270px !important;
+            height: 100px !important;
+            margin-bottom: 4px !important;
+          }
+
+          .requestTitle {
+            font-size: 21px !important;
+            line-height: 1.18 !important;
+          }
+
+          .requestSubtitle {
+            margin-top: 7px !important;
+            font-size: 13px !important;
+            line-height: 1.35 !important;
+          }
+        }
+      `}</style>
     </main>
   )
 }
