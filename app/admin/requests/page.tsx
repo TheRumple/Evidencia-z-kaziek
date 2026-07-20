@@ -21,12 +21,16 @@ type Customer = {
   id: string
   nazov: string
   user_id: string
+  kontakt?: string | null
+  telefon?: string | null
+  email?: string | null
 }
 
 export default function AdminRequestsPage() {
   const [requests, setRequests] = useState<PendingRequest[]>([])
   const [customers, setCustomers] = useState<Customer[]>([])
   const [selectedCustomerIds, setSelectedCustomerIds] = useState<Record<string, string>>({})
+  const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   // Stavy pre úpravu požiadavky v modálnom okne
@@ -37,6 +41,9 @@ export default function AdminRequestsPage() {
   const [editCustomerId, setEditCustomerId] = useState('')
 
   useEffect(() => {
+    void supabase.auth.getSession().then(({ data }) => {
+      setUserId(data.session?.user.id || null)
+    })
     void loadPendingRequests()
   }, [])
 
@@ -63,7 +70,7 @@ export default function AdminRequestsPage() {
         .order('created_at', { ascending: false }),
         supabase
           .from('customers')
-          .select('id, nazov, user_id')
+          .select('id, nazov, user_id, kontakt, telefon, email')
           .order('nazov', { ascending: true }),
       ])
 
@@ -107,17 +114,53 @@ export default function AdminRequestsPage() {
     const targetRequest = requests.find(r => r.id === reqId)
     if (!targetRequest) return
 
-    const finalCustomerId = assignedCustomerId || selectedCustomerIds[reqId] || targetRequest.customer_id || ''
-    const selectedCustomer = customers.find((customer) => customer.id === finalCustomerId)
-    if (!selectedCustomer) {
-      alert('Najprv priraďte požiadavku ku konkrétnemu zákazníkovi.')
-      return
-    }
-
     const dnesnyDatum = new Date().toISOString().slice(0, 10)
-    const adminUserId = selectedCustomer.user_id
 
     try {
+      const finalCustomerId = assignedCustomerId || selectedCustomerIds[reqId] || targetRequest.customer_id || ''
+      let selectedCustomer = customers.find((customer) => customer.id === finalCustomerId) || null
+
+      if (finalCustomerId === '__new__') {
+        if (!userId) {
+          alert('Nie je načítaný prihlásený používateľ. Skúste obnoviť stránku a prihlásiť sa znova.')
+          return
+        }
+
+        const customerName = getRequestCompany(targetRequest) || getRequestName(targetRequest)
+        if (!customerName) {
+          alert('V požiadavke chýba meno alebo firma. Otvorte úpravu požiadavky a doplňte údaje.')
+          return
+        }
+
+        const { data: newCustomer, error: customerError } = await supabase
+          .from('customers')
+          .insert([
+            {
+              user_id: userId,
+              nazov: customerName,
+              kontakt: getRequestName(targetRequest) || null,
+              telefon: getRequestPhone(targetRequest) || null,
+              email: getRequestEmail(targetRequest) || null,
+            },
+          ])
+          .select()
+          .single()
+
+        if (customerError || !newCustomer) {
+          alert(`Nepodarilo sa vytvoriť zákazníka: ${customerError?.message || 'Neznáma chyba'}`)
+          return
+        }
+
+        selectedCustomer = newCustomer as Customer
+        setCustomers((current) => [...current, selectedCustomer as Customer].sort((a, b) => a.nazov.localeCompare(b.nazov, 'sk')))
+      }
+
+      if (!selectedCustomer) {
+        alert('Najprv priraďte požiadavku ku konkrétnemu zákazníkovi alebo zvoľte vytvorenie nového zákazníka.')
+        return
+      }
+
+      const adminUserId = selectedCustomer.user_id
       console.log('Pokus o zápis do orders so priradeným user_id:', adminUserId)
 
       // 1. Vytvoríme ostrú zákazku v tabuľke 'orders'
@@ -163,14 +206,26 @@ export default function AdminRequestsPage() {
     }
   }
 
+  function getRequestField(req: PendingRequest, label: string) {
+    return req.popis.match(new RegExp(`^${label}:\\s*(.+)$`, 'im'))?.[1]?.trim() || ''
+  }
+
   function getRequestEmail(req: PendingRequest) {
-    const labeledEmail = req.popis.match(/^Email:\s*(.+)$/im)?.[1]?.trim()
+    const labeledEmail = getRequestField(req, 'Email')
     const anyEmail = req.popis.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0]
     return labeledEmail || anyEmail || ''
   }
 
   function getRequestName(req: PendingRequest) {
-    return req.popis.match(/^Meno:\s*(.+)$/im)?.[1]?.trim() || ''
+    return getRequestField(req, 'Meno')
+  }
+
+  function getRequestCompany(req: PendingRequest) {
+    return getRequestField(req, 'Firma')
+  }
+
+  function getRequestPhone(req: PendingRequest) {
+    return getRequestField(req, 'Telefón')
   }
 
   function openMailDraft(to: string, subject: string, body: string) {
@@ -370,12 +425,18 @@ ITspot s.r.o.`
                     }}
                   >
                     <option value="">Vyberte zákazníka</option>
+                    <option value="__new__">+ Vytvoriť nového zákazníka z požiadavky</option>
                     {customers.map((customer) => (
                       <option key={customer.id} value={customer.id}>
                         {customer.nazov}
                       </option>
                     ))}
                   </select>
+                  {!req.customer_id && (
+                    <div style={{ marginTop: 6, color: '#64748b', fontSize: 12 }}>
+                      Pri fyzickej osobe vyberte možnosť vytvoriť nového zákazníka. Názov sa vezme z mena alebo firmy v požiadavke.
+                    </div>
+                  )}
                 </div>
 
                 {/* Akčné tlačidlá */}
@@ -435,6 +496,7 @@ ITspot s.r.o.`
                   style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 14, color: '#0f172a', background: '#fff' }}
                 >
                   <option value="">Vyberte zákazníka</option>
+                  <option value="__new__">+ Vytvoriť nového zákazníka z požiadavky</option>
                   {customers.map((customer) => (
                     <option key={customer.id} value={customer.id}>
                       {customer.nazov}
