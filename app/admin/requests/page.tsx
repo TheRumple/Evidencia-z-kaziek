@@ -155,6 +155,7 @@ export default function AdminRequestsPage() {
 
       setEditingRequest(null)
       void loadPendingRequests()
+      openCustomerEmail(targetRequest, 'approved', finalNazov.trim(), selectedCustomer.nazov)
       alert('Zákazka bola úspešne schválená a publikovaná klientovi!')
 
     } catch (err: any) {
@@ -162,9 +163,93 @@ export default function AdminRequestsPage() {
     }
   }
 
+  function getRequestEmail(req: PendingRequest) {
+    const labeledEmail = req.popis.match(/^Email:\s*(.+)$/im)?.[1]?.trim()
+    const anyEmail = req.popis.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0]
+    return labeledEmail || anyEmail || ''
+  }
+
+  function getRequestName(req: PendingRequest) {
+    return req.popis.match(/^Meno:\s*(.+)$/im)?.[1]?.trim() || ''
+  }
+
+  function openMailDraft(to: string, subject: string, body: string) {
+    if (!to) {
+      alert('V požiadavke nie je nájdený email zákazníka.')
+      return
+    }
+
+    window.location.href = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+  }
+
+  function openCustomerEmail(req: PendingRequest, type: 'received' | 'approved' | 'rejected', orderName = req.nazov, customerName = '') {
+    const email = getRequestEmail(req)
+    const name = getRequestName(req)
+    const greeting = name ? `Dobrý deň ${name},` : 'Dobrý deň,'
+
+    if (type === 'received') {
+      openMailDraft(
+        email,
+        `ITspot - prijali sme vašu požiadavku`,
+        `${greeting}
+
+potvrdzujeme prijatie vašej požiadavky:
+${req.nazov}
+
+Požiadavku preveríme a ozveme sa vám s ďalším postupom.
+
+S pozdravom
+ITspot s.r.o.`
+      )
+      return
+    }
+
+    if (type === 'approved') {
+      openMailDraft(
+        email,
+        `ITspot - požiadavka bola schválená`,
+        `${greeting}
+
+vaša požiadavka bola schválená a zaradená medzi zákazky.
+
+Zákazka: ${orderName}
+${customerName ? `Zákazník: ${customerName}` : ''}
+
+V prípade potreby vás budeme kontaktovať s ďalším postupom.
+
+S pozdravom
+ITspot s.r.o.`
+      )
+      return
+    }
+
+    const reason = window.prompt('Dôvod zamietnutia do emailu:', 'Požiadavku momentálne nevieme zaradiť do realizácie.')
+    if (reason === null) return
+
+    openMailDraft(
+      email,
+      `ITspot - požiadavka bola zamietnutá`,
+      `${greeting}
+
+vašu požiadavku sme preverili, ale momentálne ju nevieme zaradiť do realizácie.
+
+Požiadavka: ${req.nazov}
+Dôvod: ${reason.trim() || 'Požiadavku momentálne nevieme zaradiť do realizácie.'}
+
+S pozdravom
+ITspot s.r.o.`
+    )
+  }
+
   // ❌ Odmietnutie / Zmazanie požiadavky
-  async function handleDelete(reqId: string) {
-    if (!confirm('Naozaj chcete túto požiadavku natrvalo zmazať?')) return
+  async function handleDelete(reqId: string, withEmail = false) {
+    const targetRequest = requests.find(r => r.id === reqId)
+    if (!targetRequest) return
+    if (!confirm(withEmail ? 'Otvoriť email o zamietnutí a zmazať požiadavku?' : 'Naozaj chcete túto požiadavku natrvalo zmazať?')) return
+
+    if (withEmail) {
+      openCustomerEmail(targetRequest, 'rejected')
+    }
 
     try {
       const { error } = await supabase
@@ -199,7 +284,7 @@ export default function AdminRequestsPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28, flexWrap: 'wrap', gap: 16 }}>
           <div>
             <h1 style={{ fontSize: 28, fontWeight: 800, color: '#0f172a', margin: 0 }}>📋 Nové požiadavky od klientov</h1>
-            <p style={{ color: '#64748b', margin: '4px 0 0 0', fontSize: 14 }}>Tu vidíte požiadavky, ktoré čakajú na vaše schválenie a úpravu pred zverejnením.</p>
+            <p style={{ color: '#64748b', margin: '4px 0 0 0', fontSize: 14 }}>Po schválení alebo zamietnutí sa otvorí pripravený email v poštovom klientovi.</p>
           </div>
           
           {/* Akčné tlačidlá vpravo hore */}
@@ -296,10 +381,22 @@ export default function AdminRequestsPage() {
                 {/* Akčné tlačidlá */}
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
                   <button
+                    onClick={() => openCustomerEmail(req, 'received')}
+                    style={{ background: '#e0f2fe', color: '#075985', border: 'none', padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                  >
+                    ✉️ Email prijatie
+                  </button>
+                  <button
+                    onClick={() => handleDelete(req.id, true)}
+                    style={{ background: '#ffedd5', color: '#9a3412', border: 'none', padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                  >
+                    Zamietnuť + email
+                  </button>
+                  <button
                     onClick={() => handleDelete(req.id)}
                     style={{ background: '#fee2e2', color: '#991b1b', border: 'none', padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
                   >
-                    🗑️ Zmazať
+                    Zmazať bez emailu
                   </button>
                   <button
                     onClick={() => openEditModal(req)}
@@ -327,7 +424,7 @@ export default function AdminRequestsPage() {
           <div style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 600, padding: 24, boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0' }}>
             
             <h3 style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', margin: '0 0 4px 0' }}>✏️ Úprava požiadavky pred publikovaním</h3>
-            <p style={{ color: '#64748b', fontSize: 13, margin: '0 0 20px 0' }}>Upravte texty podľa potreby. Kliknutím na zelené tlačidlo sa požiadavka rovno schváli.</p>
+            <p style={{ color: '#64748b', fontSize: 13, margin: '0 0 20px 0' }}>Upravte texty podľa potreby. Po schválení sa otvorí pripravený email zákazníkovi.</p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
