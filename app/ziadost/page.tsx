@@ -292,7 +292,7 @@ export default function PublicRequestPage() {
             Späť na itspot.sk
           </Link>
 
-          <div>Technická podpora: ivanic@itspot.sk, +421 908 806 691</div>
+          <div>Technická podpora: info@itspot.sk, +421 908 806 691</div>
         </div>
       </div>
     </main>

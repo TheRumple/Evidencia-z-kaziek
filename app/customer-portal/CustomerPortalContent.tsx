@@ -265,7 +265,7 @@ export default function CustomerPortalPage() {
             {errorMsg || 'Identita zákazníka nemohla byť overená. Skontrolujte prosím prístupový odkaz.'}
           </span>
           <div style={{ fontSize: 14, color: '#94a3b8', borderTop: '1px solid #f1f5f9', paddingTop: 14 }}>
-            ITspot s.r.o. | Podpora: ivanic@itspot.sk
+            ITspot s.r.o. | Podpora: info@itspot.sk
           </div>
         </div>
       </div>
@@ -515,7 +515,7 @@ export default function CustomerPortalPage() {
           </h4>
           <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 24, fontSize: 15, color: '#475569' }}>
             <div>📞 Správa zákaziek: <strong style={{ color: '#0f172a' }}>+421 908 806 691</strong></div>
-            <div>✉️ E-mail: <strong style={{ color: '#0f172a' }}>ivanic@itspot.sk</strong></div>
+            <div>✉️ E-mail: <strong style={{ color: '#0f172a' }}>info@itspot.sk</strong></div>
             <div>📍 Sídlo spoločnosti: <strong style={{ color: '#0f172a' }}>Brehy 530, 968 01 Brehy</strong></div>
           </div>
         </div>
