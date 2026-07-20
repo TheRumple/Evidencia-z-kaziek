@@ -1,10 +1,20 @@
+import { useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
-import type { Order } from '@/lib/dashboard-types'
+import type { CalendarPlan, Order } from '@/lib/dashboard-types'
 import { formatDate, getStatusBadgeStyle, getStatusLabel, getTodayDate } from '@/lib/dashboard-utils'
 
 type CalendarViewProps = {
+  addCalendarPlan: (input: {
+    orderId: string
+    planDate: string
+    startTime: string
+    endTime: string
+    note: string
+  }) => Promise<void>
   boxStyle: CSSProperties
   buttonStyle: CSSProperties
+  calendarPlans: CalendarPlan[]
+  deleteCalendarPlan: (planId: string) => Promise<void>
   getCustomerName: (customerId: string) => string
   orders: Order[]
   startEditOrder: (order: Order) => void
@@ -56,8 +66,22 @@ function buildCalendarDays(monthDate: Date) {
   return lastWeekAllNextMonth ? days.slice(0, 35) : days
 }
 
-export function CalendarView({ boxStyle, buttonStyle, getCustomerName, orders, startEditOrder }: CalendarViewProps) {
+export function CalendarView({
+  addCalendarPlan,
+  boxStyle,
+  buttonStyle,
+  calendarPlans,
+  deleteCalendarPlan,
+  getCustomerName,
+  orders,
+  startEditOrder,
+}: CalendarViewProps) {
   const today = getTodayDate()
+  const [planOrderId, setPlanOrderId] = useState('')
+  const [planDate, setPlanDate] = useState(today)
+  const [planStart, setPlanStart] = useState('')
+  const [planEnd, setPlanEnd] = useState('')
+  const [planNote, setPlanNote] = useState('')
   const currentMonth = new Date()
   const calendarDays = buildCalendarDays(currentMonth)
   const activeOrders = orders.filter((order) => !['odovzdana', 'stornovana'].includes(order.stav))
@@ -75,6 +99,27 @@ export function CalendarView({ boxStyle, buttonStyle, getCustomerName, orders, s
     acc[key].push(order)
     return acc
   }, {})
+  const planOrderMap = useMemo(() => new Map(orders.map((order) => [order.id, order])), [orders])
+  const plansByDate = calendarPlans.reduce<Record<string, CalendarPlan[]>>((acc, plan) => {
+    const key = String(plan.plan_date).slice(0, 10)
+    if (!acc[key]) acc[key] = []
+    acc[key].push(plan)
+    acc[key].sort((a, b) => String(a.start_time || '').localeCompare(String(b.start_time || '')))
+    return acc
+  }, {})
+
+  async function submitPlan() {
+    await addCalendarPlan({
+      orderId: planOrderId,
+      planDate,
+      startTime: planStart,
+      endTime: planEnd,
+      note: planNote,
+    })
+    setPlanStart('')
+    setPlanEnd('')
+    setPlanNote('')
+  }
 
   return (
     <div style={{ display: 'grid', gap: 12 }}>
@@ -100,12 +145,53 @@ export function CalendarView({ boxStyle, buttonStyle, getCustomerName, orders, s
 
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <div style={{ border: '1px solid rgba(255,255,255,0.18)', borderRadius: 12, padding: '9px 12px' }}>
-              <strong>{plannedOrders.length}</strong> s termínom
+              <strong>{calendarPlans.length}</strong> v pláne
             </div>
             <div style={{ border: '1px solid rgba(255,255,255,0.18)', borderRadius: 12, padding: '9px 12px', color: overdueOrders.length ? '#fecaca' : '#fff' }}>
               <strong>{overdueOrders.length}</strong> po termíne
             </div>
           </div>
+        </div>
+      </div>
+
+      <div style={{ ...boxStyle, padding: 14 }}>
+        <div style={{ fontWeight: 900, fontSize: 16, marginBottom: 12 }}>Naplánovať zákazku</div>
+        <div className="calendarPlanForm">
+          <div>
+            <label className="calendarPlanLabel" htmlFor="plan-order">Zákazka</label>
+            <select id="plan-order" className="calendarPlanInput" value={planOrderId} onChange={(event) => setPlanOrderId(event.target.value)}>
+              <option value="">Vyber zákazku</option>
+              {activeOrders.map((order) => (
+                <option key={order.id} value={order.id}>
+                  {order.nazov} - {getCustomerName(order.customer_id)}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="calendarPlanLabel" htmlFor="plan-date">Deň</label>
+            <input id="plan-date" className="calendarPlanInput" type="date" value={planDate} onChange={(event) => setPlanDate(event.target.value)} />
+          </div>
+
+          <div>
+            <label className="calendarPlanLabel" htmlFor="plan-start">Od</label>
+            <input id="plan-start" className="calendarPlanInput" type="time" value={planStart} onChange={(event) => setPlanStart(event.target.value)} />
+          </div>
+
+          <div>
+            <label className="calendarPlanLabel" htmlFor="plan-end">Do</label>
+            <input id="plan-end" className="calendarPlanInput" type="time" value={planEnd} onChange={(event) => setPlanEnd(event.target.value)} />
+          </div>
+
+          <div>
+            <label className="calendarPlanLabel" htmlFor="plan-note">Poznámka</label>
+            <input id="plan-note" className="calendarPlanInput" value={planNote} onChange={(event) => setPlanNote(event.target.value)} placeholder="Napr. montáž, obhliadka, servis" />
+          </div>
+
+          <button type="button" style={{ ...buttonStyle, alignSelf: 'end', minHeight: 42, background: '#84cc16', borderColor: '#65a30d', color: '#111827', fontWeight: 900 }} onClick={submitPlan}>
+            Pridať do plánu
+          </button>
         </div>
       </div>
 
@@ -135,6 +221,7 @@ export function CalendarView({ boxStyle, buttonStyle, getCustomerName, orders, s
             {calendarDays.map((day) => {
               const key = toDateKey(day)
               const dayOrders = ordersByDate[key] || []
+              const dayPlans = plansByDate[key] || []
               const inMonth = day.getMonth() === currentMonth.getMonth()
               const isToday = key === today
 
@@ -150,10 +237,30 @@ export function CalendarView({ boxStyle, buttonStyle, getCustomerName, orders, s
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 6, alignItems: 'center', marginBottom: 6 }}>
                     <strong style={{ color: isToday ? '#365314' : '#0f172a' }}>{day.getDate()}</strong>
-                    {dayOrders.length > 0 && <span style={{ fontSize: 11, color: '#64748b', fontWeight: 900 }}>{dayOrders.length}</span>}
+                    {dayPlans.length > 0 && <span style={{ fontSize: 11, color: '#64748b', fontWeight: 900 }}>{dayPlans.length}</span>}
                   </div>
 
                   <div style={{ display: 'grid', gap: 5 }}>
+                    {dayPlans.slice(0, 4).map((plan) => {
+                      const order = planOrderMap.get(plan.order_id)
+                      return (
+                        <div key={plan.id} className="calendarPlanItem">
+                          <button
+                            type="button"
+                            onClick={() => order && startEditOrder(order)}
+                            className="calendarPlanMain"
+                            title={order ? `${order.nazov} - ${getCustomerName(order.customer_id)}` : 'Neznáma zákazka'}
+                          >
+                            <span>{plan.start_time || '--:--'}{plan.end_time ? `-${plan.end_time}` : ''}</span>
+                            <strong>{order?.nazov || 'Neznáma zákazka'}</strong>
+                          </button>
+                          <button type="button" className="calendarPlanDelete" onClick={() => void deleteCalendarPlan(plan.id)} title="Zmazať z plánu">
+                            ×
+                          </button>
+                        </div>
+                      )
+                    })}
+                    {dayPlans.length > 4 && <div style={{ fontSize: 11, color: '#64748b', fontWeight: 800 }}>+ {dayPlans.length - 4} ďalšie</div>}
                     {dayOrders.slice(0, 3).map((order) => (
                       <button
                         key={order.id}
@@ -163,7 +270,7 @@ export function CalendarView({ boxStyle, buttonStyle, getCustomerName, orders, s
                         style={getStatusBadgeStyle(order.stav)}
                         title={`${order.nazov} - ${getCustomerName(order.customer_id)}`}
                       >
-                        {order.nazov}
+                        Termín: {order.nazov}
                       </button>
                     ))}
                     {dayOrders.length > 3 && <div style={{ fontSize: 11, color: '#64748b', fontWeight: 800 }}>+ {dayOrders.length - 3} ďalšie</div>}

@@ -56,6 +56,17 @@ export type WorkLog = {
   created_at?: string
 }
 
+export type CalendarPlan = {
+  id: string
+  user_id: string
+  order_id: string
+  plan_date: string
+  start_time: string | null
+  end_time: string | null
+  note: string | null
+  created_at?: string
+}
+
 export type Notice =
   | {
       type: 'success' | 'error'

@@ -165,6 +165,79 @@ export function DashboardStyles() {
           white-space: nowrap;
         }
 
+        .calendarPlanForm {
+          display: grid;
+          grid-template-columns: minmax(220px, 1.6fr) 150px 110px 110px minmax(180px, 1fr) auto;
+          gap: 10px;
+          align-items: end;
+        }
+
+        .calendarPlanLabel {
+          display: block;
+          font-size: 12px;
+          font-weight: 900;
+          color: #475569;
+          margin-bottom: 5px;
+        }
+
+        .calendarPlanInput {
+          width: 100%;
+          min-height: 42px;
+          border-radius: 10px;
+          border: 1px solid #cbd5e1;
+          background: #fff;
+          color: #0f172a;
+          padding: 8px 10px;
+          font-size: 14px;
+          font-weight: 700;
+        }
+
+        .calendarPlanItem {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) 22px;
+          gap: 3px;
+          align-items: stretch;
+        }
+
+        .calendarPlanMain {
+          min-width: 0;
+          border: 1px solid #bbf7d0;
+          background: #f0fdf4;
+          color: #14532d;
+          border-radius: 8px;
+          padding: 4px 6px;
+          cursor: pointer;
+          text-align: left;
+          display: grid;
+          gap: 1px;
+        }
+
+        .calendarPlanMain span {
+          font-size: 10px;
+          line-height: 1;
+          font-weight: 900;
+        }
+
+        .calendarPlanMain strong {
+          min-width: 0;
+          font-size: 11px;
+          line-height: 1.15;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .calendarPlanDelete {
+          border: 1px solid #fecaca;
+          background: #fff1f2;
+          color: #be123c;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 14px;
+          font-weight: 900;
+          line-height: 1;
+        }
+
         @media (max-width: 1150px) {
           .summaryGrid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -174,6 +247,10 @@ export function DashboardStyles() {
         @media (max-width: 900px) {
           .calendarLayout {
             grid-template-columns: 1fr;
+          }
+
+          .calendarPlanForm {
+            grid-template-columns: 1fr 1fr;
           }
 
           .orderDetailGrid {
@@ -292,6 +369,10 @@ export function DashboardStyles() {
           .calendarOrder {
             font-size: 10px;
             padding: 3px 4px;
+          }
+
+          .calendarPlanForm {
+            grid-template-columns: 1fr;
           }
         }
 

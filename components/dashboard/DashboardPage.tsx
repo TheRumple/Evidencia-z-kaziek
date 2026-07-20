@@ -12,7 +12,7 @@ import { CalendarView } from '@/components/dashboard/CalendarView'
 import { CustomersView } from '@/components/dashboard/CustomersView'
 import { OrdersView } from '@/components/dashboard/OrdersView'
 import { DashboardModals } from '@/components/dashboard/DashboardModals'
-import type { Customer, Employee, Notice, Order, OrderSubtask, WorkLog } from '@/lib/dashboard-types'
+import type { CalendarPlan, Customer, Employee, Notice, Order, OrderSubtask, WorkLog } from '@/lib/dashboard-types'
 import {
   AKTIVNE_STATUSY,
   STATUSY,
@@ -54,6 +54,7 @@ export default function DashboardPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [employees, setEmployees] = useState<Employee[]>([])
   const [workLogs, setWorkLogs] = useState<WorkLog[]>([])
+  const [calendarPlans, setCalendarPlans] = useState<CalendarPlan[]>([])
   const [subtasks, setSubtasks] = useState<OrderSubtask[]>([])
   const [newSubtaskText, setNewSubtaskText] = useState<Record<string, string>>({})
 
@@ -219,6 +220,7 @@ export default function DashboardPage() {
         loadOrders(currentUserId),
         loadEmployees(currentUserId),
         loadWorkLogs(currentUserId),
+        loadCalendarPlans(currentUserId),
         loadSubtasks(),
         loadPendingCount(),
       ])
@@ -286,6 +288,88 @@ export default function DashboardPage() {
     }
 
     setWorkLogs((data || []) as WorkLog[])
+  }
+
+  async function loadCalendarPlans(currentUserId: string) {
+    const { data, error } = await supabase
+      .from('calendar_plans')
+      .select('*')
+      .eq('user_id', currentUserId)
+      .order('plan_date', { ascending: true })
+      .order('start_time', { ascending: true })
+
+    if (error) {
+      if (error.code === '42P01') {
+        setCalendarPlans([])
+        setNotice({
+          type: 'error',
+          text: 'Chýba tabuľka calendar_plans. Spusť SQL skript scripts/supabase-calendar-plans.sql v Supabase.',
+        })
+        return
+      }
+
+      setNotice({ type: 'error', text: `Kalendár: ${error.message}` })
+      return
+    }
+
+    setCalendarPlans((data || []) as CalendarPlan[])
+  }
+
+  async function addCalendarPlan(input: {
+    orderId: string
+    planDate: string
+    startTime: string
+    endTime: string
+    note: string
+  }) {
+    if (!userId) return
+    if (!input.orderId || !input.planDate) {
+      setNotice({ type: 'error', text: 'Vyber zákazku a dátum plánu.' })
+      return
+    }
+
+    const { data, error } = await supabase
+      .from('calendar_plans')
+      .insert([
+        {
+          user_id: userId,
+          order_id: input.orderId,
+          plan_date: input.planDate,
+          start_time: input.startTime || null,
+          end_time: input.endTime || null,
+          note: input.note.trim() || null,
+        },
+      ])
+      .select()
+      .single()
+
+    if (error) {
+      setNotice({ type: 'error', text: `Plán sa neuložil: ${error.message}` })
+      return
+    }
+
+    setCalendarPlans((current) =>
+      [...current, data as CalendarPlan].sort((a, b) =>
+        `${a.plan_date} ${a.start_time || ''}`.localeCompare(`${b.plan_date} ${b.start_time || ''}`)
+      )
+    )
+    setNotice({ type: 'success', text: 'Plán bol uložený do kalendára.' })
+  }
+
+  async function deleteCalendarPlan(planId: string) {
+    if (!window.confirm('Zmazať túto položku z pracovného plánu?')) return
+
+    const previous = calendarPlans
+    setCalendarPlans((current) => current.filter((plan) => plan.id !== planId))
+
+    const { error } = await supabase.from('calendar_plans').delete().eq('id', planId).eq('user_id', userId)
+    if (error) {
+      setCalendarPlans(previous)
+      setNotice({ type: 'error', text: `Plán sa nezmazal: ${error.message}` })
+      return
+    }
+
+    setNotice({ type: 'success', text: 'Položka bola zmazaná z kalendára.' })
   }
 
   function resetAddCustomerForm() {
@@ -1896,8 +1980,11 @@ export default function DashboardPage() {
 
         {activeTab === 'kalendar' && (
           <CalendarView
+            addCalendarPlan={addCalendarPlan}
             boxStyle={boxStyle}
             buttonStyle={buttonStyle}
+            calendarPlans={calendarPlans}
+            deleteCalendarPlan={deleteCalendarPlan}
             getCustomerName={getCustomerName}
             orders={orders}
             startEditOrder={startEditOrder}
