@@ -59,7 +59,8 @@ export type WorkLog = {
 export type CalendarPlan = {
   id: string
   user_id: string
-  order_id: string
+  order_id: string | null
+  title: string | null
   plan_date: string
   start_time: string | null
   end_time: string | null

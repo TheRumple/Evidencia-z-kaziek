@@ -4,13 +4,20 @@
 create table if not exists public.calendar_plans (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
-  order_id uuid not null references public.orders(id) on delete cascade,
+  order_id uuid references public.orders(id) on delete cascade,
+  title text,
   plan_date date not null,
   start_time time,
   end_time time,
   note text,
   created_at timestamptz not null default now()
 );
+
+alter table public.calendar_plans
+  alter column order_id drop not null;
+
+alter table public.calendar_plans
+  add column if not exists title text;
 
 alter table public.calendar_plans enable row level security;
 

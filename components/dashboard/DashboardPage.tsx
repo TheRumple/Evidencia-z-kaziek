@@ -316,15 +316,21 @@ export default function DashboardPage() {
   }
 
   async function addCalendarPlan(input: {
-    orderId: string
+    orderId?: string
+    title?: string
     planDate: string
     startTime: string
     endTime: string
     note: string
   }) {
     if (!userId) return
-    if (!input.orderId || !input.planDate) {
-      setNotice({ type: 'error', text: 'Vyber zákazku a dátum plánu.' })
+    if (!input.planDate) {
+      setNotice({ type: 'error', text: 'Vyber dátum plánu.' })
+      return
+    }
+
+    if (!input.orderId && !input.title?.trim()) {
+      setNotice({ type: 'error', text: 'Vyber zákazku alebo zadaj názov úlohy.' })
       return
     }
 
@@ -333,7 +339,8 @@ export default function DashboardPage() {
       .insert([
         {
           user_id: userId,
-          order_id: input.orderId,
+          order_id: input.orderId || null,
+          title: input.title?.trim() || null,
           plan_date: input.planDate,
           start_time: input.startTime || null,
           end_time: input.endTime || null,

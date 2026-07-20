@@ -129,6 +129,13 @@ export function DashboardStyles() {
           align-items: start;
         }
 
+        .calendarPlannerLayout {
+          display: grid;
+          grid-template-columns: 310px minmax(0, 1fr);
+          gap: 12px;
+          align-items: start;
+        }
+
         .calendarGrid {
           display: grid;
           grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -168,6 +175,13 @@ export function DashboardStyles() {
         .calendarPlanForm {
           display: grid;
           grid-template-columns: minmax(220px, 1.6fr) 150px 110px 110px minmax(180px, 1fr) auto;
+          gap: 10px;
+          align-items: end;
+        }
+
+        .calendarTaskForm {
+          display: grid;
+          grid-template-columns: minmax(240px, 1.4fr) 150px 110px 110px minmax(180px, 1fr) auto;
           gap: 10px;
           align-items: end;
         }
@@ -238,6 +252,29 @@ export function DashboardStyles() {
           line-height: 1;
         }
 
+        .calendarPlanTask {
+          border-color: #bfdbfe;
+          background: #eff6ff;
+          color: #1e3a8a;
+        }
+
+        .calendarDraggableOrder {
+          border: 1px solid #e2e8f0;
+          background: #fff;
+          color: #0f172a;
+          border-radius: 12px;
+          padding: 10px;
+          cursor: grab;
+          text-align: left;
+          display: grid;
+          gap: 5px;
+          box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+        }
+
+        .calendarDraggableOrder:active {
+          cursor: grabbing;
+        }
+
         @media (max-width: 1150px) {
           .summaryGrid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -249,7 +286,15 @@ export function DashboardStyles() {
             grid-template-columns: 1fr;
           }
 
+          .calendarPlannerLayout {
+            grid-template-columns: 1fr;
+          }
+
           .calendarPlanForm {
+            grid-template-columns: 1fr 1fr;
+          }
+
+          .calendarTaskForm {
             grid-template-columns: 1fr 1fr;
           }
 
@@ -372,6 +417,10 @@ export function DashboardStyles() {
           }
 
           .calendarPlanForm {
+            grid-template-columns: 1fr;
+          }
+
+          .calendarTaskForm {
             grid-template-columns: 1fr;
           }
         }
