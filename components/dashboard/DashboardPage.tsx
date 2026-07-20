@@ -379,6 +379,35 @@ export default function DashboardPage() {
     setNotice({ type: 'success', text: 'Položka bola zmazaná z kalendára.' })
   }
 
+  async function updateCalendarPlan(planId: string, changes: Partial<Pick<CalendarPlan, 'plan_date' | 'start_time' | 'end_time' | 'note' | 'title'>>) {
+    const previous = calendarPlans
+    setCalendarPlans((current) =>
+      current
+        .map((plan) => (plan.id === planId ? { ...plan, ...changes } : plan))
+        .sort((a, b) => `${a.plan_date} ${a.start_time || ''}`.localeCompare(`${b.plan_date} ${b.start_time || ''}`))
+    )
+
+    const { error } = await supabase
+      .from('calendar_plans')
+      .update({
+        plan_date: changes.plan_date,
+        start_time: changes.start_time,
+        end_time: changes.end_time,
+        note: changes.note,
+        title: changes.title,
+      })
+      .eq('id', planId)
+      .eq('user_id', userId)
+
+    if (error) {
+      setCalendarPlans(previous)
+      setNotice({ type: 'error', text: `Plán sa neupravil: ${error.message}` })
+      return
+    }
+
+    setNotice({ type: 'success', text: 'Plán bol upravený.' })
+  }
+
   function resetAddCustomerForm() {
     setNazov('')
     setKontakt('')
@@ -1713,11 +1742,11 @@ export default function DashboardPage() {
   }, [orders, activeWorkLogOrderId])
 
   const boxStyle: CSSProperties = {
-    background: '#ffffff',
-    border: '1px solid #e2e8f0',
-    borderRadius: 12,
+    background: 'rgba(255,255,255,0.96)',
+    border: '1px solid rgba(226,232,240,0.86)',
+    borderRadius: 14,
     padding: 14,
-    boxShadow: '0 6px 18px rgba(15, 23, 42, 0.05)',
+    boxShadow: '0 16px 42px rgba(15, 23, 42, 0.10)',
   }
 
   const inputStyle: CSSProperties = {
@@ -1740,7 +1769,7 @@ export default function DashboardPage() {
 
   const buttonStyle: CSSProperties = {
     padding: '7px 10px',
-    borderRadius: 12,
+    borderRadius: 11,
     border: '1px solid #cbd5e1',
     background: '#fff',
     cursor: 'pointer',
@@ -1754,14 +1783,14 @@ export default function DashboardPage() {
 
   const primaryButtonStyle: CSSProperties = {
     ...buttonStyle,
-    background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-    color: '#fff',
-    border: '1px solid #1d4ed8',
+    background: 'linear-gradient(135deg, #84cc16 0%, #65a30d 100%)',
+    color: '#111827',
+    border: '1px solid #65a30d',
     minHeight: 40,
     padding: '9px 14px',
     fontSize: 13,
     fontWeight: 900,
-    boxShadow: '0 10px 24px rgba(37, 99, 235, 0.35)',
+    boxShadow: '0 12px 26px rgba(132, 204, 22, 0.28)',
   }
 
   const greenButtonStyle: CSSProperties = {
@@ -1789,8 +1818,8 @@ export default function DashboardPage() {
     padding: '7px 10px',
     borderRadius: 12,
     border: active ? '1px solid #0f172a' : '1px solid #cbd5e1',
-    background: active ? '#0f172a' : '#fff',
-    color: active ? '#fff' : '#0f172a',
+    background: active ? '#84cc16' : '#fff',
+    color: active ? '#111827' : '#0f172a',
     cursor: 'pointer',
     fontWeight: 700,
   })
@@ -1816,7 +1845,8 @@ export default function DashboardPage() {
     <div
       style={{
         minHeight: '100vh',
-        background: 'linear-gradient(180deg, #f8fafc 0%, #eef4ff 100%)',
+        background:
+          'radial-gradient(circle at 74% -10%, rgba(132,204,22,0.18), transparent 30%), linear-gradient(180deg, #060a12 0%, #111827 280px, #eef4ff 281px, #f8fafc 100%)',
         padding: 12,
         fontFamily: 'Arial, Helvetica, sans-serif',
         color: '#0f172a',
@@ -1829,7 +1859,7 @@ export default function DashboardPage() {
               ...boxStyle,
               marginBottom: 12,
               padding: 18,
-              background: 'linear-gradient(135deg, #0f172a 0%, #243447 100%)',
+              background: 'linear-gradient(135deg, #0b1120 0%, #1f2937 74%, #365314 100%)',
               color: '#fff',
               border: 'none',
             }}
@@ -1979,6 +2009,7 @@ export default function DashboardPage() {
             onBackToOrders={() => setActiveTab('zakazky')}
             orders={orders}
             startEditOrder={startEditOrder}
+            updateCalendarPlan={updateCalendarPlan}
           />
         )}
 

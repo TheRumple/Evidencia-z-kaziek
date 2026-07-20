@@ -20,6 +20,7 @@ type CalendarViewProps = {
   onBackToOrders: () => void
   orders: Order[]
   startEditOrder: (order: Order) => void
+  updateCalendarPlan: (planId: string, changes: Partial<Pick<CalendarPlan, 'plan_date' | 'start_time' | 'end_time' | 'note' | 'title'>>) => Promise<void>
 }
 
 const monthNames = ['Január', 'Február', 'Marec', 'Apríl', 'Máj', 'Jún', 'Júl', 'August', 'September', 'Október', 'November', 'December']
@@ -42,6 +43,10 @@ function buildCalendarDays(monthDate: Date) {
   })
 }
 
+function addMonths(date: Date, offset: number) {
+  return new Date(date.getFullYear(), date.getMonth() + offset, 1)
+}
+
 export function CalendarView({
   addCalendarPlan,
   boxStyle,
@@ -52,16 +57,18 @@ export function CalendarView({
   onBackToOrders,
   orders,
   startEditOrder,
+  updateCalendarPlan,
 }: CalendarViewProps) {
   const today = getTodayDate()
+  const [currentMonth, setCurrentMonth] = useState(() => new Date())
+  const [selectedDate, setSelectedDate] = useState(today)
   const [planDate, setPlanDate] = useState(today)
   const [planStart, setPlanStart] = useState('')
   const [planEnd, setPlanEnd] = useState('')
   const [taskTitle, setTaskTitle] = useState('')
   const [taskNote, setTaskNote] = useState('')
   const [dragOverDate, setDragOverDate] = useState('')
-
-  const currentMonth = new Date()
+  const [editingPlanId, setEditingPlanId] = useState('')
   const calendarDays = buildCalendarDays(currentMonth)
   const activeOrders = orders.filter((order) => !['odovzdana', 'stornovana'].includes(order.stav))
   const orderMap = useMemo(() => new Map(orders.map((order) => [order.id, order])), [orders])
@@ -96,15 +103,74 @@ export function CalendarView({
   }
 
   function onOrderDragStart(event: DragEvent<HTMLButtonElement>, orderId: string) {
-    event.dataTransfer.setData('text/plain', orderId)
+    event.dataTransfer.setData('application/x-itspot-order', orderId)
     event.dataTransfer.effectAllowed = 'copy'
+  }
+
+  function onPlanDragStart(event: DragEvent<HTMLDivElement>, planId: string) {
+    event.dataTransfer.setData('application/x-itspot-plan', planId)
+    event.dataTransfer.effectAllowed = 'move'
   }
 
   function onDayDrop(event: DragEvent<HTMLDivElement>, dateKey: string) {
     event.preventDefault()
     setDragOverDate('')
-    const orderId = event.dataTransfer.getData('text/plain')
+    const planId = event.dataTransfer.getData('application/x-itspot-plan')
+    if (planId) {
+      void updateCalendarPlan(planId, { plan_date: dateKey })
+      return
+    }
+
+    const orderId = event.dataTransfer.getData('application/x-itspot-order') || event.dataTransfer.getData('text/plain')
     if (orderId) void addOrderToDate(orderId, dateKey)
+  }
+
+  function startEditPlan(plan: CalendarPlan) {
+    const order = plan.order_id ? orderMap.get(plan.order_id) : null
+    setEditingPlanId(plan.id)
+    setTaskTitle(plan.title || order?.nazov || '')
+    setPlanDate(String(plan.plan_date).slice(0, 10))
+    setPlanStart(plan.start_time || '')
+    setPlanEnd(plan.end_time || '')
+    setTaskNote(plan.note || '')
+  }
+
+  async function saveEditedPlan() {
+    if (!editingPlanId) return
+    await updateCalendarPlan(editingPlanId, {
+      plan_date: planDate,
+      start_time: planStart || null,
+      end_time: planEnd || null,
+      title: taskTitle.trim() || null,
+      note: taskNote.trim() || null,
+    })
+    setEditingPlanId('')
+    setTaskTitle('')
+    setTaskNote('')
+  }
+
+  const selectedPlans = plansByDate[selectedDate] || []
+
+  function renderPlan(plan: CalendarPlan) {
+    const order = plan.order_id ? orderMap.get(plan.order_id) : null
+    const title = order?.nazov || plan.title || 'Úloha'
+    return (
+      <div key={plan.id} className="calendarPlanItem" draggable onDragStart={(event) => onPlanDragStart(event, plan.id)}>
+        <button
+          type="button"
+          onClick={() => startEditPlan(plan)}
+          onDoubleClick={() => order && startEditOrder(order)}
+          className={order ? 'calendarPlanMain' : 'calendarPlanMain calendarPlanTask'}
+          title={order ? `${order.nazov} - ${getCustomerName(order.customer_id)}` : plan.note || title}
+        >
+          <span>{plan.start_time || '--:--'}{plan.end_time ? `-${plan.end_time}` : ''}</span>
+          <strong>{title}</strong>
+        </button>
+        <button type="button" className="calendarPlanDelete" onClick={() => void deleteCalendarPlan(plan.id)} title="Zmazať z plánu">
+          ×
+        </button>
+      </div>
+    )
   }
 
   return (
@@ -130,6 +196,15 @@ export function CalendarView({
           </div>
 
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button type="button" onClick={() => setCurrentMonth((month) => addMonths(month, -1))} style={{ ...buttonStyle, background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.2)', color: '#fff', fontWeight: 900 }}>
+              Predošlý
+            </button>
+            <button type="button" onClick={() => { const now = new Date(); setCurrentMonth(now); setSelectedDate(today); setPlanDate(today) }} style={{ ...buttonStyle, background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.2)', color: '#fff', fontWeight: 900 }}>
+              Dnes
+            </button>
+            <button type="button" onClick={() => setCurrentMonth((month) => addMonths(month, 1))} style={{ ...buttonStyle, background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.2)', color: '#fff', fontWeight: 900 }}>
+              Ďalší
+            </button>
             <button type="button" onClick={onBackToOrders} style={{ ...buttonStyle, background: '#fff', borderColor: '#fff', color: '#0f172a', fontWeight: 900 }}>
               Späť na zákazky
             </button>
@@ -163,9 +238,14 @@ export function CalendarView({
             <label className="calendarPlanLabel" htmlFor="task-note">Poznámka</label>
             <input id="task-note" className="calendarPlanInput" value={taskNote} onChange={(event) => setTaskNote(event.target.value)} />
           </div>
-          <button type="button" style={{ ...buttonStyle, alignSelf: 'end', minHeight: 42, background: '#84cc16', borderColor: '#65a30d', color: '#111827', fontWeight: 900 }} onClick={addTask}>
-            Pridať úlohu
+          <button type="button" style={{ ...buttonStyle, alignSelf: 'end', minHeight: 42, background: editingPlanId ? '#0f172a' : '#84cc16', borderColor: editingPlanId ? '#0f172a' : '#65a30d', color: editingPlanId ? '#fff' : '#111827', fontWeight: 900 }} onClick={editingPlanId ? saveEditedPlan : addTask}>
+            {editingPlanId ? 'Uložiť zmenu' : 'Pridať úlohu'}
           </button>
+          {editingPlanId && (
+            <button type="button" style={{ ...buttonStyle, alignSelf: 'end', minHeight: 42 }} onClick={() => { setEditingPlanId(''); setTaskTitle(''); setTaskNote('') }}>
+              Zrušiť úpravu
+            </button>
+          )}
         </div>
       </div>
 
@@ -214,6 +294,10 @@ export function CalendarView({
                 <div
                   key={key}
                   className="calendarDay"
+                  onClick={() => {
+                    setSelectedDate(key)
+                    setPlanDate(key)
+                  }}
                   onDragOver={(event) => {
                     event.preventDefault()
                     setDragOverDate(key)
@@ -222,8 +306,8 @@ export function CalendarView({
                   onDrop={(event) => onDayDrop(event, key)}
                   style={{
                     opacity: inMonth ? 1 : 0.42,
-                    borderColor: isDragOver ? '#65a30d' : isToday ? '#84cc16' : '#e2e8f0',
-                    background: isDragOver ? '#ecfccb' : isToday ? '#f7fee7' : '#fff',
+                    borderColor: isDragOver ? '#65a30d' : key === selectedDate ? '#2563eb' : isToday ? '#84cc16' : '#e2e8f0',
+                    background: isDragOver ? '#ecfccb' : key === selectedDate ? '#eff6ff' : isToday ? '#f7fee7' : '#fff',
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 6, alignItems: 'center', marginBottom: 6 }}>
@@ -232,26 +316,7 @@ export function CalendarView({
                   </div>
 
                   <div style={{ display: 'grid', gap: 5 }}>
-                    {dayPlans.slice(0, 5).map((plan) => {
-                      const order = plan.order_id ? orderMap.get(plan.order_id) : null
-                      const title = order?.nazov || plan.title || 'Úloha'
-                      return (
-                        <div key={plan.id} className="calendarPlanItem">
-                          <button
-                            type="button"
-                            onClick={() => order && startEditOrder(order)}
-                            className={order ? 'calendarPlanMain' : 'calendarPlanMain calendarPlanTask'}
-                            title={order ? `${order.nazov} - ${getCustomerName(order.customer_id)}` : plan.note || title}
-                          >
-                            <span>{plan.start_time || '--:--'}{plan.end_time ? `-${plan.end_time}` : ''}</span>
-                            <strong>{title}</strong>
-                          </button>
-                          <button type="button" className="calendarPlanDelete" onClick={() => void deleteCalendarPlan(plan.id)} title="Zmazať z plánu">
-                            ×
-                          </button>
-                        </div>
-                      )
-                    })}
+                    {dayPlans.slice(0, 5).map((plan) => renderPlan(plan))}
                     {dayPlans.length > 5 && <div style={{ fontSize: 11, color: '#64748b', fontWeight: 800 }}>+ {dayPlans.length - 5} ďalšie</div>}
                   </div>
                 </div>
@@ -259,6 +324,42 @@ export function CalendarView({
             })}
           </div>
         </div>
+      </div>
+
+      <div style={{ ...boxStyle, padding: 14 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginBottom: 10 }}>
+          <div>
+            <div style={{ fontWeight: 900, fontSize: 16 }}>Detail dňa</div>
+            <div style={{ color: '#64748b', fontSize: 13 }}>{formatDate(selectedDate)}</div>
+          </div>
+          <button type="button" style={buttonStyle} onClick={() => setPlanDate(selectedDate)}>
+            Pridať úlohu na tento deň
+          </button>
+        </div>
+        {selectedPlans.length === 0 ? (
+          <div style={{ color: '#64748b', fontSize: 14 }}>Na tento deň zatiaľ nie je nič naplánované.</div>
+        ) : (
+          <div style={{ display: 'grid', gap: 8 }}>
+            {selectedPlans.map((plan) => {
+              const order = plan.order_id ? orderMap.get(plan.order_id) : null
+              return (
+                <div key={plan.id} style={{ border: '1px solid #e2e8f0', borderRadius: 12, padding: 10, background: '#fff' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+                    <strong>{order?.nazov || plan.title || 'Úloha'}</strong>
+                    <span style={{ color: '#64748b', fontWeight: 900 }}>{plan.start_time || '--:--'}{plan.end_time ? ` - ${plan.end_time}` : ''}</span>
+                  </div>
+                  {order && <div style={{ color: '#64748b', fontSize: 13, marginTop: 4 }}>{getCustomerName(order.customer_id)}</div>}
+                  {plan.note && <div style={{ color: '#334155', fontSize: 13, marginTop: 6 }}>{plan.note}</div>}
+                  <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+                    <button type="button" style={buttonStyle} onClick={() => startEditPlan(plan)}>Upraviť</button>
+                    {order && <button type="button" style={buttonStyle} onClick={() => startEditOrder(order)}>Otvoriť zákazku</button>}
+                    <button type="button" style={{ ...buttonStyle, color: '#be123c' }} onClick={() => void deleteCalendarPlan(plan.id)}>Zmazať</button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
     </div>
   )

@@ -332,14 +332,14 @@ ITspot s.r.o.`
   }
 
   return (
-    <div style={{ fontFamily: 'sans-serif', background: '#f1f5f9', minHeight: '100vh', padding: '40px 20px' }}>
+    <div style={{ fontFamily: 'sans-serif', background: 'linear-gradient(180deg, #0b1120 0%, #111827 42%, #eef4ff 42%, #f8fafc 100%)', minHeight: '100vh', padding: '40px 20px' }}>
       <div style={{ maxWidth: 1000, margin: '0 auto' }}>
         
         {/* Hlavička adminu s navigačnými prvkami */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28, flexWrap: 'wrap', gap: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28, flexWrap: 'wrap', gap: 16, color: '#fff' }}>
           <div>
-            <h1 style={{ fontSize: 28, fontWeight: 800, color: '#0f172a', margin: 0 }}>📋 Nové požiadavky od klientov</h1>
-            <p style={{ color: '#64748b', margin: '4px 0 0 0', fontSize: 14 }}>Po schválení alebo zamietnutí sa otvorí pripravený email v poštovom klientovi.</p>
+            <h1 style={{ fontSize: 28, fontWeight: 900, color: '#fff', margin: 0 }}>Nové požiadavky od klientov</h1>
+            <p style={{ color: 'rgba(255,255,255,0.72)', margin: '4px 0 0 0', fontSize: 14 }}>Po schválení alebo zamietnutí sa otvorí pripravený email v poštovom klientovi.</p>
           </div>
           
           {/* Akčné tlačidlá vpravo hore */}
@@ -377,7 +377,7 @@ ITspot s.r.o.`
             </div>
           ) : (
             requests.map((req) => (
-              <div key={req.id} style={{ background: '#fff', borderRadius: 16, padding: 24, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
+              <div key={req.id} style={{ background: '#fff', borderRadius: 16, padding: 24, boxShadow: '0 18px 42px rgba(15,23,42,0.12)', border: '1px solid #e2e8f0' }}>
                 
                 {/* Horný infopanel požiadavky */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, borderBottom: '1px solid #f1f5f9', paddingBottom: 14, marginBottom: 14 }}>
@@ -401,6 +401,25 @@ ITspot s.r.o.`
                 <p style={{ fontSize: 14, color: '#475569', margin: '0 0 20px 0', whiteSpace: 'pre-wrap', lineHeight: 1.5, background: '#f8fafc', padding: 14, borderRadius: 8, border: '1px solid #f1f5f9' }}>
                   {req.popis}
                 </p>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10, marginBottom: 16 }}>
+                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: 10 }}>
+                    <div style={{ color: '#64748b', fontSize: 12, fontWeight: 900 }}>Meno</div>
+                    <strong>{getRequestName(req) || '-'}</strong>
+                  </div>
+                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: 10 }}>
+                    <div style={{ color: '#64748b', fontSize: 12, fontWeight: 900 }}>Firma</div>
+                    <strong>{getRequestCompany(req) || '-'}</strong>
+                  </div>
+                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: 10 }}>
+                    <div style={{ color: '#64748b', fontSize: 12, fontWeight: 900 }}>Telefón</div>
+                    <strong>{getRequestPhone(req) || '-'}</strong>
+                  </div>
+                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: 10 }}>
+                    <div style={{ color: '#64748b', fontSize: 12, fontWeight: 900 }}>Email</div>
+                    <strong style={{ wordBreak: 'break-word' }}>{getRequestEmail(req) || '-'}</strong>
+                  </div>
+                </div>
 
                 <div style={{ marginBottom: 16, maxWidth: 360 }}>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 800, color: '#475569', marginBottom: 6 }}>
