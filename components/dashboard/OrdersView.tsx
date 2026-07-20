@@ -77,7 +77,16 @@ export function OrdersView({
 }: OrdersViewProps) {
   return (
     <>
-      <div style={{ ...boxStyle, marginBottom: 8, padding: 12 }}>
+      <div className="ordersControlPanel" style={{ ...boxStyle, marginBottom: 12, padding: 16 }}>
+        <div className="ordersControlHeader">
+          <div>
+            <div className="ordersEyebrow">Pracovný zoznam</div>
+            <h2>Aktívne zákazky</h2>
+            <p>Rýchlo nájdi zákazku, pozri stav a otvor výkaz alebo poznámku.</p>
+          </div>
+          <div className="ordersVisibleBadge">{filteredOrders.length} zobrazených</div>
+        </div>
+
         <div className="filtersGrid filtersGridOrders">
           <div>
             <label style={labelStyle} htmlFor="search-orders">
@@ -139,72 +148,26 @@ export function OrdersView({
         </div>
       </div>
 
-      <div style={boxStyle}>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            gap: 12,
-            alignItems: 'center',
-            marginBottom: 12,
-            flexWrap: 'wrap',
-          }}
-        >
-          <div style={{ fontWeight: 800, fontSize: 16 }}>Servisné zákazky</div>
-          <div style={{ color: '#475569', fontWeight: 700 }}>Zobrazené: {filteredOrders.length}</div>
-        </div>
-
+      <div className="ordersBoard" style={boxStyle}>
         {filteredOrders.length === 0 && (
-          <div
-            style={{
-              padding: 18,
-              borderRadius: 16,
-              border: '1px dashed #cbd5e1',
-              background: '#f8fafc',
-              textAlign: 'center',
-              color: '#64748b',
-            }}
-          >
-            Žiadne zákazky na zobrazenie.
+          <div className="ordersEmptyState">
+            <strong>Žiadne zákazky na zobrazenie.</strong>
+            <span>Skús upraviť filter alebo vytvoriť novú zákazku.</span>
           </div>
         )}
 
-        <div style={{ display: 'grid', gap: 10 }}>
+        <div className="ordersSectionStack">
           {groupedOrders.map((section) => (
-            <div key={section.key}>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  gap: 12,
-                  alignItems: 'center',
-                  marginBottom: 8,
-                  flexWrap: 'wrap',
-                }}
-              >
+            <section className={`ordersSection ordersSection-${section.key}`} key={section.key}>
+              <div className="ordersSectionHeader">
                 <div>
-                  <div style={{ fontSize: 15, fontWeight: 900 }}>{section.title}</div>
-                  <div style={{ color: '#64748b', fontSize: 12, marginTop: 2 }}>{section.description}</div>
+                  <h3>{section.title}</h3>
+                  <p>{section.description}</p>
                 </div>
-                <div
-                  style={{
-                    minWidth: 28,
-                    height: 28,
-                    borderRadius: 999,
-                    background: '#f8fafc',
-                    border: '1px solid #e2e8f0',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: 900,
-                    color: '#334155',
-                  }}
-                >
-                  {section.items.length}
-                </div>
+                <div className="ordersSectionCount">{section.items.length}</div>
               </div>
 
-              <div style={{ display: 'grid', gap: 10 }}>
+              <div className="ordersCardsStack">
                 {section.items.map((order) => (
                   <OrderCard
                     key={order.id}
@@ -231,7 +194,7 @@ export function OrdersView({
                   />
                 ))}
               </div>
-            </div>
+            </section>
           ))}
         </div>
       </div>

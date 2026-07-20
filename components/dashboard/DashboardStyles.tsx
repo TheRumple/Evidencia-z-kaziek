@@ -65,6 +65,190 @@ export function DashboardStyles() {
           grid-template-columns: 2fr 1.2fr 1fr 1.2fr;
         }
 
+        .ordersControlPanel {
+          background: linear-gradient(135deg, #0b1120 0%, #182235 68%, #243b12 100%) !important;
+          border: 1px solid rgba(148, 163, 184, 0.24) !important;
+          color: #fff;
+          box-shadow: 0 20px 46px rgba(15, 23, 42, 0.18) !important;
+        }
+
+        .ordersControlHeader {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+          gap: 16px;
+          margin-bottom: 14px;
+          flex-wrap: wrap;
+        }
+
+        .ordersControlHeader h2 {
+          margin: 0;
+          color: #fff;
+          font-size: 24px;
+          line-height: 1.08;
+          font-weight: 900;
+        }
+
+        .ordersControlHeader p {
+          margin: 5px 0 0;
+          color: rgba(226, 232, 240, 0.78);
+          font-size: 13px;
+          font-weight: 700;
+        }
+
+        .ordersEyebrow {
+          color: #a3e635;
+          font-size: 11px;
+          font-weight: 900;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          margin-bottom: 6px;
+        }
+
+        .ordersVisibleBadge {
+          border: 1px solid rgba(163, 230, 53, 0.45);
+          background: rgba(132, 204, 22, 0.14);
+          color: #ecfccb;
+          border-radius: 999px;
+          padding: 7px 11px;
+          font-size: 12px;
+          font-weight: 900;
+          white-space: nowrap;
+        }
+
+        .ordersControlPanel label {
+          color: rgba(226, 232, 240, 0.86) !important;
+          font-weight: 900 !important;
+        }
+
+        .ordersControlPanel input,
+        .ordersControlPanel select {
+          background: rgba(15, 23, 42, 0.62) !important;
+          border-color: rgba(148, 163, 184, 0.42) !important;
+          color: #fff !important;
+          min-height: 42px;
+        }
+
+        .ordersControlPanel input::placeholder {
+          color: rgba(203, 213, 225, 0.62);
+        }
+
+        .ordersBoard {
+          padding: 0 !important;
+          overflow: hidden;
+          background: rgba(255, 255, 255, 0.98) !important;
+        }
+
+        .ordersSectionStack {
+          display: grid;
+          gap: 0;
+        }
+
+        .ordersSection {
+          padding: 14px;
+          border-top: 1px solid #e2e8f0;
+        }
+
+        .ordersSection:first-child {
+          border-top: none;
+        }
+
+        .ordersSectionHeader {
+          display: flex;
+          justify-content: space-between;
+          gap: 12px;
+          align-items: center;
+          margin-bottom: 10px;
+          border: 1px solid #e2e8f0;
+          background: linear-gradient(135deg, #f8fafc 0%, #eef6ff 100%);
+          border-radius: 14px;
+          padding: 10px 12px;
+        }
+
+        .ordersSectionHeader h3 {
+          margin: 0;
+          font-size: 15px;
+          line-height: 1.1;
+          font-weight: 900;
+          color: #0f172a;
+        }
+
+        .ordersSectionHeader p {
+          margin: 3px 0 0;
+          color: #64748b;
+          font-size: 12px;
+          font-weight: 700;
+        }
+
+        .ordersSectionCount {
+          min-width: 32px;
+          height: 32px;
+          border-radius: 999px;
+          background: #0f172a;
+          color: #fff;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 900;
+          box-shadow: 0 8px 18px rgba(15, 23, 42, 0.16);
+        }
+
+        .ordersSection-overdue .ordersSectionHeader {
+          background: linear-gradient(135deg, #fff1f2 0%, #fff7ed 100%);
+          border-color: #fecdd3;
+        }
+
+        .ordersSection-pripnute .ordersSectionHeader {
+          background: linear-gradient(135deg, #ecfccb 0%, #f7fee7 100%);
+          border-color: #bef264;
+        }
+
+        .ordersCardsStack {
+          display: grid;
+          gap: 10px;
+        }
+
+        .ordersEmptyState {
+          margin: 14px;
+          padding: 22px;
+          border-radius: 16px;
+          border: 1px dashed #cbd5e1;
+          background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+          text-align: center;
+          color: #64748b;
+          display: grid;
+          gap: 5px;
+        }
+
+        .ordersEmptyState strong {
+          color: #0f172a;
+          font-size: 15px;
+        }
+
+        .orderCard {
+          transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+        }
+
+        .orderCard:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 16px 32px rgba(15, 23, 42, 0.12) !important;
+        }
+
+        .orderCardTitle {
+          font-weight: 900;
+          font-size: 15px;
+          line-height: 1.14;
+          color: #0f172a;
+          overflow-wrap: anywhere;
+        }
+
+        .orderCardCustomer {
+          margin-top: 4px;
+          color: #475569;
+          font-size: 13px;
+          font-weight: 800;
+        }
+
         .modalGrid {
           display: grid;
           grid-template-columns: 1fr 1fr;
@@ -82,15 +266,15 @@ export function DashboardStyles() {
           grid-template-columns: minmax(260px, 1fr) auto;
           align-items: center;
           gap: 12px;
-          padding: 10px 12px;
+          padding: 12px 14px;
         }
 
         .orderRowMeta {
-          display: grid;
-          grid-template-columns: repeat(5, auto);
+          display: flex;
           align-items: center;
           gap: 8px;
           justify-content: flex-end;
+          flex-wrap: wrap;
         }
 
         .orderMetaChip {
@@ -105,6 +289,7 @@ export function DashboardStyles() {
           justify-content: center;
           flex-direction: column;
           gap: 2px;
+          box-shadow: 0 4px 10px rgba(15, 23, 42, 0.04);
         }
 
         .orderMetaLabel {
@@ -367,15 +552,35 @@ export function DashboardStyles() {
             padding: 8px 10px !important;
           }
 
+          .ordersControlPanel {
+            padding: 13px !important;
+          }
+
+          .ordersControlHeader h2 {
+            font-size: 20px;
+          }
+
+          .ordersControlHeader p {
+            font-size: 12px;
+          }
+
+          .ordersSection {
+            padding: 10px;
+          }
+
+          .ordersSectionHeader {
+            align-items: flex-start;
+            padding: 9px 10px;
+          }
+
           .orderRowSummary {
-            padding: 7px;
-            gap: 5px;
+            padding: 9px;
+            gap: 8px;
           }
 
           .orderRowMeta {
             width: 100%;
             gap: 6px;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
           }
 
           .orderMetaChip {

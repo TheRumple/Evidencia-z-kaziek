@@ -60,12 +60,15 @@ export function OrderCard({
 
   return (
     <div
+      className={`orderCard ${expanded ? 'orderCardExpanded' : ''} ${overdue ? 'orderCardOverdue' : ''}`}
       style={{
-        borderRadius: 12,
+        borderRadius: 14,
         border: overdue ? '1px solid #fecdd3' : '1px solid #e2e8f0',
-        background: overdue ? '#fff7f7' : '#ffffff',
+        background: overdue
+          ? 'linear-gradient(135deg, #fff7f7 0%, #ffffff 76%)'
+          : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
         overflow: 'hidden',
-        boxShadow: expanded ? '0 12px 26px rgba(15, 23, 42, 0.08)' : '0 4px 12px rgba(15, 23, 42, 0.04)',
+        boxShadow: expanded ? '0 18px 34px rgba(15, 23, 42, 0.12)' : '0 7px 18px rgba(15, 23, 42, 0.06)',
         ...getStatusCardBorder(order.stav),
       }}
     >
@@ -101,15 +104,16 @@ export function OrderCard({
               title={isPinned ? 'Odopnúť zákazku' : 'Pripnúť zákazku'}
               style={{
                 border: '1px solid #cbd5e1',
-                background: isPinned ? '#fff7ed' : '#fff',
-                color: isPinned ? '#c2410c' : '#64748b',
-                width: 30,
-                height: 30,
-                minWidth: 30,
-                borderRadius: 9,
+                background: isPinned ? '#84cc16' : '#fff',
+                color: isPinned ? '#111827' : '#64748b',
+                width: 34,
+                height: 34,
+                minWidth: 34,
+                borderRadius: 11,
                 cursor: 'pointer',
                 fontSize: 16,
                 fontWeight: 800,
+                boxShadow: isPinned ? '0 8px 18px rgba(132, 204, 22, 0.26)' : 'none',
               }}
             >
               {isPinned ? '★' : '☆'}
@@ -117,7 +121,7 @@ export function OrderCard({
 
             <div style={{ minWidth: 0 }}>
               <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-                <div style={{ fontWeight: 900, fontSize: 14, lineHeight: 1.1 }}>{order.nazov}</div>
+                <div className="orderCardTitle">{order.nazov}</div>
                 {overdue && (
                   <span
                     style={{
@@ -149,7 +153,7 @@ export function OrderCard({
                   </span>
                 )}
               </div>
-              <div style={{ marginTop: 3, color: '#475569', fontSize: 13 }}>{getCustomerName(order.customer_id)}</div>
+              <div className="orderCardCustomer">{getCustomerName(order.customer_id)}</div>
             </div>
           </div>
 
@@ -167,10 +171,11 @@ export function OrderCard({
             </div>
 
             <div
+              className="orderExpandIcon"
               style={{
-                width: 30,
-                height: 30,
-                borderRadius: 9,
+                width: 34,
+                height: 34,
+                borderRadius: 11,
                 border: '1px solid #cbd5e1',
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -192,7 +197,7 @@ export function OrderCard({
           style={{
             padding: 10,
             borderTop: '1px solid #e2e8f0',
-            background: '#f8fafc',
+            background: 'linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)',
           }}
         >
           <div className="orderDetailGrid">
