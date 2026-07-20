@@ -8,6 +8,7 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { BrandLogo } from '@/components/BrandLogo'
 import { DashboardStyles } from '@/components/dashboard/DashboardStyles'
+import { CalendarView } from '@/components/dashboard/CalendarView'
 import { CustomersView } from '@/components/dashboard/CustomersView'
 import { OrdersView } from '@/components/dashboard/OrdersView'
 import { DashboardModals } from '@/components/dashboard/DashboardModals'
@@ -56,7 +57,7 @@ export default function DashboardPage() {
   const [subtasks, setSubtasks] = useState<OrderSubtask[]>([])
   const [newSubtaskText, setNewSubtaskText] = useState<Record<string, string>>({})
 
-  const [activeTab, setActiveTab] = useState<'zakazky' | 'zakaznici'>('zakazky')
+  const [activeTab, setActiveTab] = useState<'zakazky' | 'kalendar' | 'zakaznici'>('zakazky')
   const [expandedOrderIds, setExpandedOrderIds] = useState<string[]>([])
   const [pinnedOrderIds, setPinnedOrderIds] = useState<string[]>([])
 
@@ -1893,6 +1894,16 @@ export default function DashboardPage() {
           />
         )}
 
+        {activeTab === 'kalendar' && (
+          <CalendarView
+            boxStyle={boxStyle}
+            buttonStyle={buttonStyle}
+            getCustomerName={getCustomerName}
+            orders={orders}
+            startEditOrder={startEditOrder}
+          />
+        )}
+
         <div
           style={{
             ...boxStyle,
@@ -1919,6 +1930,10 @@ export default function DashboardPage() {
 
             <button type="button" style={tabButton(activeTab === 'zakazky')} onClick={() => setActiveTab('zakazky')}>
               Zákazky
+            </button>
+
+            <button type="button" style={tabButton(activeTab === 'kalendar')} onClick={() => setActiveTab('kalendar')}>
+              Kalendár
             </button>
 
             <button type="button" style={tabButton(activeTab === 'zakaznici')} onClick={() => setActiveTab('zakaznici')}>

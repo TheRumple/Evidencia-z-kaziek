@@ -122,6 +122,49 @@ export function DashboardStyles() {
           gap: 12px;
         }
 
+        .calendarLayout {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) 320px;
+          gap: 12px;
+          align-items: start;
+        }
+
+        .calendarGrid {
+          display: grid;
+          grid-template-columns: repeat(7, minmax(0, 1fr));
+          gap: 8px;
+        }
+
+        .calendarWeekDays {
+          margin-bottom: 8px;
+          color: #64748b;
+          font-size: 12px;
+          font-weight: 900;
+          text-align: center;
+        }
+
+        .calendarDay {
+          min-height: 116px;
+          border: 1px solid #e2e8f0;
+          border-radius: 12px;
+          padding: 8px;
+          overflow: hidden;
+        }
+
+        .calendarOrder {
+          width: 100%;
+          border-radius: 8px;
+          padding: 4px 6px;
+          font-size: 11px;
+          font-weight: 900;
+          line-height: 1.2;
+          cursor: pointer;
+          text-align: left;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
         @media (max-width: 1150px) {
           .summaryGrid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -129,6 +172,10 @@ export function DashboardStyles() {
         }
 
         @media (max-width: 900px) {
+          .calendarLayout {
+            grid-template-columns: 1fr;
+          }
+
           .orderDetailGrid {
             grid-template-columns: 1fr;
           }
@@ -230,6 +277,21 @@ export function DashboardStyles() {
           .mobileActionRow {
             grid-template-columns: 1fr 1fr;
             gap: 8px;
+          }
+
+          .calendarGrid {
+            gap: 5px;
+          }
+
+          .calendarDay {
+            min-height: 82px;
+            padding: 5px;
+            border-radius: 9px;
+          }
+
+          .calendarOrder {
+            font-size: 10px;
+            padding: 3px 4px;
           }
         }
 
