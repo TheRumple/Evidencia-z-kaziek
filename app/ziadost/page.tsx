@@ -19,7 +19,6 @@ export default function PublicRequestPage() {
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
   const [requestType, setRequestType] = useState('nova_instalacia')
-  const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [deadline, setDeadline] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -29,14 +28,15 @@ export default function PublicRequestPage() {
     event.preventDefault()
     setMessage(null)
 
-    if (!name.trim() || !phone.trim() || !email.trim() || !title.trim() || !description.trim()) {
-      setMessage({ type: 'error', text: 'Vyplňte prosím meno, telefón, email, názov a popis požiadavky.' })
+    if (!name.trim() || !phone.trim() || !email.trim() || !description.trim()) {
+      setMessage({ type: 'error', text: 'Vyplňte prosím meno, telefón, email a popis požiadavky.' })
       return
     }
 
     setSubmitting(true)
 
     const typeLabel = requestTypes.find((type) => type.value === requestType)?.label || requestType
+    const generatedTitle = `${typeLabel} - ${company.trim() || name.trim()}`
     const fullDescription = [
       `Typ požiadavky: ${typeLabel}`,
       `Meno: ${name.trim()}`,
@@ -54,7 +54,7 @@ export default function PublicRequestPage() {
       const { error } = await supabase.from('customer_requests').insert([
         {
           customer_id: null,
-          nazov: title.trim(),
+          nazov: generatedTitle,
           popis: fullDescription,
           termin: deadline || null,
           stav: 'na_schvalenie',
@@ -74,7 +74,6 @@ export default function PublicRequestPage() {
       setPhone('')
       setEmail('')
       setRequestType('nova_instalacia')
-      setTitle('')
       setDescription('')
       setDeadline('')
       setMessage({ type: 'success', text: 'Požiadavka bola odoslaná. Ozveme sa vám po jej spracovaní.' })
@@ -216,19 +215,6 @@ export default function PublicRequestPage() {
           </div>
 
           <div style={{ marginTop: 14 }}>
-            <label style={labelStyle} htmlFor="title">
-              Názov požiadavky *
-            </label>
-            <input
-              id="title"
-              style={inputStyle}
-              placeholder="Napr. nefunguje kamera, nová montáž alarmu, rozšírenie Loxone"
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-            />
-          </div>
-
-          <div style={{ marginTop: 14 }}>
             <label style={labelStyle} htmlFor="description">
               Popis požiadavky *
             </label>
@@ -236,7 +222,7 @@ export default function PublicRequestPage() {
               id="description"
               rows={7}
               style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.55 }}
-              placeholder="Napíšte, čo potrebujete vyriešiť, kde sa problém nachádza a aké sú dôležité detaily."
+              placeholder="Napr. potrebujem novú montáž alarmu, nefunguje kamera, rozšírenie Loxone alebo cenovú ponuku. Pridajte miesto, stručný popis a dôležité detaily."
               value={description}
               onChange={(event) => setDescription(event.target.value)}
             />
