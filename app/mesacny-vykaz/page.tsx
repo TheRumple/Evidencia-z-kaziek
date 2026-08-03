@@ -12,6 +12,25 @@ type InvoiceLog = WorkLog & {
   customer?: Customer
 }
 
+type LogTargetType = 'order' | 'customer' | 'internal'
+
+const WEEKDAY_LABELS = ['Ne', 'Po', 'Ut', 'St', 'Št', 'Pi', 'So']
+const FIXED_SK_HOLIDAYS: Record<string, string> = {
+  '01-01': 'Deň vzniku SR',
+  '01-06': 'Traja králi',
+  '05-01': 'Sviatok práce',
+  '05-08': 'Deň víťazstva nad fašizmom',
+  '07-05': 'Sviatok sv. Cyrila a Metoda',
+  '08-29': 'Výročie SNP',
+  '09-01': 'Deň Ústavy SR',
+  '09-15': 'Sedembolestná Panna Mária',
+  '11-01': 'Sviatok všetkých svätých',
+  '11-17': 'Deň boja za slobodu a demokraciu',
+  '12-24': 'Štedrý deň',
+  '12-25': 'Prvý sviatok vianočný',
+  '12-26': 'Druhý sviatok vianočný',
+}
+
 function getCurrentMonth() {
   return new Date().toISOString().slice(0, 7)
 }
@@ -50,6 +69,59 @@ function getLogTitle(text: string) {
   return cleaned.length > 70 ? `${cleaned.slice(0, 67)}...` : cleaned
 }
 
+function getEasterSunday(year: number) {
+  const a = year % 19
+  const b = Math.floor(year / 100)
+  const c = year % 100
+  const d = Math.floor(b / 4)
+  const e = b % 4
+  const f = Math.floor((b + 8) / 25)
+  const g = Math.floor((b - f + 1) / 3)
+  const h = (19 * a + b - d - g + 15) % 30
+  const i = Math.floor(c / 4)
+  const k = c % 4
+  const l = (32 + 2 * e + 2 * i - h - k) % 7
+  const m = Math.floor((a + 11 * h + 22 * l) / 451)
+  const month = Math.floor((h + l - 7 * m + 114) / 31)
+  const day = ((h + l - 7 * m + 114) % 31) + 1
+  return new Date(year, month - 1, day)
+}
+
+function toDateKey(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
+function getHolidayName(dateKey: string) {
+  const [yearText] = dateKey.split('-')
+  const fixedName = FIXED_SK_HOLIDAYS[dateKey.slice(5)]
+  if (fixedName) return fixedName
+
+  const year = Number(yearText)
+  const easter = getEasterSunday(year)
+  const goodFriday = new Date(easter)
+  goodFriday.setDate(easter.getDate() - 2)
+  const easterMonday = new Date(easter)
+  easterMonday.setDate(easter.getDate() + 1)
+
+  if (dateKey === toDateKey(goodFriday)) return 'Veľký piatok'
+  if (dateKey === toDateKey(easterMonday)) return 'Veľkonočný pondelok'
+  return ''
+}
+
+function getDayInfo(dateKey: string) {
+  const [year, month, day] = dateKey.split('-').map(Number)
+  const date = new Date(year, month - 1, day)
+  const weekday = date.getDay()
+  const holidayName = getHolidayName(dateKey)
+  return {
+    weekday,
+    weekdayLabel: WEEKDAY_LABELS[weekday],
+    isWeekend: weekday === 0 || weekday === 6,
+    holidayName,
+    isHoliday: Boolean(holidayName),
+  }
+}
+
 export default function MesacnyVykazPage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [checkingAuth, setCheckingAuth] = useState(true)
@@ -58,6 +130,8 @@ export default function MesacnyVykazPage() {
   const [selectedCustomerId, setSelectedCustomerId] = useState('vsetci')
   const [search, setSearch] = useState('')
   const [activeAddDate, setActiveAddDate] = useState('')
+  const [newLogTargetType, setNewLogTargetType] = useState<LogTargetType>('customer')
+  const [newLogCustomerId, setNewLogCustomerId] = useState('')
   const [newLogOrderId, setNewLogOrderId] = useState('')
   const [newLogText, setNewLogText] = useState('')
   const [newLogHours, setNewLogHours] = useState('')
@@ -187,6 +261,15 @@ export default function MesacnyVykazPage() {
       })
   }, [orders, selectedCustomerId, customerById])
 
+  const filteredOrdersByCustomerForForm = useMemo(() => {
+    return orders
+      .filter((order) => {
+        if (!newLogCustomerId) return true
+        return order.customer_id === newLogCustomerId
+      })
+      .sort((a, b) => a.nazov.localeCompare(b.nazov, 'sk'))
+  }, [orders, newLogCustomerId])
+
   const customerSummary = useMemo(() => {
     const summary: Record<string, { customerName: string; hours: number; km: number; count: number }> = {}
     for (const log of invoiceLogs) {
@@ -234,18 +317,96 @@ export default function MesacnyVykazPage() {
     setNewLogKm('')
     setNotice('')
 
-    if (!newLogOrderId || !filteredOrdersForForm.some((order) => order.id === newLogOrderId)) {
-      setNewLogOrderId(filteredOrdersForForm[0]?.id || '')
+    const defaultCustomerId = selectedCustomerId === 'vsetci' ? customers[0]?.id || '' : selectedCustomerId
+    if (!newLogCustomerId) setNewLogCustomerId(defaultCustomerId)
+
+    if (!newLogOrderId || !orders.some((order) => order.id === newLogOrderId)) {
+      const firstOrder = orders.find((order) => !defaultCustomerId || order.customer_id === defaultCustomerId) || orders[0]
+      setNewLogOrderId(firstOrder?.id || '')
     }
+  }
+
+  async function ensureCustomer(name: string) {
+    if (!userId) return null
+
+    const existing = customers.find((customer) => customer.nazov.toLowerCase() === name.toLowerCase())
+    if (existing) return existing
+
+    const { data, error } = await supabase
+      .from('customers')
+      .insert([
+        {
+          user_id: userId,
+          nazov: name,
+          kontakt: null,
+          telefon: null,
+          email: null,
+        },
+      ])
+      .select()
+      .single()
+
+    if (error || !data) {
+      setNotice(error?.message || 'Nepodarilo sa vytvoriť zákazníka.')
+      return null
+    }
+
+    const customer = data as Customer
+    setCustomers((current) => [...current, customer].sort((a, b) => a.nazov.localeCompare(b.nazov, 'sk')))
+    return customer
+  }
+
+  async function ensureMonthlyOrder(customerId: string, orderName: string, date: string) {
+    if (!userId) return null
+
+    const existing = orders.find((order) => order.customer_id === customerId && order.nazov.toLowerCase() === orderName.toLowerCase())
+    if (existing) return existing
+
+    const { data, error } = await supabase
+      .from('orders')
+      .insert([
+        {
+          user_id: userId,
+          nazov: orderName,
+          customer_id: customerId,
+          stav: 'rozpracovana',
+          praca: null,
+          popis: 'Zberná zákazka pre priebežné mesačné zápisy bez samostatnej zákazky.',
+          termin: null,
+          prijatie_zakazky: date,
+          hodiny: 0,
+        },
+      ])
+      .select()
+      .single()
+
+    if (error || !data) {
+      setNotice(error?.message || 'Nepodarilo sa vytvoriť zbernú zákazku.')
+      return null
+    }
+
+    const order = data as Order
+    setOrders((current) => [order, ...current])
+    return order
+  }
+
+  async function resolveTargetOrder(date: string) {
+    if (newLogTargetType === 'order') {
+      return orders.find((order) => order.id === newLogOrderId) || null
+    }
+
+    if (newLogTargetType === 'internal') {
+      const customer = await ensureCustomer('ITspot interné')
+      if (!customer) return null
+      return ensureMonthlyOrder(customer.id, 'Interné práce', date)
+    }
+
+    if (!newLogCustomerId) return null
+    return ensureMonthlyOrder(newLogCustomerId, 'Mesačné práce', date)
   }
 
   async function addWorkLogFromMonth(date: string) {
     if (!userId) return
-
-    if (!newLogOrderId) {
-      setNotice('Vyber zákazku.')
-      return
-    }
 
     if (!newLogText.trim()) {
       setNotice('Zadaj popis práce.')
@@ -264,13 +425,19 @@ export default function MesacnyVykazPage() {
       return
     }
 
+    const targetOrder = await resolveTargetOrder(date)
+    if (!targetOrder) {
+      setNotice(newLogTargetType === 'order' ? 'Vyber zákazku.' : 'Vyber firmu alebo použi interný zápis.')
+      return
+    }
+
     setSavingLog(true)
     setNotice('')
 
     const { error } = await supabase.from('work_logs').insert([
       {
         user_id: userId,
-        order_id: newLogOrderId,
+        order_id: targetOrder.id,
         datum: date,
         nazov_vykazu: getLogTitle(newLogText),
         start_time: null,
@@ -365,10 +532,72 @@ export default function MesacnyVykazPage() {
           gap: 9px;
           padding: 14px;
           border-top: 1px solid #e2e8f0;
+          background: #fff;
         }
 
         .invoiceDay:first-child {
           border-top: none;
+        }
+
+        .invoiceWeekend {
+          background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+        }
+
+        .invoiceHoliday {
+          background: linear-gradient(135deg, #fff7ed 0%, #fff 100%);
+        }
+
+        .invoiceDayHeader {
+          display: grid;
+          grid-template-columns: 92px minmax(0, 1fr) auto auto;
+          gap: 12px;
+          align-items: center;
+        }
+
+        .invoiceDateBadge {
+          border-radius: 14px;
+          border: 1px solid #e2e8f0;
+          background: #fff;
+          padding: 9px 10px;
+          text-align: center;
+          box-shadow: 0 5px 14px rgba(15, 23, 42, 0.05);
+        }
+
+        .invoiceDateBadge strong {
+          display: block;
+          font-size: 18px;
+          line-height: 1;
+          color: #0f172a;
+        }
+
+        .invoiceDateBadge span {
+          display: block;
+          margin-top: 4px;
+          color: #64748b;
+          font-size: 11px;
+          font-weight: 900;
+          text-transform: uppercase;
+        }
+
+        .invoiceDayFlag {
+          display: inline-flex;
+          width: fit-content;
+          border-radius: 999px;
+          padding: 4px 8px;
+          background: #e2e8f0;
+          color: #334155;
+          font-size: 11px;
+          font-weight: 900;
+        }
+
+        .invoiceWeekend .invoiceDayFlag {
+          background: #dbeafe;
+          color: #1e40af;
+        }
+
+        .invoiceHoliday .invoiceDayFlag {
+          background: #fed7aa;
+          color: #9a3412;
         }
 
         .invoiceLogRow {
@@ -386,7 +615,7 @@ export default function MesacnyVykazPage() {
 
         .invoiceAddForm {
           display: grid;
-          grid-template-columns: minmax(220px, 1.1fr) minmax(260px, 2fr) 100px 90px auto;
+          grid-template-columns: 150px minmax(220px, 1fr) minmax(260px, 2fr) 100px 90px auto;
           gap: 9px;
           align-items: end;
           border: 1px solid #bef264;
@@ -431,6 +660,10 @@ export default function MesacnyVykazPage() {
           }
 
           .invoiceLogRow {
+            grid-template-columns: 1fr;
+          }
+
+          .invoiceDayHeader {
             grid-template-columns: 1fr;
           }
 
@@ -529,17 +762,33 @@ export default function MesacnyVykazPage() {
             ) : (
               monthDays.map((date) => {
                 const logs = groupedByDay[date] || []
+                const dayInfo = getDayInfo(date)
 
                 return (
-                <section key={date} className="invoiceDay">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                <section
+                  key={date}
+                  className={`invoiceDay ${dayInfo.isWeekend ? 'invoiceWeekend' : ''} ${dayInfo.isHoliday ? 'invoiceHoliday' : ''}`}
+                >
+                  <div className="invoiceDayHeader">
+                    <div className="invoiceDateBadge">
+                      <strong>{date.slice(8)}</strong>
+                      <span>{dayInfo.weekdayLabel}</span>
+                    </div>
+
                     <div>
                       <div style={{ fontSize: 18, fontWeight: 900 }}>{formatDate(date)}</div>
-                      <div className="invoiceMuted">{logs.length} zápisov</div>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 5 }}>
+                        <span className="invoiceDayFlag">
+                          {dayInfo.holidayName || (dayInfo.isWeekend ? 'Víkend' : 'Pracovný deň')}
+                        </span>
+                        <span className="invoiceMuted">{logs.length} zápisov</span>
+                      </div>
                     </div>
+
                     <div style={{ fontWeight: 900, color: '#365314' }}>
                       {formatHours(logs.reduce((sum, log) => sum + Number(log.hodiny || 0), 0))}
                     </div>
+
                     <button type="button" style={buttonStyle} onClick={() => openAddForDate(date)}>
                       + Pridať zápis
                     </button>
@@ -548,18 +797,62 @@ export default function MesacnyVykazPage() {
                   {activeAddDate === date && (
                     <div className="invoiceAddForm">
                       <div>
-                        <label className="invoiceMuted" htmlFor={`order-${date}`}>
-                          Zákazka
+                        <label className="invoiceMuted" htmlFor={`target-${date}`}>
+                          Typ
                         </label>
-                        <select id={`order-${date}`} value={newLogOrderId} onChange={(event) => setNewLogOrderId(event.target.value)} style={inputStyle}>
-                          <option value="">Vyber zákazku</option>
-                          {filteredOrdersForForm.map((order) => (
-                            <option key={order.id} value={order.id}>
-                              {customerById[order.customer_id]?.nazov || 'Neznámy zákazník'} - {order.nazov}
-                            </option>
-                          ))}
+                        <select
+                          id={`target-${date}`}
+                          value={newLogTargetType}
+                          onChange={(event) => setNewLogTargetType(event.target.value as LogTargetType)}
+                          style={inputStyle}
+                        >
+                          <option value="customer">Firma bez zákazky</option>
+                          <option value="order">Existujúca zákazka</option>
+                          <option value="internal">Interná práca</option>
                         </select>
                       </div>
+
+                      {newLogTargetType === 'order' ? (
+                        <div>
+                          <label className="invoiceMuted" htmlFor={`order-${date}`}>
+                            Zákazka
+                          </label>
+                          <select id={`order-${date}`} value={newLogOrderId} onChange={(event) => setNewLogOrderId(event.target.value)} style={inputStyle}>
+                            <option value="">Vyber zákazku</option>
+                            {filteredOrdersByCustomerForForm.map((order) => (
+                              <option key={order.id} value={order.id}>
+                                {customerById[order.customer_id]?.nazov || 'Neznámy zákazník'} - {order.nazov}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      ) : newLogTargetType === 'customer' ? (
+                        <div>
+                          <label className="invoiceMuted" htmlFor={`customer-${date}`}>
+                            Firma
+                          </label>
+                          <select
+                            id={`customer-${date}`}
+                            value={newLogCustomerId}
+                            onChange={(event) => setNewLogCustomerId(event.target.value)}
+                            style={inputStyle}
+                          >
+                            <option value="">Vyber firmu</option>
+                            {customers.map((customer) => (
+                              <option key={customer.id} value={customer.id}>
+                                {customer.nazov}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      ) : (
+                        <div>
+                          <label className="invoiceMuted">Zaradenie</label>
+                          <div style={{ ...inputStyle, display: 'flex', alignItems: 'center', background: '#f8fafc' }}>
+                            ITspot interné - Interné práce
+                          </div>
+                        </div>
+                      )}
 
                       <div>
                         <label className="invoiceMuted" htmlFor={`text-${date}`}>
@@ -569,7 +862,7 @@ export default function MesacnyVykazPage() {
                           id={`text-${date}`}
                           value={newLogText}
                           onChange={(event) => setNewLogText(event.target.value)}
-                          placeholder="Napr. výmena zdroja, konfigurácia siete, diagnostika..."
+                          placeholder="Napr. príprava vecí pre firmu, programovanie appky, administratíva..."
                           style={inputStyle}
                         />
                       </div>
