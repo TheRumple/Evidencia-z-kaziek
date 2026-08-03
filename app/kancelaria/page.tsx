@@ -219,16 +219,13 @@ export default function OfficeDashboardPage() {
         }
 
         .officeLogo {
-          width: 230px;
-          height: 76px;
+          width: 330px;
+          height: 112px;
           display: inline-flex;
           align-items: center;
           justify-content: center;
           overflow: hidden;
-          border-radius: 18px;
-          border: 1px solid rgba(190, 242, 100, 0.24);
-          background: rgba(255, 255, 255, 0.08);
-          box-shadow: 0 18px 42px rgba(0, 0, 0, 0.24);
+          filter: drop-shadow(0 0 18px rgba(132, 204, 22, 0.36)) drop-shadow(0 12px 34px rgba(0, 0, 0, 0.34));
         }
 
         .officeLogo img {
