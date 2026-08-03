@@ -2065,6 +2065,10 @@ export default function DashboardPage() {
               Kalendár
             </button>
 
+            <Link href="/kancelaria" style={buttonStyle}>
+              Kancelária
+            </Link>
+
             <Link href="/mesacny-vykaz" style={buttonStyle}>
               Mesačný výkaz
             </Link>
