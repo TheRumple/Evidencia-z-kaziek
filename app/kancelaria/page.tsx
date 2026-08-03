@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import type { CSSProperties } from 'react'
 import Link from 'next/link'
 import { BrandLogo } from '@/components/BrandLogo'
 import type { Order } from '@/lib/dashboard-types'
@@ -146,7 +147,7 @@ export default function OfficeDashboardPage() {
       active: orders.filter((order) => ['nova', 'rozpracovana', 'caka'].includes(order.stav)).length,
       inProgress: orders.filter((order) => order.stav === 'rozpracovana').length,
       waiting: orders.filter((order) => order.stav === 'caka').length,
-      done: orders.filter((order) => order.stav === 'hotova').length,
+      invoiced: orders.filter((order) => order.stav === 'odovzdana').length,
       overdue: orders.filter((order) => {
         if (!order.termin || ['hotova', 'odovzdana', 'stornovana'].includes(order.stav)) return false
         return order.termin < getTodayDate()
@@ -171,13 +172,29 @@ export default function OfficeDashboardPage() {
           padding: 22px;
           color: #fff;
           font-family: Arial, Helvetica, sans-serif;
+          position: relative;
+          overflow: hidden;
           background:
             radial-gradient(circle at 82% 8%, rgba(132, 204, 22, 0.28), transparent 28%),
             radial-gradient(circle at 12% 86%, rgba(59, 130, 246, 0.16), transparent 30%),
             linear-gradient(135deg, #05070d 0%, #101827 56%, #1f2d17 100%);
         }
 
+        .officeScreen::before {
+          content: '';
+          position: fixed;
+          inset: 0;
+          pointer-events: none;
+          background:
+            linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+          background-size: 46px 46px;
+          mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.55), transparent 78%);
+        }
+
         .officeShell {
+          position: relative;
+          z-index: 1;
           max-width: 1380px;
           min-height: calc(100vh - 44px);
           margin: 0 auto;
@@ -211,7 +228,9 @@ export default function OfficeDashboardPage() {
 
         .glassPanel {
           border: 1px solid rgba(148, 163, 184, 0.24);
-          background: rgba(15, 23, 42, 0.62);
+          background:
+            linear-gradient(135deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.025)),
+            rgba(15, 23, 42, 0.62);
           box-shadow: 0 26px 60px rgba(0, 0, 0, 0.34);
           border-radius: 22px;
           backdrop-filter: blur(18px);
@@ -223,6 +242,20 @@ export default function OfficeDashboardPage() {
           align-content: space-between;
           gap: 20px;
           min-height: 430px;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .clockPanel::after {
+          content: '';
+          position: absolute;
+          right: -90px;
+          bottom: -120px;
+          width: 340px;
+          height: 340px;
+          border-radius: 999px;
+          border: 42px solid rgba(132, 204, 22, 0.12);
+          box-shadow: 0 0 80px rgba(132, 204, 22, 0.12);
         }
 
         .clockValue {
@@ -252,6 +285,7 @@ export default function OfficeDashboardPage() {
           padding: 24px;
           display: grid;
           gap: 16px;
+          border-color: rgba(132, 204, 22, 0.32);
         }
 
         .weatherTemp {
@@ -272,14 +306,43 @@ export default function OfficeDashboardPage() {
           gap: 14px;
         }
 
+        .statusGrid {
+          display: grid;
+          grid-template-columns: repeat(5, minmax(0, 1fr));
+          gap: 14px;
+        }
+
         .statCard {
           min-height: 142px;
           border-radius: 20px;
           padding: 20px;
           border: 1px solid rgba(148, 163, 184, 0.24);
-          background: rgba(255, 255, 255, 0.08);
+          background:
+            linear-gradient(160deg, rgba(255, 255, 255, 0.105), rgba(255, 255, 255, 0.035)),
+            rgba(255, 255, 255, 0.06);
           display: grid;
           align-content: space-between;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .statCard::before {
+          content: '';
+          position: absolute;
+          inset: 0 auto 0 0;
+          width: 5px;
+          background: var(--accent, #64748b);
+        }
+
+        .statCard::after {
+          content: '';
+          position: absolute;
+          right: -34px;
+          top: -34px;
+          width: 104px;
+          height: 104px;
+          border-radius: 999px;
+          background: var(--accentGlow, rgba(148, 163, 184, 0.12));
         }
 
         .statLabel {
@@ -298,6 +361,8 @@ export default function OfficeDashboardPage() {
           background: linear-gradient(135deg, rgba(132, 204, 22, 0.95), rgba(101, 163, 13, 0.88));
           color: #111827;
           border-color: rgba(190, 242, 100, 0.76);
+          --accent: #ecfccb;
+          --accentGlow: rgba(236, 252, 203, 0.32);
         }
 
         .highlightCard .statLabel {
@@ -325,7 +390,8 @@ export default function OfficeDashboardPage() {
 
         @media (max-width: 980px) {
           .officeGrid,
-          .statGrid {
+          .statGrid,
+          .statusGrid {
             grid-template-columns: 1fr;
           }
 
@@ -376,11 +442,11 @@ export default function OfficeDashboardPage() {
                 <div className="statLabel">Nové žiadosti</div>
                 <div className="statValue">{pendingRequestsCount}</div>
               </div>
-              <div className="statCard">
+              <div className="statCard" style={{ '--accent': '#38bdf8', '--accentGlow': 'rgba(56, 189, 248, 0.18)' } as CSSProperties}>
                 <div className="statLabel">Dnešný plán</div>
                 <div className="statValue">{todayPlansCount}</div>
               </div>
-              <div className="statCard">
+              <div className="statCard" style={{ '--accent': '#fb7185', '--accentGlow': 'rgba(251, 113, 133, 0.18)' } as CSSProperties}>
                 <div className="statLabel">Po termíne</div>
                 <div className="statValue">{stats.overdue}</div>
               </div>
@@ -388,28 +454,24 @@ export default function OfficeDashboardPage() {
           </div>
         </section>
 
-        <section className="statGrid">
-          <div className="statCard">
+        <section className="statusGrid">
+          <div className="statCard" style={{ '--accent': '#a3e635', '--accentGlow': 'rgba(163, 230, 53, 0.16)' } as CSSProperties}>
             <div className="statLabel">Aktívne zákazky</div>
             <div className="statValue">{stats.active}</div>
           </div>
-          <div className="statCard">
+          <div className="statCard" style={{ '--accent': '#fbbf24', '--accentGlow': 'rgba(251, 191, 36, 0.17)' } as CSSProperties}>
             <div className="statLabel">Rozpracované</div>
             <div className="statValue">{stats.inProgress}</div>
           </div>
-          <div className="statCard">
+          <div className="statCard" style={{ '--accent': '#fb923c', '--accentGlow': 'rgba(251, 146, 60, 0.17)' } as CSSProperties}>
             <div className="statLabel">Čaká na materiál</div>
             <div className="statValue">{stats.waiting}</div>
           </div>
-          <div className="statCard">
-            <div className="statLabel">Dokončené</div>
-            <div className="statValue">{stats.done}</div>
+          <div className="statCard" style={{ '--accent': '#22c55e', '--accentGlow': 'rgba(34, 197, 94, 0.17)' } as CSSProperties}>
+            <div className="statLabel">Fakturované zákazky</div>
+            <div className="statValue">{stats.invoiced}</div>
           </div>
-          <div className="statCard">
-            <div className="statLabel">Požiadavky kontrolované</div>
-            <div className="statValue">30s</div>
-          </div>
-          <div className="statCard">
+          <div className="statCard" style={{ '--accent': '#84cc16', '--accentGlow': 'rgba(132, 204, 22, 0.2)' } as CSSProperties}>
             <div className="statLabel">Stav systému</div>
             <div className="statValue" style={{ color: '#a3e635' }}>OK</div>
           </div>
