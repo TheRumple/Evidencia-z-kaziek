@@ -2041,6 +2041,10 @@ export default function DashboardPage() {
               Kalendár
             </button>
 
+            <Link href="/mesacny-vykaz" style={buttonStyle}>
+              Mesačný výkaz
+            </Link>
+
             <button type="button" style={tabButton(activeTab === 'zakaznici')} onClick={() => setActiveTab('zakaznici')}>
               Zákazníci / portál
             </button>
