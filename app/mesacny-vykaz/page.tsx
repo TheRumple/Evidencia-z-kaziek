@@ -15,6 +15,20 @@ type InvoiceLog = WorkLog & {
 type LogTargetType = 'order' | 'customer' | 'internal'
 
 const WEEKDAY_LABELS = ['Ne', 'Po', 'Ut', 'St', 'Št', 'Pi', 'So']
+const MONTH_LABELS = [
+  'Január',
+  'Február',
+  'Marec',
+  'Apríl',
+  'Máj',
+  'Jún',
+  'Júl',
+  'August',
+  'September',
+  'Október',
+  'November',
+  'December',
+]
 const FIXED_SK_HOLIDAYS: Record<string, string> = {
   '01-01': 'Deň vzniku SR',
   '01-06': 'Traja králi',
@@ -67,6 +81,12 @@ function getMonthDays(month: string) {
 function getLogTitle(text: string) {
   const cleaned = text.trim().replace(/\s+/g, ' ')
   return cleaned.length > 70 ? `${cleaned.slice(0, 67)}...` : cleaned
+}
+
+function getMonthLabelFromDate(dateKey: string) {
+  const [yearText, monthText] = dateKey.split('-')
+  const monthIndex = Number(monthText) - 1
+  return `${MONTH_LABELS[monthIndex] || monthText} ${yearText}`
 }
 
 function getEasterSunday(year: number) {
@@ -397,6 +417,8 @@ export default function MesacnyVykazPage() {
   }
 
   async function resolveTargetOrder(date: string) {
+    const monthLabel = getMonthLabelFromDate(date)
+
     if (newLogTargetType === 'order') {
       return orders.find((order) => order.id === newLogOrderId) || null
     }
@@ -404,11 +426,11 @@ export default function MesacnyVykazPage() {
     if (newLogTargetType === 'internal') {
       const customer = await ensureCustomer('ITspot interné')
       if (!customer) return null
-      return ensureMonthlyOrder(customer.id, 'Interné práce', date)
+      return ensureMonthlyOrder(customer.id, `Interné práce ${monthLabel}`, date)
     }
 
     if (!newLogCustomerId) return null
-    return ensureMonthlyOrder(newLogCustomerId, 'Mesačné práce', date)
+    return ensureMonthlyOrder(newLogCustomerId, `Mesačné práce ${monthLabel}`, date)
   }
 
   async function addWorkLogFromMonth(date: string) {
@@ -918,7 +940,7 @@ export default function MesacnyVykazPage() {
                         <div>
                           <label className="invoiceMuted">Zaradenie</label>
                           <div style={{ ...inputStyle, display: 'flex', alignItems: 'center', background: '#f8fafc' }}>
-                            ITspot interné - Interné práce
+                            ITspot interné - Interné práce podľa mesiaca
                           </div>
                         </div>
                       )}
