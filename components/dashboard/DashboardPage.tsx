@@ -173,6 +173,16 @@ export default function DashboardPage() {
   }, [userId])
 
   useEffect(() => {
+    if (!userId) return
+
+    const timer = window.setInterval(() => {
+      void refreshLiveData(userId)
+    }, 20000)
+
+    return () => window.clearInterval(timer)
+  }, [userId])
+
+  useEffect(() => {
     if (!notice) return
     const timer = window.setTimeout(() => setNotice(null), 4000)
     return () => window.clearTimeout(timer)
@@ -288,6 +298,20 @@ export default function DashboardPage() {
     }
 
     setWorkLogs((data || []) as WorkLog[])
+  }
+
+  async function refreshLiveData(currentUserId: string) {
+    try {
+      await Promise.all([
+        loadCustomers(currentUserId),
+        loadOrders(currentUserId),
+        loadWorkLogs(currentUserId),
+        loadCalendarPlans(currentUserId),
+        loadPendingCount(),
+      ])
+    } catch (error) {
+      console.error('Live refresh error:', error)
+    }
   }
 
   async function loadCalendarPlans(currentUserId: string) {

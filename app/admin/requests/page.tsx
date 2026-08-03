@@ -47,9 +47,17 @@ export default function AdminRequestsPage() {
     void loadPendingRequests()
   }, [])
 
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      void loadPendingRequests(false)
+    }, 20000)
+
+    return () => window.clearInterval(timer)
+  }, [])
+
   // Načítanie požiadaviek z tabuľky spolu s názvom a user_id zákazníka
-  async function loadPendingRequests() {
-    setLoading(true)
+  async function loadPendingRequests(showLoader = true) {
+    if (showLoader) setLoading(true)
     try {
       const [{ data, error }, { data: customersData, error: customersError }] = await Promise.all([
         supabase
@@ -96,7 +104,7 @@ export default function AdminRequestsPage() {
     } catch (err: any) {
       alert(`Chyba: ${err.message}`)
     } finally {
-      setLoading(false)
+      if (showLoader) setLoading(false)
     }
   }
 
