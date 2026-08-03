@@ -200,34 +200,23 @@ export default function OfficeDashboardPage() {
           height: calc(100vh - 28px);
           margin: 0 auto;
           display: grid;
-          grid-template-rows: 78px minmax(0, 1fr) 118px 34px;
+          grid-template-rows: minmax(0, 1fr) 112px 30px;
           gap: 10px;
-        }
-
-        .officeHeader {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 18px;
-        }
-
-        .officeTopRight {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          color: rgba(226, 232, 240, 0.82);
-          font-size: 13px;
-          font-weight: 800;
         }
 
         .officeLogo {
-          width: 260px;
-          height: 76px;
+          position: absolute;
+          right: 18px;
+          top: 16px;
+          width: 300px;
+          height: 92px;
           display: inline-flex;
           align-items: center;
           justify-content: center;
           overflow: hidden;
           filter: drop-shadow(0 0 18px rgba(132, 204, 22, 0.36)) drop-shadow(0 12px 34px rgba(0, 0, 0, 0.34));
+          opacity: 0.96;
+          z-index: 2;
         }
 
         .officeLogo img {
@@ -289,14 +278,6 @@ export default function OfficeDashboardPage() {
           font-size: clamp(20px, 2vw, 30px);
           font-weight: 900;
           text-transform: capitalize;
-        }
-
-        .heroText {
-          max-width: 720px;
-          color: rgba(226, 232, 240, 0.72);
-          font-size: 14px;
-          line-height: 1.45;
-          font-weight: 700;
         }
 
         .requestPanel {
@@ -382,12 +363,12 @@ export default function OfficeDashboardPage() {
         }
 
         .weatherPanel {
-          padding: 12px 16px;
-          display: grid;
-          grid-template-columns: minmax(0, 1fr) auto;
-          gap: 14px;
-          align-items: center;
-          border-color: rgba(132, 204, 22, 0.32);
+          width: fit-content;
+          max-width: 100%;
+          padding: 10px 12px;
+          border-radius: 16px;
+          border: 1px solid rgba(132, 204, 22, 0.26);
+          background: rgba(255, 255, 255, 0.07);
         }
 
         .weatherTemp {
@@ -498,7 +479,6 @@ export default function OfficeDashboardPage() {
             grid-template-columns: 1fr;
           }
 
-          .officeHeader,
           .footerBar {
             align-items: flex-start;
             flex-direction: column;
@@ -507,24 +487,26 @@ export default function OfficeDashboardPage() {
       `}</style>
 
       <div className="officeShell">
-        <header className="officeHeader">
-          <div className="officeLogo" aria-label="ITspot">
-            <img src="/logo-new.png" alt="ITspot" />
-          </div>
-          <div className="officeTopRight">
-            <span>Kancelársky prehľad</span>
-            <span>Automatický refresh 30 s</span>
-          </div>
-        </header>
-
         <section className="officeGrid">
           <div className="glassPanel clockPanel">
+            <div className="officeLogo" aria-label="ITspot">
+              <img src="/logo-new.png" alt="ITspot" />
+            </div>
             <div>
               <div className="clockValue">{formatClock(now)}</div>
               <div className="dateValue">{formatLongDate(now)}</div>
             </div>
-            <div className="heroText">
-              Kancelársky prehľad bez citlivých údajov. Nové žiadosti sú zvýraznené samostatne, aby boli viditeľné aj pri prechode okolo monitora.
+            <div className="weatherPanel">
+              <div style={{ color: 'rgba(226,232,240,0.72)', fontWeight: 900, marginBottom: 4 }}>Počasie Banská Bystrica</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, flexWrap: 'wrap' }}>
+                <div className="weatherTemp">{weather.temperature === null ? '--' : Math.round(weather.temperature)}°C</div>
+                <div>
+                  <div className="weatherLabel">{getWeatherLabel(weather.code)}</div>
+                  <div style={{ color: 'rgba(226,232,240,0.72)', marginTop: 2, fontWeight: 800 }}>
+                    Vietor {weather.windSpeed === null ? '-' : `${Math.round(weather.windSpeed)} km/h`} · Aktualizácia {lastRefresh ? formatClock(lastRefresh) : '-'}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -551,21 +533,6 @@ export default function OfficeDashboardPage() {
               <div className="miniCard">
                 <div className="statLabel">Aktívne</div>
                 <div className="statValue">{stats.active}</div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="glassPanel weatherPanel">
-          <div>
-            <div style={{ color: 'rgba(226,232,240,0.72)', fontWeight: 900, marginBottom: 5 }}>Počasie Banská Bystrica</div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, flexWrap: 'wrap' }}>
-              <div className="weatherTemp">{weather.temperature === null ? '--' : Math.round(weather.temperature)}°C</div>
-              <div>
-                <div className="weatherLabel">{getWeatherLabel(weather.code)}</div>
-                <div style={{ color: 'rgba(226,232,240,0.72)', marginTop: 3, fontWeight: 800 }}>
-                  Vietor {weather.windSpeed === null ? '-' : `${Math.round(weather.windSpeed)} km/h`} · Posledná aktualizácia {lastRefresh ? formatClock(lastRefresh) : '-'}
-                </div>
               </div>
             </div>
           </div>
