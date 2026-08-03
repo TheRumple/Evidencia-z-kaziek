@@ -12,10 +12,6 @@ type WeatherState = {
   code: number | null
 }
 
-function getTodayDate() {
-  return new Date().toISOString().slice(0, 10)
-}
-
 function formatClock(date: Date) {
   return new Intl.DateTimeFormat('sk-SK', {
     hour: '2-digit',
@@ -51,7 +47,6 @@ export default function OfficeDashboardPage() {
   const [now, setNow] = useState(new Date())
   const [orders, setOrders] = useState<Order[]>([])
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0)
-  const [todayPlansCount, setTodayPlansCount] = useState(0)
   const [weather, setWeather] = useState<WeatherState>({ temperature: null, windSpeed: null, code: null })
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
 
@@ -107,28 +102,20 @@ export default function OfficeDashboardPage() {
   }, [])
 
   async function loadData(currentUserId: string) {
-    const today = getTodayDate()
-
-    const [ordersResult, pendingResult, plansResult] = await Promise.all([
+    const [ordersResult, pendingResult] = await Promise.all([
       supabase.from('orders').select('*').eq('user_id', currentUserId),
       supabase.from('customer_requests').select('*', { count: 'exact', head: true }).eq('stav', 'na_schvalenie'),
-      supabase
-        .from('calendar_plans')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', currentUserId)
-        .eq('plan_date', today),
     ])
 
     if (!ordersResult.error) setOrders((ordersResult.data || []) as Order[])
     if (!pendingResult.error && pendingResult.count !== null) setPendingRequestsCount(pendingResult.count)
-    if (!plansResult.error && plansResult.count !== null) setTodayPlansCount(plansResult.count)
     setLastRefresh(new Date())
   }
 
   async function loadWeather() {
     try {
       const response = await fetch(
-        'https://api.open-meteo.com/v1/forecast?latitude=48.7395&longitude=19.1535&current=temperature_2m,weather_code,wind_speed_10m&timezone=Europe%2FBratislava'
+        'https://api.open-meteo.com/v1/forecast?latitude=48.4237&longitude=18.6407&current=temperature_2m,weather_code,wind_speed_10m&timezone=Europe%2FBratislava'
       )
       const data = await response.json()
       setWeather({
@@ -147,10 +134,6 @@ export default function OfficeDashboardPage() {
       inProgress: orders.filter((order) => order.stav === 'rozpracovana').length,
       waiting: orders.filter((order) => order.stav === 'caka').length,
       invoiced: orders.filter((order) => order.stav === 'odovzdana').length,
-      overdue: orders.filter((order) => {
-        if (!order.termin || ['hotova', 'odovzdana', 'stornovana'].includes(order.stav)) return false
-        return order.termin < getTodayDate()
-      }).length,
     }
   }, [orders])
 
@@ -200,8 +183,15 @@ export default function OfficeDashboardPage() {
           height: calc(100vh - 28px);
           margin: 0 auto;
           display: grid;
-          grid-template-rows: minmax(0, 1fr) 112px 30px;
+          grid-template-rows: 74px minmax(0, 1fr) 108px 30px;
           gap: 10px;
+        }
+
+        .officeHeader {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 14px;
         }
 
         .officeLogo {
@@ -212,7 +202,7 @@ export default function OfficeDashboardPage() {
           justify-content: center;
           gap: 0;
           color: #f8fafc;
-          font-size: clamp(70px, 6.4vw, 104px);
+          font-size: clamp(46px, 4.4vw, 70px);
           line-height: 0.9;
           font-weight: 900;
           letter-spacing: 0;
@@ -225,7 +215,7 @@ export default function OfficeDashboardPage() {
 
         .officeGrid {
           display: grid;
-          grid-template-columns: minmax(0, 1.28fr) minmax(320px, 0.72fr);
+          grid-template-columns: minmax(0, 1.18fr) minmax(360px, 0.82fr);
           gap: 10px;
           align-items: stretch;
         }
@@ -241,9 +231,9 @@ export default function OfficeDashboardPage() {
         }
 
         .clockPanel {
-          padding: 20px;
+          padding: 26px;
           display: grid;
-          align-content: start;
+          align-content: center;
           gap: 12px;
           min-height: 0;
           position: relative;
@@ -263,18 +253,71 @@ export default function OfficeDashboardPage() {
         }
 
         .clockValue {
-          font-size: clamp(62px, 6.4vw, 98px);
+          font-size: clamp(92px, 9vw, 148px);
           line-height: 0.92;
           font-weight: 900;
           letter-spacing: 0;
         }
 
         .dateValue {
-          margin-top: 8px;
+          margin-top: 12px;
           color: rgba(226, 232, 240, 0.82);
-          font-size: clamp(20px, 2vw, 30px);
+          font-size: clamp(24px, 2.4vw, 38px);
           font-weight: 900;
           text-transform: capitalize;
+        }
+
+        .requestBadge {
+          min-width: 360px;
+          height: 68px;
+          border-radius: 18px;
+          border: 1px solid rgba(190, 242, 100, 0.35);
+          background:
+            linear-gradient(135deg, rgba(132, 204, 22, 0.22), rgba(255, 255, 255, 0.06)),
+            rgba(15, 23, 42, 0.72);
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 12px;
+          align-items: center;
+          padding: 10px 14px;
+          box-shadow: 0 16px 40px rgba(0, 0, 0, 0.24);
+        }
+
+        .requestBadge.hasRequests {
+          border-color: rgba(254, 202, 202, 0.9);
+          background:
+            linear-gradient(135deg, rgba(239, 68, 68, 0.96), rgba(153, 27, 27, 0.94)),
+            #ef4444;
+          color: #fff;
+          box-shadow: 0 18px 46px rgba(153, 27, 27, 0.42);
+        }
+
+        .requestBadgeLabel {
+          color: rgba(226, 232, 240, 0.84);
+          font-size: 14px;
+          font-weight: 900;
+        }
+
+        .requestBadge.hasRequests .requestBadgeLabel {
+          color: rgba(255, 255, 255, 0.88);
+        }
+
+        .requestBadgeText {
+          margin-top: 3px;
+          color: #a3e635;
+          font-size: 12px;
+          font-weight: 900;
+        }
+
+        .requestBadge.hasRequests .requestBadgeText {
+          color: #fff;
+        }
+
+        .requestBadgeValue {
+          color: #f8fafc;
+          font-size: 48px;
+          line-height: 0.95;
+          font-weight: 900;
         }
 
         .requestPanel {
@@ -358,42 +401,23 @@ export default function OfficeDashboardPage() {
           font-weight: 900;
         }
 
-        .miniGrid {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 10px;
-        }
-
-        .miniCard {
-          min-height: 82px;
-          border-radius: 14px;
-          padding: 12px;
-          border: 1px solid rgba(148, 163, 184, 0.2);
-          background:
-            linear-gradient(160deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.03)),
-            rgba(255, 255, 255, 0.055);
-          display: grid;
-          align-content: space-between;
-        }
-
         .weatherPanel {
-          width: fit-content;
-          max-width: 100%;
-          padding: 10px 12px;
-          border-radius: 16px;
-          border: 1px solid rgba(132, 204, 22, 0.26);
-          background: rgba(255, 255, 255, 0.07);
+          padding: 18px;
+          display: grid;
+          align-content: center;
+          gap: 12px;
+          border-color: rgba(132, 204, 22, 0.32);
         }
 
         .weatherTemp {
-          font-size: clamp(36px, 3.4vw, 54px);
+          font-size: clamp(58px, 5.4vw, 88px);
           font-weight: 900;
           line-height: 1;
         }
 
         .weatherLabel {
           color: #a3e635;
-          font-size: 16px;
+          font-size: 20px;
           font-weight: 900;
         }
 
@@ -488,9 +512,18 @@ export default function OfficeDashboardPage() {
         @media (max-width: 980px) {
           .officeGrid,
           .statGrid,
-          .miniGrid,
           .statusGrid {
             grid-template-columns: 1fr;
+          }
+
+          .officeHeader {
+            align-items: flex-start;
+            flex-direction: column;
+          }
+
+          .requestBadge {
+            min-width: 0;
+            width: 100%;
           }
 
           .footerBar {
@@ -501,54 +534,46 @@ export default function OfficeDashboardPage() {
       `}</style>
 
       <div className="officeShell">
+        <header className="officeHeader">
+          <div className="officeLogo" aria-label="ITspot">
+            <span>ITsp</span>
+            <span className="officeLogoPower">o</span>
+            <span>t</span>
+          </div>
+
+          <div className={`requestBadge ${pendingRequestsCount > 0 ? 'hasRequests' : ''}`}>
+            <div>
+              <div className="requestBadgeLabel">Nové žiadosti z portálu</div>
+              <div className="requestBadgeText">
+                {pendingRequestsCount > 0 ? 'Čaká na spracovanie' : 'Bez novej žiadosti'}
+              </div>
+            </div>
+            <div className="requestBadgeValue">{pendingRequestsCount}</div>
+          </div>
+        </header>
+
         <section className="officeGrid">
           <div className="glassPanel clockPanel">
-            <div className="officeLogo" aria-label="ITspot">
-              <span>ITsp</span>
-              <span className="officeLogoPower">o</span>
-              <span>t</span>
-            </div>
             <div>
               <div className="clockValue">{formatClock(now)}</div>
               <div className="dateValue">{formatLongDate(now)}</div>
             </div>
-            <div className="weatherPanel">
-              <div style={{ color: 'rgba(226,232,240,0.72)', fontWeight: 900, marginBottom: 4 }}>Počasie Banská Bystrica</div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, flexWrap: 'wrap' }}>
-                <div className="weatherTemp">{weather.temperature === null ? '--' : Math.round(weather.temperature)}°C</div>
-                <div>
-                  <div className="weatherLabel">{getWeatherLabel(weather.code)}</div>
-                  <div style={{ color: 'rgba(226,232,240,0.72)', marginTop: 2, fontWeight: 800 }}>
-                    Vietor {weather.windSpeed === null ? '-' : `${Math.round(weather.windSpeed)} km/h`} · Aktualizácia {lastRefresh ? formatClock(lastRefresh) : '-'}
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
 
-          <div style={{ display: 'grid', gap: 10, gridTemplateRows: '150px minmax(0, 1fr)' }}>
-            <div className={`glassPanel requestPanel ${pendingRequestsCount > 0 ? 'hasRequests' : ''}`}>
+          <div style={{ display: 'grid', gap: 10 }}>
+            <div className="glassPanel weatherPanel">
               <div>
-                <div className="requestLabel">Nové žiadosti z portálu</div>
-                <div className="requestStatus">
-                  {pendingRequestsCount > 0 ? 'Čaká na spracovanie' : 'Aktuálne bez novej žiadosti'}
+                <div style={{ color: 'rgba(226,232,240,0.72)', fontWeight: 900, marginBottom: 8 }}>Počasie Nová Baňa</div>
+                <div className="weatherTemp">{weather.temperature === null ? '--' : Math.round(weather.temperature)}°C</div>
+              </div>
+              <div>
+                <div className="weatherLabel">{getWeatherLabel(weather.code)}</div>
+                <div style={{ color: 'rgba(226,232,240,0.72)', marginTop: 6, fontWeight: 800 }}>
+                  Vietor {weather.windSpeed === null ? '-' : `${Math.round(weather.windSpeed)} km/h`}
                 </div>
-              </div>
-              <div className="requestValue">{pendingRequestsCount}</div>
-            </div>
-
-            <div className="miniGrid">
-              <div className="miniCard">
-                <div className="statLabel">Dnešný plán</div>
-                <div className="statValue">{todayPlansCount}</div>
-              </div>
-              <div className="miniCard">
-                <div className="statLabel">Po termíne</div>
-                <div className="statValue">{stats.overdue}</div>
-              </div>
-              <div className="miniCard">
-                <div className="statLabel">Aktívne</div>
-                <div className="statValue">{stats.active}</div>
+                <div style={{ color: 'rgba(226,232,240,0.54)', marginTop: 4, fontSize: 12, fontWeight: 800 }}>
+                  Aktualizácia {lastRefresh ? formatClock(lastRefresh) : '-'}
+                </div>
               </div>
             </div>
           </div>
