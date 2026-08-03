@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
 import Link from 'next/link'
-import { BrandLogo } from '@/components/BrandLogo'
 import type { Order } from '@/lib/dashboard-types'
 import { supabase } from '@/lib/supabase'
 
@@ -219,6 +218,26 @@ export default function OfficeDashboardPage() {
           font-weight: 800;
         }
 
+        .officeLogo {
+          width: 230px;
+          height: 76px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+          border-radius: 18px;
+          border: 1px solid rgba(190, 242, 100, 0.24);
+          background: rgba(255, 255, 255, 0.08);
+          box-shadow: 0 18px 42px rgba(0, 0, 0, 0.24);
+        }
+
+        .officeLogo img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+          display: block;
+        }
+
         .officeGrid {
           display: grid;
           grid-template-columns: minmax(0, 1.25fr) minmax(340px, 0.75fr);
@@ -405,7 +424,9 @@ export default function OfficeDashboardPage() {
 
       <div className="officeShell">
         <header className="officeHeader">
-          <BrandLogo size="lg" tone="dark" label />
+          <div className="officeLogo" aria-label="ITspot">
+            <img src="/logo-new.png" alt="ITspot" />
+          </div>
           <div className="officeTopRight">
             <span>Kancelársky prehľad</span>
             <span>Automatický refresh 30 s</span>
