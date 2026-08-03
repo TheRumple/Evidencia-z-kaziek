@@ -205,8 +205,8 @@ export default function OfficeDashboardPage() {
         }
 
         .officeLogo {
-          width: 360px;
-          height: 96px;
+          width: 460px;
+          height: 122px;
           display: inline-flex;
           align-items: center;
           justify-content: center;
@@ -224,7 +224,7 @@ export default function OfficeDashboardPage() {
 
         .officeGrid {
           display: grid;
-          grid-template-columns: minmax(0, 1.1fr) minmax(360px, 0.9fr);
+          grid-template-columns: minmax(0, 1.28fr) minmax(320px, 0.72fr);
           gap: 10px;
           align-items: stretch;
         }
@@ -278,7 +278,7 @@ export default function OfficeDashboardPage() {
 
         .requestPanel {
           min-height: 0;
-          padding: 18px;
+          padding: 16px;
           display: grid;
           align-content: space-between;
           position: relative;
@@ -329,14 +329,14 @@ export default function OfficeDashboardPage() {
         .requestLabel {
           position: relative;
           z-index: 1;
-          font-size: 19px;
+          font-size: 17px;
           font-weight: 900;
         }
 
         .requestValue {
           position: relative;
           z-index: 1;
-          font-size: clamp(86px, 11vw, 142px);
+          font-size: clamp(72px, 8vw, 112px);
           line-height: 0.82;
           font-weight: 900;
           letter-spacing: 0;
@@ -562,7 +562,7 @@ export default function OfficeDashboardPage() {
             <div className="statValue">{stats.waiting}</div>
           </div>
           <div className="statCard" style={{ '--accent': '#22c55e', '--accentGlow': 'rgba(34, 197, 94, 0.17)' } as CSSProperties}>
-            <div className="statLabel">Fakturované zákazky</div>
+            <div className="statLabel">Zrealizované zákazky</div>
             <div className="statValue">{stats.invoiced}</div>
           </div>
         </section>
