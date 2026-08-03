@@ -130,6 +130,7 @@ export default function MesacnyVykazPage() {
   const [selectedCustomerId, setSelectedCustomerId] = useState('vsetci')
   const [search, setSearch] = useState('')
   const [activeAddDate, setActiveAddDate] = useState('')
+  const [expandedDayIds, setExpandedDayIds] = useState<string[]>([])
   const [newLogTargetType, setNewLogTargetType] = useState<LogTargetType>('customer')
   const [newLogCustomerId, setNewLogCustomerId] = useState('')
   const [newLogOrderId, setNewLogOrderId] = useState('')
@@ -312,6 +313,7 @@ export default function MesacnyVykazPage() {
 
   function openAddForDate(date: string) {
     setActiveAddDate(date)
+    setExpandedDayIds((current) => (current.includes(date) ? current : [...current, date]))
     setNewLogText('')
     setNewLogHours('')
     setNewLogKm('')
@@ -324,6 +326,10 @@ export default function MesacnyVykazPage() {
       const firstOrder = orders.find((order) => !defaultCustomerId || order.customer_id === defaultCustomerId) || orders[0]
       setNewLogOrderId(firstOrder?.id || '')
     }
+  }
+
+  function toggleDay(date: string) {
+    setExpandedDayIds((current) => (current.includes(date) ? current.filter((item) => item !== date) : [...current, date]))
   }
 
   async function ensureCustomer(name: string) {
@@ -529,8 +535,8 @@ export default function MesacnyVykazPage() {
 
         .invoiceDay {
           display: grid;
-          gap: 9px;
-          padding: 14px;
+          gap: 0;
+          padding: 0;
           border-top: 1px solid #e2e8f0;
           background: #fff;
         }
@@ -549,23 +555,29 @@ export default function MesacnyVykazPage() {
 
         .invoiceDayHeader {
           display: grid;
-          grid-template-columns: 92px minmax(0, 1fr) auto auto;
-          gap: 12px;
+          grid-template-columns: 58px 86px minmax(0, 1.1fr) minmax(0, 2fr) 86px 86px 120px;
+          gap: 8px;
           align-items: center;
+          min-height: 42px;
+          padding: 6px 10px;
+          cursor: pointer;
+        }
+
+        .invoiceDayHeader:hover {
+          background: rgba(132, 204, 22, 0.08);
         }
 
         .invoiceDateBadge {
-          border-radius: 14px;
+          border-radius: 9px;
           border: 1px solid #e2e8f0;
           background: #fff;
-          padding: 9px 10px;
+          padding: 5px 6px;
           text-align: center;
-          box-shadow: 0 5px 14px rgba(15, 23, 42, 0.05);
         }
 
         .invoiceDateBadge strong {
           display: block;
-          font-size: 18px;
+          font-size: 15px;
           line-height: 1;
           color: #0f172a;
         }
@@ -579,14 +591,32 @@ export default function MesacnyVykazPage() {
           text-transform: uppercase;
         }
 
+        .invoiceDayPreview {
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          color: #334155;
+          font-size: 12px;
+          font-weight: 800;
+        }
+
+        .invoiceDayDetails {
+          display: grid;
+          gap: 8px;
+          padding: 8px 10px 12px;
+          border-top: 1px solid rgba(226, 232, 240, 0.85);
+          background: rgba(255, 255, 255, 0.74);
+        }
+
         .invoiceDayFlag {
           display: inline-flex;
           width: fit-content;
           border-radius: 999px;
-          padding: 4px 8px;
+          padding: 3px 7px;
           background: #e2e8f0;
           color: #334155;
-          font-size: 11px;
+          font-size: 10px;
           font-weight: 900;
         }
 
@@ -664,11 +694,16 @@ export default function MesacnyVykazPage() {
           }
 
           .invoiceDayHeader {
-            grid-template-columns: 1fr;
+            grid-template-columns: 48px 74px minmax(0, 1fr) 72px;
           }
 
           .invoiceAddForm {
             grid-template-columns: 1fr;
+          }
+
+          .invoiceDayPreview,
+          .invoiceDayHeader .desktopOnly {
+            display: none;
           }
         }
       `}</style>
@@ -763,39 +798,73 @@ export default function MesacnyVykazPage() {
               monthDays.map((date) => {
                 const logs = groupedByDay[date] || []
                 const dayInfo = getDayInfo(date)
+                const isExpanded = expandedDayIds.includes(date)
+                const dayHours = logs.reduce((sum, log) => sum + Number(log.hodiny || 0), 0)
+                const dayKm = logs.reduce((sum, log) => sum + Number(log.kilometre || 0), 0)
+                const previewText =
+                  logs.length > 0
+                    ? logs
+                        .slice(0, 2)
+                        .map((log) => `${log.customer?.nazov || 'Nepriradené'}: ${log.praca_popis || log.nazov_vykazu || '-'}`)
+                        .join(' | ')
+                    : 'Bez zápisu'
 
                 return (
                 <section
                   key={date}
                   className={`invoiceDay ${dayInfo.isWeekend ? 'invoiceWeekend' : ''} ${dayInfo.isHoliday ? 'invoiceHoliday' : ''}`}
                 >
-                  <div className="invoiceDayHeader">
+                  <div
+                    className="invoiceDayHeader"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => toggleDay(date)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault()
+                        toggleDay(date)
+                      }
+                    }}
+                  >
                     <div className="invoiceDateBadge">
                       <strong>{date.slice(8)}</strong>
                       <span>{dayInfo.weekdayLabel}</span>
                     </div>
 
+                    <div className="invoiceStrong">{formatDate(date)}</div>
+
                     <div>
-                      <div style={{ fontSize: 18, fontWeight: 900 }}>{formatDate(date)}</div>
-                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 5 }}>
-                        <span className="invoiceDayFlag">
-                          {dayInfo.holidayName || (dayInfo.isWeekend ? 'Víkend' : 'Pracovný deň')}
-                        </span>
-                        <span className="invoiceMuted">{logs.length} zápisov</span>
-                      </div>
+                      <span className="invoiceDayFlag">
+                        {dayInfo.holidayName || (dayInfo.isWeekend ? 'Víkend' : 'Pracovný deň')}
+                      </span>
                     </div>
 
-                    <div style={{ fontWeight: 900, color: '#365314' }}>
-                      {formatHours(logs.reduce((sum, log) => sum + Number(log.hodiny || 0), 0))}
+                    <div className="invoiceDayPreview">{previewText}</div>
+
+                    <div style={{ fontWeight: 900, color: '#365314', textAlign: 'right' }}>
+                      {formatHours(dayHours)}
                     </div>
 
-                    <button type="button" style={buttonStyle} onClick={() => openAddForDate(date)}>
+                    <div className="desktopOnly invoiceMuted" style={{ textAlign: 'right' }}>
+                      {dayKm.toFixed(0)} km · {logs.length} záp.
+                    </div>
+
+                    <button
+                      type="button"
+                      style={{ ...buttonStyle, minHeight: 32, padding: '5px 9px' }}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        openAddForDate(date)
+                      }}
+                    >
                       + Pridať zápis
                     </button>
                   </div>
 
-                  {activeAddDate === date && (
-                    <div className="invoiceAddForm">
+                  {isExpanded && (
+                    <div className="invoiceDayDetails">
+                    {activeAddDate === date && (
+                      <div className="invoiceAddForm">
                       <div>
                         <label className="invoiceMuted" htmlFor={`target-${date}`}>
                           Typ
@@ -909,11 +978,11 @@ export default function MesacnyVykazPage() {
                         </button>
                       </div>
                     </div>
-                  )}
+                    )}
 
-                  {logs.length === 0 && <div className="invoiceDayEmpty">Bez zápisu pre zvolený filter.</div>}
+                    {logs.length === 0 && <div className="invoiceDayEmpty">Bez zápisu pre zvolený filter.</div>}
 
-                  {logs.map((log) => (
+                    {logs.map((log) => (
                     <div key={log.id} className="invoiceLogRow">
                       <div>
                         <div className="invoiceMuted">Firma</div>
@@ -946,7 +1015,9 @@ export default function MesacnyVykazPage() {
                         <div className="invoiceStrong">{Number(log.kilometre || 0).toFixed(0)}</div>
                       </div>
                     </div>
-                  ))}
+                    ))}
+                    </div>
+                  )}
                 </section>
                 )
               })
