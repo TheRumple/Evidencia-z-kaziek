@@ -205,18 +205,14 @@ export default function OfficeDashboardPage() {
         }
 
         .officeLogo {
-          position: absolute;
-          right: 18px;
-          top: 16px;
-          width: 300px;
-          height: 92px;
+          width: 360px;
+          height: 96px;
           display: inline-flex;
           align-items: center;
           justify-content: center;
           overflow: hidden;
           filter: drop-shadow(0 0 18px rgba(132, 204, 22, 0.36)) drop-shadow(0 12px 34px rgba(0, 0, 0, 0.34));
           opacity: 0.96;
-          z-index: 2;
         }
 
         .officeLogo img {
@@ -228,7 +224,7 @@ export default function OfficeDashboardPage() {
 
         .officeGrid {
           display: grid;
-          grid-template-columns: minmax(0, 0.92fr) minmax(430px, 1.08fr);
+          grid-template-columns: minmax(0, 1.1fr) minmax(360px, 0.9fr);
           gap: 10px;
           align-items: stretch;
         }
@@ -246,7 +242,7 @@ export default function OfficeDashboardPage() {
         .clockPanel {
           padding: 20px;
           display: grid;
-          align-content: space-between;
+          align-content: start;
           gap: 12px;
           min-height: 0;
           position: relative;
@@ -266,7 +262,7 @@ export default function OfficeDashboardPage() {
         }
 
         .clockValue {
-          font-size: clamp(64px, 7vw, 106px);
+          font-size: clamp(62px, 6.4vw, 98px);
           line-height: 0.92;
           font-weight: 900;
           letter-spacing: 0;
@@ -282,7 +278,7 @@ export default function OfficeDashboardPage() {
 
         .requestPanel {
           min-height: 0;
-          padding: 22px;
+          padding: 18px;
           display: grid;
           align-content: space-between;
           position: relative;
@@ -292,6 +288,20 @@ export default function OfficeDashboardPage() {
             #84cc16;
           color: #0f172a;
           border-color: rgba(236, 252, 203, 0.8);
+        }
+
+        .requestPanel.hasRequests {
+          background:
+            linear-gradient(135deg, rgba(239, 68, 68, 0.97), rgba(153, 27, 27, 0.94)),
+            #ef4444;
+          color: #fff;
+          border-color: rgba(254, 202, 202, 0.82);
+          box-shadow: 0 26px 70px rgba(153, 27, 27, 0.38);
+        }
+
+        .requestPanel.hasRequests .requestStatus {
+          background: rgba(255, 255, 255, 0.18);
+          color: #fff;
         }
 
         .requestPanel::before {
@@ -319,14 +329,14 @@ export default function OfficeDashboardPage() {
         .requestLabel {
           position: relative;
           z-index: 1;
-          font-size: 21px;
+          font-size: 19px;
           font-weight: 900;
         }
 
         .requestValue {
           position: relative;
           z-index: 1;
-          font-size: clamp(112px, 15vw, 188px);
+          font-size: clamp(86px, 11vw, 142px);
           line-height: 0.82;
           font-weight: 900;
           letter-spacing: 0;
@@ -340,7 +350,7 @@ export default function OfficeDashboardPage() {
           padding: 8px 12px;
           background: rgba(15, 23, 42, 0.13);
           color: #111827;
-          font-size: 13px;
+          font-size: 12px;
           font-weight: 900;
         }
 
@@ -511,7 +521,7 @@ export default function OfficeDashboardPage() {
           </div>
 
           <div style={{ display: 'grid', gap: 18 }}>
-            <div className="glassPanel requestPanel">
+            <div className={`glassPanel requestPanel ${pendingRequestsCount > 0 ? 'hasRequests' : ''}`}>
               <div>
                 <div className="requestLabel">Nové žiadosti z portálu</div>
                 <div className="requestStatus">
