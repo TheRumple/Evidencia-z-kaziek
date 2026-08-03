@@ -237,7 +237,7 @@ export default function OfficeDashboardPage() {
 
         .officeGrid {
           display: grid;
-          grid-template-columns: minmax(0, 1.25fr) minmax(340px, 0.75fr);
+          grid-template-columns: minmax(0, 0.92fr) minmax(430px, 1.08fr);
           gap: 18px;
           align-items: stretch;
         }
@@ -253,11 +253,11 @@ export default function OfficeDashboardPage() {
         }
 
         .clockPanel {
-          padding: 30px;
+          padding: 26px;
           display: grid;
           align-content: space-between;
           gap: 20px;
-          min-height: 430px;
+          min-height: 390px;
           position: relative;
           overflow: hidden;
         }
@@ -275,7 +275,7 @@ export default function OfficeDashboardPage() {
         }
 
         .clockValue {
-          font-size: clamp(72px, 9vw, 142px);
+          font-size: clamp(70px, 8vw, 118px);
           line-height: 0.92;
           font-weight: 900;
           letter-spacing: 0;
@@ -292,27 +292,111 @@ export default function OfficeDashboardPage() {
         .heroText {
           max-width: 720px;
           color: rgba(226, 232, 240, 0.72);
-          font-size: 18px;
+          font-size: 16px;
           line-height: 1.45;
           font-weight: 700;
         }
 
-        .weatherPanel {
-          padding: 24px;
+        .requestPanel {
+          min-height: 390px;
+          padding: 28px;
           display: grid;
-          gap: 16px;
+          align-content: space-between;
+          position: relative;
+          overflow: hidden;
+          background:
+            linear-gradient(135deg, rgba(132, 204, 22, 0.97), rgba(77, 124, 15, 0.92)),
+            #84cc16;
+          color: #0f172a;
+          border-color: rgba(236, 252, 203, 0.8);
+        }
+
+        .requestPanel::before {
+          content: '';
+          position: absolute;
+          right: -80px;
+          top: -80px;
+          width: 240px;
+          height: 240px;
+          border-radius: 999px;
+          background: rgba(236, 252, 203, 0.22);
+        }
+
+        .requestPanel::after {
+          content: '';
+          position: absolute;
+          left: -70px;
+          bottom: -100px;
+          width: 260px;
+          height: 260px;
+          border-radius: 999px;
+          border: 34px solid rgba(15, 23, 42, 0.12);
+        }
+
+        .requestLabel {
+          position: relative;
+          z-index: 1;
+          font-size: 24px;
+          font-weight: 900;
+        }
+
+        .requestValue {
+          position: relative;
+          z-index: 1;
+          font-size: clamp(130px, 18vw, 230px);
+          line-height: 0.82;
+          font-weight: 900;
+          letter-spacing: 0;
+        }
+
+        .requestStatus {
+          position: relative;
+          z-index: 1;
+          width: fit-content;
+          border-radius: 999px;
+          padding: 10px 14px;
+          background: rgba(15, 23, 42, 0.13);
+          color: #111827;
+          font-size: 15px;
+          font-weight: 900;
+        }
+
+        .miniGrid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 12px;
+        }
+
+        .miniCard {
+          min-height: 102px;
+          border-radius: 18px;
+          padding: 16px;
+          border: 1px solid rgba(148, 163, 184, 0.2);
+          background:
+            linear-gradient(160deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.03)),
+            rgba(255, 255, 255, 0.055);
+          display: grid;
+          align-content: space-between;
+        }
+
+        .weatherPanel {
+          padding: 18px;
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 14px;
+          align-items: center;
           border-color: rgba(132, 204, 22, 0.32);
         }
 
         .weatherTemp {
-          font-size: clamp(56px, 6vw, 92px);
+          font-size: clamp(42px, 4vw, 66px);
           font-weight: 900;
           line-height: 1;
         }
 
         .weatherLabel {
           color: #a3e635;
-          font-size: 20px;
+          font-size: 18px;
           font-weight: 900;
         }
 
@@ -407,6 +491,7 @@ export default function OfficeDashboardPage() {
         @media (max-width: 980px) {
           .officeGrid,
           .statGrid,
+          .miniGrid,
           .statusGrid {
             grid-template-columns: 1fr;
           }
@@ -437,36 +522,48 @@ export default function OfficeDashboardPage() {
               <div className="dateValue">{formatLongDate(now)}</div>
             </div>
             <div className="heroText">
-              ITspot servisné centrum. Prehľad dostupnosti práce, nových požiadaviek a stavu zákaziek bez zobrazenia citlivých údajov.
+              Kancelársky prehľad bez citlivých údajov. Nové žiadosti sú zvýraznené samostatne, aby boli viditeľné aj pri prechode okolo monitora.
             </div>
           </div>
 
           <div style={{ display: 'grid', gap: 18 }}>
-            <div className="glassPanel weatherPanel">
+            <div className="glassPanel requestPanel">
               <div>
-                <div style={{ color: 'rgba(226,232,240,0.72)', fontWeight: 900, marginBottom: 8 }}>Počasie Banská Bystrica</div>
-                <div className="weatherTemp">{weather.temperature === null ? '--' : Math.round(weather.temperature)}°C</div>
-              </div>
-              <div>
-                <div className="weatherLabel">{getWeatherLabel(weather.code)}</div>
-                <div style={{ color: 'rgba(226,232,240,0.72)', marginTop: 6, fontWeight: 800 }}>
-                  Vietor {weather.windSpeed === null ? '-' : `${Math.round(weather.windSpeed)} km/h`}
+                <div className="requestLabel">Nové žiadosti z portálu</div>
+                <div className="requestStatus">
+                  {pendingRequestsCount > 0 ? 'Čaká na spracovanie' : 'Aktuálne bez novej žiadosti'}
                 </div>
               </div>
+              <div className="requestValue">{pendingRequestsCount}</div>
             </div>
 
-            <div className="statGrid">
-              <div className="statCard highlightCard">
-                <div className="statLabel">Nové žiadosti</div>
-                <div className="statValue">{pendingRequestsCount}</div>
-              </div>
-              <div className="statCard" style={{ '--accent': '#38bdf8', '--accentGlow': 'rgba(56, 189, 248, 0.18)' } as CSSProperties}>
+            <div className="miniGrid">
+              <div className="miniCard">
                 <div className="statLabel">Dnešný plán</div>
                 <div className="statValue">{todayPlansCount}</div>
               </div>
-              <div className="statCard" style={{ '--accent': '#fb7185', '--accentGlow': 'rgba(251, 113, 133, 0.18)' } as CSSProperties}>
+              <div className="miniCard">
                 <div className="statLabel">Po termíne</div>
                 <div className="statValue">{stats.overdue}</div>
+              </div>
+              <div className="miniCard">
+                <div className="statLabel">Aktívne</div>
+                <div className="statValue">{stats.active}</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="glassPanel weatherPanel">
+          <div>
+            <div style={{ color: 'rgba(226,232,240,0.72)', fontWeight: 900, marginBottom: 5 }}>Počasie Banská Bystrica</div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, flexWrap: 'wrap' }}>
+              <div className="weatherTemp">{weather.temperature === null ? '--' : Math.round(weather.temperature)}°C</div>
+              <div>
+                <div className="weatherLabel">{getWeatherLabel(weather.code)}</div>
+                <div style={{ color: 'rgba(226,232,240,0.72)', marginTop: 3, fontWeight: 800 }}>
+                  Vietor {weather.windSpeed === null ? '-' : `${Math.round(weather.windSpeed)} km/h`} · Posledná aktualizácia {lastRefresh ? formatClock(lastRefresh) : '-'}
+                </div>
               </div>
             </div>
           </div>
@@ -496,7 +593,7 @@ export default function OfficeDashboardPage() {
         </section>
 
         <footer className="footerBar">
-          <div>Posledná aktualizácia: {lastRefresh ? formatClock(lastRefresh) : '-'}</div>
+          <div>ITspot s.r.o. · Servisné centrum</div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <Link className="officeLink" href="/">
               Správa zákaziek
