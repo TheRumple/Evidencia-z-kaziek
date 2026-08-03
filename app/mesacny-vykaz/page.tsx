@@ -35,6 +35,21 @@ function getMonthRange(month: string) {
   return { start, end }
 }
 
+function getMonthDays(month: string) {
+  const [year, monthNumber] = month.split('-').map(Number)
+  const lastDay = new Date(year, monthNumber, 0).getDate()
+
+  return Array.from({ length: lastDay }, (_item, index) => {
+    const day = String(index + 1).padStart(2, '0')
+    return `${month}-${day}`
+  })
+}
+
+function getLogTitle(text: string) {
+  const cleaned = text.trim().replace(/\s+/g, ' ')
+  return cleaned.length > 70 ? `${cleaned.slice(0, 67)}...` : cleaned
+}
+
 export default function MesacnyVykazPage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [checkingAuth, setCheckingAuth] = useState(true)
@@ -42,6 +57,13 @@ export default function MesacnyVykazPage() {
   const [month, setMonth] = useState(getCurrentMonth())
   const [selectedCustomerId, setSelectedCustomerId] = useState('vsetci')
   const [search, setSearch] = useState('')
+  const [activeAddDate, setActiveAddDate] = useState('')
+  const [newLogOrderId, setNewLogOrderId] = useState('')
+  const [newLogText, setNewLogText] = useState('')
+  const [newLogHours, setNewLogHours] = useState('')
+  const [newLogKm, setNewLogKm] = useState('')
+  const [savingLog, setSavingLog] = useState(false)
+  const [notice, setNotice] = useState('')
 
   const [customers, setCustomers] = useState<Customer[]>([])
   const [orders, setOrders] = useState<Order[]>([])
@@ -147,8 +169,23 @@ export default function MesacnyVykazPage() {
       groups[log.datum] = groups[log.datum] || []
       groups[log.datum].push(log)
     }
-    return Object.entries(groups).sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
+    return groups
   }, [invoiceLogs])
+
+  const monthDays = useMemo(() => getMonthDays(month), [month])
+
+  const filteredOrdersForForm = useMemo(() => {
+    return orders
+      .filter((order) => {
+        if (selectedCustomerId === 'vsetci') return true
+        return order.customer_id === selectedCustomerId
+      })
+      .sort((a, b) => {
+        const customerA = customerById[a.customer_id]?.nazov || ''
+        const customerB = customerById[b.customer_id]?.nazov || ''
+        return `${customerA} ${a.nazov}`.localeCompare(`${customerB} ${b.nazov}`, 'sk')
+      })
+  }, [orders, selectedCustomerId, customerById])
 
   const customerSummary = useMemo(() => {
     const summary: Record<string, { customerName: string; hours: number; km: number; count: number }> = {}
@@ -188,6 +225,76 @@ export default function MesacnyVykazPage() {
     })
 
     navigator.clipboard.writeText(lines.join('\n'))
+  }
+
+  function openAddForDate(date: string) {
+    setActiveAddDate(date)
+    setNewLogText('')
+    setNewLogHours('')
+    setNewLogKm('')
+    setNotice('')
+
+    if (!newLogOrderId || !filteredOrdersForForm.some((order) => order.id === newLogOrderId)) {
+      setNewLogOrderId(filteredOrdersForForm[0]?.id || '')
+    }
+  }
+
+  async function addWorkLogFromMonth(date: string) {
+    if (!userId) return
+
+    if (!newLogOrderId) {
+      setNotice('Vyber zákazku.')
+      return
+    }
+
+    if (!newLogText.trim()) {
+      setNotice('Zadaj popis práce.')
+      return
+    }
+
+    const hours = Number(String(newLogHours).replace(',', '.'))
+    if (!Number.isFinite(hours) || hours <= 0) {
+      setNotice('Zadaj platný počet hodín.')
+      return
+    }
+
+    const kilometres = Number(String(newLogKm || '0').replace(',', '.'))
+    if (!Number.isFinite(kilometres) || kilometres < 0) {
+      setNotice('Zadaj platné kilometre.')
+      return
+    }
+
+    setSavingLog(true)
+    setNotice('')
+
+    const { error } = await supabase.from('work_logs').insert([
+      {
+        user_id: userId,
+        order_id: newLogOrderId,
+        datum: date,
+        nazov_vykazu: getLogTitle(newLogText),
+        start_time: null,
+        end_time: null,
+        praca_popis: newLogText.trim(),
+        hodiny: hours,
+        kilometre: kilometres,
+        zamestnanci: [],
+      },
+    ])
+
+    setSavingLog(false)
+
+    if (error) {
+      setNotice(`Výkaz sa neuložil: ${error.message}`)
+      return
+    }
+
+    setNewLogText('')
+    setNewLogHours('')
+    setNewLogKm('')
+    setActiveAddDate('')
+    setNotice('Výkaz bol uložený do zákazky aj do mesačného prehľadu.')
+    await loadData(userId)
   }
 
   const boxStyle: CSSProperties = {
@@ -277,6 +384,26 @@ export default function MesacnyVykazPage() {
           box-shadow: 0 7px 18px rgba(15, 23, 42, 0.06);
         }
 
+        .invoiceAddForm {
+          display: grid;
+          grid-template-columns: minmax(220px, 1.1fr) minmax(260px, 2fr) 100px 90px auto;
+          gap: 9px;
+          align-items: end;
+          border: 1px solid #bef264;
+          border-radius: 14px;
+          padding: 10px;
+          background: linear-gradient(135deg, #f7fee7 0%, #ffffff 100%);
+        }
+
+        .invoiceDayEmpty {
+          border: 1px dashed #cbd5e1;
+          border-radius: 14px;
+          padding: 12px;
+          color: #64748b;
+          font-weight: 800;
+          background: #f8fafc;
+        }
+
         .invoiceMuted {
           color: #64748b;
           font-size: 12px;
@@ -304,6 +431,10 @@ export default function MesacnyVykazPage() {
           }
 
           .invoiceLogRow {
+            grid-template-columns: 1fr;
+          }
+
+          .invoiceAddForm {
             grid-template-columns: 1fr;
           }
         }
@@ -334,6 +465,22 @@ export default function MesacnyVykazPage() {
         </div>
 
         <div style={boxStyle}>
+          {notice && (
+            <div
+              style={{
+                marginBottom: 12,
+                border: notice.includes('neuložil') || notice.includes('Zadaj') || notice.includes('Vyber') ? '1px solid #fecaca' : '1px solid #bef264',
+                background: notice.includes('neuložil') || notice.includes('Zadaj') || notice.includes('Vyber') ? '#fff1f2' : '#f7fee7',
+                color: notice.includes('neuložil') || notice.includes('Zadaj') || notice.includes('Vyber') ? '#991b1b' : '#365314',
+                borderRadius: 12,
+                padding: '10px 12px',
+                fontWeight: 900,
+              }}
+            >
+              {notice}
+            </div>
+          )}
+
           <div className="invoiceFilters">
             <div>
               <label className="invoiceMuted" htmlFor="month">
@@ -379,12 +526,11 @@ export default function MesacnyVykazPage() {
           <div style={{ ...boxStyle, padding: 0, overflow: 'hidden' }}>
             {loading ? (
               <div style={{ padding: 20, color: '#64748b', fontWeight: 800 }}>Načítavam výkazy...</div>
-            ) : groupedByDay.length === 0 ? (
-              <div style={{ padding: 24, color: '#64748b', fontWeight: 800, textAlign: 'center' }}>
-                V tomto mesiaci nie sú žiadne výkazy pre zvolený filter.
-              </div>
             ) : (
-              groupedByDay.map(([date, logs]) => (
+              monthDays.map((date) => {
+                const logs = groupedByDay[date] || []
+
+                return (
                 <section key={date} className="invoiceDay">
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
                     <div>
@@ -394,7 +540,85 @@ export default function MesacnyVykazPage() {
                     <div style={{ fontWeight: 900, color: '#365314' }}>
                       {formatHours(logs.reduce((sum, log) => sum + Number(log.hodiny || 0), 0))}
                     </div>
+                    <button type="button" style={buttonStyle} onClick={() => openAddForDate(date)}>
+                      + Pridať zápis
+                    </button>
                   </div>
+
+                  {activeAddDate === date && (
+                    <div className="invoiceAddForm">
+                      <div>
+                        <label className="invoiceMuted" htmlFor={`order-${date}`}>
+                          Zákazka
+                        </label>
+                        <select id={`order-${date}`} value={newLogOrderId} onChange={(event) => setNewLogOrderId(event.target.value)} style={inputStyle}>
+                          <option value="">Vyber zákazku</option>
+                          {filteredOrdersForForm.map((order) => (
+                            <option key={order.id} value={order.id}>
+                              {customerById[order.customer_id]?.nazov || 'Neznámy zákazník'} - {order.nazov}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="invoiceMuted" htmlFor={`text-${date}`}>
+                          Čo sa spravilo
+                        </label>
+                        <input
+                          id={`text-${date}`}
+                          value={newLogText}
+                          onChange={(event) => setNewLogText(event.target.value)}
+                          placeholder="Napr. výmena zdroja, konfigurácia siete, diagnostika..."
+                          style={inputStyle}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="invoiceMuted" htmlFor={`hours-${date}`}>
+                          Hodiny
+                        </label>
+                        <input
+                          id={`hours-${date}`}
+                          value={newLogHours}
+                          onChange={(event) => setNewLogHours(event.target.value)}
+                          placeholder="1,5"
+                          inputMode="decimal"
+                          style={inputStyle}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="invoiceMuted" htmlFor={`km-${date}`}>
+                          Km
+                        </label>
+                        <input
+                          id={`km-${date}`}
+                          value={newLogKm}
+                          onChange={(event) => setNewLogKm(event.target.value)}
+                          placeholder="0"
+                          inputMode="decimal"
+                          style={inputStyle}
+                        />
+                      </div>
+
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        <button
+                          type="button"
+                          style={{ ...buttonStyle, background: '#84cc16', borderColor: '#65a30d' }}
+                          onClick={() => addWorkLogFromMonth(date)}
+                          disabled={savingLog}
+                        >
+                          {savingLog ? 'Ukladám...' : 'Uložiť'}
+                        </button>
+                        <button type="button" style={buttonStyle} onClick={() => setActiveAddDate('')}>
+                          Zrušiť
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {logs.length === 0 && <div className="invoiceDayEmpty">Bez zápisu pre zvolený filter.</div>}
 
                   {logs.map((log) => (
                     <div key={log.id} className="invoiceLogRow">
@@ -431,7 +655,8 @@ export default function MesacnyVykazPage() {
                     </div>
                   ))}
                 </section>
-              ))
+                )
+              })
             )}
           </div>
 
