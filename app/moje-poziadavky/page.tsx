@@ -30,9 +30,9 @@ function getStatusLabel(item: CustomerLookupItem) {
     case 'nova':
       return 'Nová zákazka'
     case 'rozpracovana':
-      return 'V riešení'
+      return 'Rozpracovaná'
     case 'obhliadka':
-      return 'Bude obhliadka'
+      return 'Potrebná obhliadka'
     case 'caka':
     case 'cakame':
       return 'Čaká na materiál'
