@@ -71,7 +71,8 @@ export default function MyRequestsPage() {
     setMessage('')
     setSearched(false)
 
-    if (!customerName.trim() || portalCode.trim().length < 6) {
+    const cleanPortalCode = portalCode.replace(/\D/g, '')
+    if (!customerName.trim() || cleanPortalCode.length !== 6) {
       setMessage('Zadajte názov firmy alebo meno a prístupový kód zákazníka.')
       return
     }
@@ -79,7 +80,7 @@ export default function MyRequestsPage() {
     setLoading(true)
     const { data, error } = await supabase.rpc('lookup_customer_requests', {
       p_customer_name: customerName.trim(),
-      p_portal_code: portalCode.trim(),
+      p_portal_code: cleanPortalCode,
     })
     setLoading(false)
     setSearched(true)
@@ -167,7 +168,7 @@ export default function MyRequestsPage() {
                 style={inputStyle}
                 value={customerName}
                 onChange={(event) => setCustomerName(event.target.value)}
-                placeholder="Napr. Strojbal s.r.o."
+                placeholder="Názov vašej firmy alebo meno"
               />
             </div>
 
@@ -177,10 +178,12 @@ export default function MyRequestsPage() {
               </label>
               <input
                 id="portal-code"
-                style={{ ...inputStyle, textTransform: 'uppercase' }}
+                inputMode="numeric"
+                maxLength={6}
+                style={inputStyle}
                 value={portalCode}
-                onChange={(event) => setPortalCode(event.target.value.toUpperCase())}
-                placeholder="Napr. STROJBAL-4821"
+                onChange={(event) => setPortalCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
+                placeholder="123456"
               />
             </div>
 

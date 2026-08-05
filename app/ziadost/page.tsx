@@ -347,12 +347,14 @@ export default function PublicRequestPage() {
           <Link
             href="/moje-poziadavky"
             style={{
-              color: '#cbd5e1',
-              border: '1px solid rgba(255,255,255,0.18)',
-              borderRadius: 10,
-              padding: '8px 12px',
+              color: '#111827',
+              border: '1px solid #84cc16',
+              background: '#84cc16',
+              boxShadow: '0 10px 24px rgba(132, 204, 22, 0.22)',
+              borderRadius: 12,
+              padding: '9px 14px',
               textDecoration: 'none',
-              fontWeight: 800,
+              fontWeight: 900,
             }}
           >
             Moje požiadavky

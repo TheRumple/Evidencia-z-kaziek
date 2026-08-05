@@ -1,22 +1,57 @@
 -- Run this in Supabase SQL Editor to enable the public "Moje požiadavky" page.
 -- The app does not expose table SELECT access to visitors. Anonymous users can only call
--- this function with company/person name + portal code and receive matching rows.
-
-create extension if not exists pgcrypto;
+-- this function with company/person name + a 6 digit portal code and receive matching rows.
 
 alter table public.customers
   add column if not exists portal_code text;
 
 update public.customers
-set portal_code = upper(left(regexp_replace(nazov, '[^[:alnum:]]', '', 'g'), 8)) || '-' || upper(substr(replace(id::text, '-', ''), 1, 4))
+set portal_code = lpad(((abs(hashtext(id::text)) % 900000) + 100000)::text, 6, '0')
 where portal_code is null or length(trim(portal_code)) = 0;
 
 alter table public.customers
-  alter column portal_code set default upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 4)) || '-' || upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 4));
+  alter column portal_code drop default;
 
 create unique index if not exists customers_portal_code_unique
 on public.customers (portal_code)
 where portal_code is not null;
+
+create or replace function public.set_customer_portal_code()
+returns trigger
+language plpgsql
+as $$
+declare
+  next_code text;
+begin
+  if new.portal_code is null or length(trim(new.portal_code)) = 0 then
+    loop
+      next_code := lpad((floor(random() * 900000 + 100000))::int::text, 6, '0');
+      exit when not exists (
+        select 1
+        from public.customers
+        where portal_code = next_code
+          and id is distinct from new.id
+      );
+    end loop;
+
+    new.portal_code := next_code;
+  else
+    new.portal_code := regexp_replace(new.portal_code, '[^0-9]', '', 'g');
+  end if;
+
+  if length(new.portal_code) <> 6 then
+    raise exception 'portal_code must contain exactly 6 digits';
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_set_customer_portal_code on public.customers;
+create trigger trg_set_customer_portal_code
+before insert or update of portal_code on public.customers
+for each row
+execute function public.set_customer_portal_code();
 
 create or replace function public.lookup_customer_requests(
   p_customer_name text,
@@ -39,7 +74,7 @@ as $$
   with lookup_input as (
     select
       lower(trim(coalesce(p_customer_name, ''))) as customer_name,
-      upper(trim(coalesce(p_portal_code, ''))) as portal_code
+      regexp_replace(coalesce(p_portal_code, ''), '[^0-9]', '', 'g') as portal_code
   ),
   matched_customer as (
     select c.*
