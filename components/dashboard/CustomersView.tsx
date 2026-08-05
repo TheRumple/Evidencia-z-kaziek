@@ -43,6 +43,7 @@ export function CustomersView({
                 <th style={{ padding: '12px 10px' }}>Kontakt</th>
                 <th style={{ padding: '12px 10px' }}>Telefón</th>
                 <th style={{ padding: '12px 10px' }}>Email</th>
+                <th style={{ padding: '12px 10px' }}>Kód portálu</th>
                 <th style={{ padding: '12px 10px' }}>Akcie</th>
               </tr>
             </thead>
@@ -53,6 +54,9 @@ export function CustomersView({
                   <td style={{ padding: '12px 10px' }}>{customer.kontakt || '-'}</td>
                   <td style={{ padding: '12px 10px' }}>{customer.telefon || '-'}</td>
                   <td style={{ padding: '12px 10px' }}>{customer.email || '-'}</td>
+                  <td style={{ padding: '12px 10px', fontWeight: 900 }}>
+                    {customer.portal_code || '-'}
+                  </td>
 
                   <td style={{ padding: '12px 10px' }}>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -69,7 +73,7 @@ export function CustomersView({
 
               {customers.length === 0 && (
                 <tr>
-                  <td colSpan={5} style={{ padding: 24, textAlign: 'center', color: '#64748b' }}>
+                  <td colSpan={6} style={{ padding: 24, textAlign: 'center', color: '#64748b' }}>
                     Zatiaľ nemáš žiadnych zákazníkov
                   </td>
                 </tr>
@@ -104,6 +108,9 @@ export function CustomersView({
               </div>
               <div>
                 <strong>Email:</strong> {customer.email || '-'}
+              </div>
+              <div>
+                <strong>Kód portálu:</strong> {customer.portal_code || '-'}
               </div>
 
             </div>

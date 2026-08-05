@@ -59,8 +59,8 @@ function cleanPublicDescription(text: string | null) {
 }
 
 export default function MyRequestsPage() {
-  const [email, setEmail] = useState('')
-  const [phone, setPhone] = useState('')
+  const [customerName, setCustomerName] = useState('')
+  const [portalCode, setPortalCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [searched, setSearched] = useState(false)
   const [message, setMessage] = useState('')
@@ -71,16 +71,15 @@ export default function MyRequestsPage() {
     setMessage('')
     setSearched(false)
 
-    const phoneDigits = phone.replace(/\D/g, '')
-    if (!email.trim() || phoneDigits.length < 7) {
-      setMessage('Zadajte email a telefónne číslo, ktoré ste uviedli v požiadavke.')
+    if (!customerName.trim() || portalCode.trim().length < 6) {
+      setMessage('Zadajte názov firmy alebo meno a prístupový kód zákazníka.')
       return
     }
 
     setLoading(true)
     const { data, error } = await supabase.rpc('lookup_customer_requests', {
-      p_email: email.trim().toLowerCase(),
-      p_phone: phone,
+      p_customer_name: customerName.trim(),
+      p_portal_code: portalCode.trim(),
     })
     setLoading(false)
     setSearched(true)
@@ -144,7 +143,7 @@ export default function MyRequestsPage() {
           />
           <h1 style={{ margin: 0, fontSize: 30, fontWeight: 900, lineHeight: 1.18 }}>Moje požiadavky</h1>
           <div style={{ marginTop: 10, color: 'rgba(226,232,240,0.72)', fontSize: 15, fontWeight: 800 }}>
-            Zadajte email a telefón z požiadavky. Zobrazíme stav vašich požiadaviek a zákaziek.
+            Zadajte názov firmy alebo meno a prístupový kód. Zobrazíme stav vašich požiadaviek a zákaziek.
           </div>
         </section>
 
@@ -160,17 +159,29 @@ export default function MyRequestsPage() {
         >
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 14, alignItems: 'end' }}>
             <div>
-              <label style={labelStyle} htmlFor="email">
-                Email *
+              <label style={labelStyle} htmlFor="customer-name">
+                Firma alebo meno *
               </label>
-              <input id="email" type="email" style={inputStyle} value={email} onChange={(event) => setEmail(event.target.value)} />
+              <input
+                id="customer-name"
+                style={inputStyle}
+                value={customerName}
+                onChange={(event) => setCustomerName(event.target.value)}
+                placeholder="Napr. Strojbal s.r.o."
+              />
             </div>
 
             <div>
-              <label style={labelStyle} htmlFor="phone">
-                Telefón *
+              <label style={labelStyle} htmlFor="portal-code">
+                Prístupový kód *
               </label>
-              <input id="phone" style={inputStyle} value={phone} onChange={(event) => setPhone(event.target.value)} />
+              <input
+                id="portal-code"
+                style={{ ...inputStyle, textTransform: 'uppercase' }}
+                value={portalCode}
+                onChange={(event) => setPortalCode(event.target.value.toUpperCase())}
+                placeholder="Napr. STROJBAL-4821"
+              />
             </div>
 
             <button
@@ -203,7 +214,7 @@ export default function MyRequestsPage() {
         <section style={{ marginTop: 14, display: 'grid', gap: 10 }}>
           {searched && items.length === 0 && !message && (
             <div style={{ border: '1px solid rgba(148, 163, 184, 0.22)', borderRadius: 16, padding: 18, background: 'rgba(15, 23, 42, 0.82)', color: '#cbd5e1', fontWeight: 800 }}>
-              Nenašli sme žiadnu požiadavku pre zadaný email a telefón.
+              Nenašli sme žiadnu požiadavku pre zadaný názov a prístupový kód.
             </div>
           )}
 

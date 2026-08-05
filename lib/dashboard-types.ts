@@ -5,6 +5,7 @@ export type Customer = {
   kontakt: string | null
   telefon: string | null
   email: string | null
+  portal_code?: string | null
   created_at?: string
 }
 
