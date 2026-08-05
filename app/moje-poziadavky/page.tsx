@@ -168,7 +168,7 @@ export default function MyRequestsPage() {
           />
           <h1 style={{ margin: 0, fontSize: 30, fontWeight: 900, lineHeight: 1.18 }}>Moje požiadavky</h1>
           <div style={{ marginTop: 10, color: 'rgba(226,232,240,0.72)', fontSize: 15, fontWeight: 800 }}>
-            Zadajte názov firmy alebo meno a zákaznícky PIN. Zobrazíme stav vašich požiadaviek a zákaziek.
+            Zadajte názov firmy alebo meno a zákaznícky PIN. Právnu formu ako s.r.o. písať nemusíte.
           </div>
         </section>
 
@@ -192,7 +192,7 @@ export default function MyRequestsPage() {
                 style={inputStyle}
                 value={customerName}
                 onChange={(event) => setCustomerName(event.target.value)}
-                placeholder="Názov vašej firmy alebo meno"
+                placeholder="Napr. názov firmy bez s.r.o. alebo meno"
               />
             </div>
 

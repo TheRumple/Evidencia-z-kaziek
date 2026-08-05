@@ -54,6 +54,31 @@ set portal_code = null
 where portal_code is null
   or portal_code !~ '^[0-9]{4}$';
 
+create or replace function public.normalize_customer_lookup_name(p_name text)
+returns text
+language sql
+immutable
+as $$
+  select trim(
+    regexp_replace(
+      regexp_replace(
+        regexp_replace(
+          lower(coalesce(p_name, '')),
+          '\m(s\.?\s*r\.?\s*o\.?|spol\.?\s*s\.?\s*r\.?\s*o\.?|a\.?\s*s\.?|sro|as)\M',
+          '',
+          'gi'
+        ),
+        '[^[:alnum:]]+',
+        '',
+        'g'
+      ),
+      '\s+',
+      '',
+      'g'
+    )
+  );
+$$;
+
 create or replace function public.lookup_customer_requests(
   p_customer_name text,
   p_portal_code text
@@ -75,6 +100,7 @@ as $$
   with lookup_input as (
     select
       lower(trim(coalesce(p_customer_name, ''))) as customer_name,
+      public.normalize_customer_lookup_name(p_customer_name) as normalized_customer_name,
       regexp_replace(coalesce(p_portal_code, ''), '[^0-9]', '', 'g') as portal_code
   ),
   matched_customer as (
@@ -87,6 +113,8 @@ as $$
       and (
         lower(trim(c.nazov)) = i.customer_name
         or lower(trim(c.kontakt)) = i.customer_name
+        or public.normalize_customer_lookup_name(c.nazov) = i.normalized_customer_name
+        or public.normalize_customer_lookup_name(c.kontakt) = i.normalized_customer_name
       )
     limit 1
   ),
