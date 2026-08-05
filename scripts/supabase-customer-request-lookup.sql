@@ -5,9 +5,18 @@
 alter table public.customers
   add column if not exists portal_code text;
 
-update public.customers
-set portal_code = lpad(((abs(hashtext(id::text)) % 900000) + 100000)::text, 6, '0')
-where portal_code is null or length(trim(portal_code)) = 0;
+with numbered_customers as (
+  select
+    id,
+    lpad((100000 + row_number() over (order by created_at nulls last, id))::text, 6, '0') as next_portal_code
+  from public.customers
+  where portal_code is null
+    or portal_code !~ '^[0-9]{6}$'
+)
+update public.customers c
+set portal_code = n.next_portal_code
+from numbered_customers n
+where c.id = n.id;
 
 alter table public.customers
   alter column portal_code drop default;
