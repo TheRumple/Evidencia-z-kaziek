@@ -27,16 +27,13 @@ function getStatusLabel(item: CustomerLookupItem) {
   if (item.item_type === 'poziadavka') return 'Prijatá požiadavka'
 
   switch (item.stav) {
+    case 'nova':
+      return 'Nová zákazka'
     case 'rozpracovana':
       return 'V riešení'
+    case 'caka':
     case 'cakame':
       return 'Čaká'
-    case 'hotova':
-      return 'Hotové'
-    case 'fakturovana':
-      return 'Zrealizované'
-    case 'stornovana':
-      return 'Stornované'
     default:
       return item.stav || 'Zákazka'
   }
@@ -44,9 +41,10 @@ function getStatusLabel(item: CustomerLookupItem) {
 
 function getStatusColor(item: CustomerLookupItem) {
   if (item.item_type === 'poziadavka') return { background: '#fef3c7', color: '#92400e', border: '#fcd34d' }
-  if (item.stav === 'fakturovana' || item.stav === 'hotova') return { background: '#dcfce7', color: '#166534', border: '#86efac' }
-  if (item.stav === 'stornovana') return { background: '#fee2e2', color: '#991b1b', border: '#fecaca' }
-  return { background: '#dbeafe', color: '#1e40af', border: '#93c5fd' }
+  if (item.stav === 'nova') return { background: '#dbeafe', color: '#1e40af', border: '#93c5fd' }
+  if (item.stav === 'rozpracovana') return { background: '#dcfce7', color: '#166534', border: '#86efac' }
+  if (item.stav === 'caka' || item.stav === 'cakame') return { background: '#ffedd5', color: '#9a3412', border: '#fdba74' }
+  return { background: '#e2e8f0', color: '#334155', border: '#cbd5e1' }
 }
 
 function cleanPublicDescription(text: string | null) {
@@ -91,7 +89,11 @@ export default function MyRequestsPage() {
       return
     }
 
-    setItems(((data || []) as CustomerLookupItem[]).slice(0, 25))
+    setItems(
+      ((data || []) as CustomerLookupItem[])
+        .filter((item) => item.item_type === 'poziadavka' || ['nova', 'rozpracovana', 'caka', 'cakame'].includes(item.stav || ''))
+        .slice(0, 25)
+    )
   }
 
   const inputStyle = {

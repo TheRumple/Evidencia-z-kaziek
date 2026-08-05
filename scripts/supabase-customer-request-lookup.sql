@@ -119,6 +119,7 @@ as $$
       c.nazov as customer_name
     from public.orders o
     join matched_customer c on c.id = o.customer_id
+    where o.stav in ('nova', 'rozpracovana', 'caka', 'cakame')
   )
   select * from pending_requests
   union all
