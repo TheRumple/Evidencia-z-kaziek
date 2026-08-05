@@ -26,6 +26,7 @@ export default function PublicRequestPage() {
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
   const [requestType, setRequestType] = useState('nova_instalacia')
+  const [requestTitle, setRequestTitle] = useState('')
   const [description, setDescription] = useState('')
   const [deadline, setDeadline] = useState('')
   const [website, setWebsite] = useState('')
@@ -47,14 +48,14 @@ export default function PublicRequestPage() {
       return
     }
 
-    if (!name.trim() || !email.trim() || !description.trim()) {
-      setMessage({ type: 'error', text: 'Vyplňte prosím meno, email a popis požiadavky.' })
+    if (!name.trim() || !email.trim() || !requestTitle.trim() || !description.trim()) {
+      setMessage({ type: 'error', text: 'Vyplňte prosím meno, email, názov a popis požiadavky.' })
       return
     }
 
     const today = getLocalDateValue()
     const phoneDigits = phone.replace(/\D/g, '')
-    const combinedText = [name, company, phone, email, description].join(' ')
+    const combinedText = [name, company, phone, email, requestTitle, description].join(' ')
     const suspiciousPattern = /(https?:\/\/|www\.|casino|viagra|crypto|loan|forex|porn|betting)/i
 
     if (deadline && deadline < today) {
@@ -80,7 +81,7 @@ export default function PublicRequestPage() {
     setSubmitting(true)
 
     const typeLabel = requestTypes.find((type) => type.value === requestType)?.label || requestType
-    const generatedTitle = `${typeLabel} - ${company.trim() || name.trim()}`
+    const generatedTitle = requestTitle.trim()
     const fullDescription = [
       `Typ požiadavky: ${typeLabel}`,
       `Meno: ${name.trim()}`,
@@ -118,6 +119,7 @@ export default function PublicRequestPage() {
       setPhone('')
       setEmail('')
       setRequestType('nova_instalacia')
+      setRequestTitle('')
       setDescription('')
       setDeadline('')
       setMessage({ type: 'success', text: 'Požiadavka bola odoslaná. Ozveme sa vám po jej spracovaní.' })
@@ -264,6 +266,20 @@ export default function PublicRequestPage() {
               </label>
               <input id="deadline" type="date" style={inputStyle} value={deadline} onChange={(event) => setDeadline(event.target.value)} />
             </div>
+          </div>
+
+          <div style={{ marginTop: 14 }}>
+            <label style={labelStyle} htmlFor="request-title">
+              Názov požiadavky *
+            </label>
+            <input
+              id="request-title"
+              required
+              style={inputStyle}
+              placeholder="Napr. výmena motora, kamera pri bráne, cenová ponuka alarmu"
+              value={requestTitle}
+              onChange={(event) => setRequestTitle(event.target.value)}
+            />
           </div>
 
           <div style={{ marginTop: 14 }}>

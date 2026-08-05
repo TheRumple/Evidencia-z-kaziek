@@ -250,7 +250,7 @@ export default function AdminRequestsPage() {
 
     return req.popis
       .split('\n')
-      .filter((line) => !/^(Typ požiadavky|Meno|Firma|Telefón|Telefon|Email):/i.test(line.trim()))
+      .filter((line) => !/^(Typ požiadavky|Názov požiadavky|Nazov poziadavky|Meno|Firma|Telefón|Telefon|Email):/i.test(line.trim()))
       .join('\n')
       .trim() || '-'
   }
