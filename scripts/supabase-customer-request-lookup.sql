@@ -1,22 +1,9 @@
 -- Run this in Supabase SQL Editor to enable the public "Moje požiadavky" page.
 -- The app does not expose table SELECT access to visitors. Anonymous users can only call
--- this function with company/person name + a 6 digit portal code and receive matching rows.
+-- this function with company/person name + a 4 digit portal PIN and receive matching rows.
 
 alter table public.customers
   add column if not exists portal_code text;
-
-with numbered_customers as (
-  select
-    id,
-    lpad((100000 + row_number() over (order by created_at nulls last, id))::text, 6, '0') as next_portal_code
-  from public.customers
-  where portal_code is null
-    or portal_code !~ '^[0-9]{6}$'
-)
-update public.customers c
-set portal_code = n.next_portal_code
-from numbered_customers n
-where c.id = n.id;
 
 alter table public.customers
   alter column portal_code drop default;
@@ -34,7 +21,7 @@ declare
 begin
   if new.portal_code is null or length(trim(new.portal_code)) = 0 then
     loop
-      next_code := lpad((floor(random() * 900000 + 100000))::int::text, 6, '0');
+      next_code := lpad((floor(random() * 9000 + 1000))::int::text, 4, '0');
       exit when not exists (
         select 1
         from public.customers
@@ -48,8 +35,8 @@ begin
     new.portal_code := regexp_replace(new.portal_code, '[^0-9]', '', 'g');
   end if;
 
-  if length(new.portal_code) <> 6 then
-    raise exception 'portal_code must contain exactly 6 digits';
+  if length(new.portal_code) <> 4 then
+    raise exception 'portal_code must contain exactly 4 digits';
   end if;
 
   return new;
@@ -61,6 +48,11 @@ create trigger trg_set_customer_portal_code
 before insert or update of portal_code on public.customers
 for each row
 execute function public.set_customer_portal_code();
+
+update public.customers
+set portal_code = null
+where portal_code is null
+  or portal_code !~ '^[0-9]{4}$';
 
 create or replace function public.lookup_customer_requests(
   p_customer_name text,
@@ -90,7 +82,7 @@ as $$
     from public.customers c
     cross join lookup_input i
     where i.customer_name <> ''
-      and length(i.portal_code) >= 6
+      and length(i.portal_code) = 4
       and upper(trim(coalesce(c.portal_code, ''))) = i.portal_code
       and (
         lower(trim(c.nazov)) = i.customer_name

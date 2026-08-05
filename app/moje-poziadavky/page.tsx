@@ -72,8 +72,8 @@ export default function MyRequestsPage() {
     setSearched(false)
 
     const cleanPortalCode = portalCode.replace(/\D/g, '')
-    if (!customerName.trim() || cleanPortalCode.length !== 6) {
-      setMessage('Zadajte názov firmy alebo meno a prístupový kód zákazníka.')
+    if (!customerName.trim() || cleanPortalCode.length !== 4) {
+      setMessage('Zadajte názov firmy alebo meno a 4-miestny PIN zákazníka.')
       return
     }
 
@@ -144,7 +144,7 @@ export default function MyRequestsPage() {
           />
           <h1 style={{ margin: 0, fontSize: 30, fontWeight: 900, lineHeight: 1.18 }}>Moje požiadavky</h1>
           <div style={{ marginTop: 10, color: 'rgba(226,232,240,0.72)', fontSize: 15, fontWeight: 800 }}>
-            Zadajte názov firmy alebo meno a prístupový kód. Zobrazíme stav vašich požiadaviek a zákaziek.
+            Zadajte názov firmy alebo meno a zákaznícky PIN. Zobrazíme stav vašich požiadaviek a zákaziek.
           </div>
         </section>
 
@@ -174,16 +174,16 @@ export default function MyRequestsPage() {
 
             <div>
               <label style={labelStyle} htmlFor="portal-code">
-                Prístupový kód *
+                PIN *
               </label>
               <input
                 id="portal-code"
                 inputMode="numeric"
-                maxLength={6}
+                maxLength={4}
                 style={inputStyle}
                 value={portalCode}
-                onChange={(event) => setPortalCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
-                placeholder="123456"
+                onChange={(event) => setPortalCode(event.target.value.replace(/\D/g, '').slice(0, 4))}
+                placeholder="1234"
               />
             </div>
 

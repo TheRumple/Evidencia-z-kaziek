@@ -43,7 +43,7 @@ export function CustomersView({
                 <th style={{ padding: '12px 10px' }}>Kontakt</th>
                 <th style={{ padding: '12px 10px' }}>Telefón</th>
                 <th style={{ padding: '12px 10px' }}>Email</th>
-                <th style={{ padding: '12px 10px' }}>Kód portálu</th>
+                <th style={{ padding: '12px 10px' }}>PIN portálu</th>
                 <th style={{ padding: '12px 10px' }}>Akcie</th>
               </tr>
             </thead>
@@ -110,7 +110,7 @@ export function CustomersView({
                 <strong>Email:</strong> {customer.email || '-'}
               </div>
               <div>
-                <strong>Kód portálu:</strong> {customer.portal_code || '-'}
+                <strong>PIN portálu:</strong> {customer.portal_code || '-'}
               </div>
 
             </div>
