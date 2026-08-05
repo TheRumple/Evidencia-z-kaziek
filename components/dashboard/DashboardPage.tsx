@@ -88,6 +88,7 @@ export default function DashboardPage() {
   const [editCustomerKontakt, setEditCustomerKontakt] = useState('')
   const [editCustomerTelefon, setEditCustomerTelefon] = useState('')
   const [editCustomerEmail, setEditCustomerEmail] = useState('')
+  const [editCustomerPortalCode, setEditCustomerPortalCode] = useState('')
 
   const [editOrderId, setEditOrderId] = useState('')
   const [editOrderNazov, setEditOrderNazov] = useState('')
@@ -458,6 +459,7 @@ export default function DashboardPage() {
     setEditCustomerKontakt('')
     setEditCustomerTelefon('')
     setEditCustomerEmail('')
+    setEditCustomerPortalCode('')
   }
 
   function resetEditOrderForm() {
@@ -834,12 +836,19 @@ export default function DashboardPage() {
     setEditCustomerKontakt(c.kontakt || '')
     setEditCustomerTelefon(c.telefon || '')
     setEditCustomerEmail(c.email || '')
+    setEditCustomerPortalCode(c.portal_code || '')
     setOpenEditCustomer(true)
   }
 
   async function saveCustomerEdit() {
     if (!editCustomerId || !editCustomerNazov.trim() || !userId) {
       setNotice({ type: 'error', text: 'Zadaj názov zákazníka.' })
+      return
+    }
+
+    const cleanPortalCode = editCustomerPortalCode.replace(/\D/g, '')
+    if (cleanPortalCode && cleanPortalCode.length !== 4) {
+      setNotice({ type: 'error', text: 'PIN portálu musí mať presne 4 číslice.' })
       return
     }
 
@@ -850,6 +859,7 @@ export default function DashboardPage() {
       kontakt: editCustomerKontakt.trim() || null,
       telefon: editCustomerTelefon.trim() || null,
       email: editCustomerEmail.trim() || null,
+      portal_code: cleanPortalCode || null,
     }
 
     const previousCustomers = customers
@@ -869,6 +879,7 @@ export default function DashboardPage() {
       return
     }
 
+    await loadCustomers(userId)
     setNotice({ type: 'success', text: 'Zákazník bol upravený.' })
     closeEditCustomerModal()
   }
@@ -2144,6 +2155,7 @@ export default function DashboardPage() {
             editCustomerEmail={editCustomerEmail}
             editCustomerKontakt={editCustomerKontakt}
             editCustomerNazov={editCustomerNazov}
+            editCustomerPortalCode={editCustomerPortalCode}
             editCustomerTelefon={editCustomerTelefon}
             editEmployeeCanDelete={editEmployeeCanDelete}
             editEmployeeEmail={editEmployeeEmail}
@@ -2205,6 +2217,7 @@ export default function DashboardPage() {
             setEditCustomerEmail={setEditCustomerEmail}
             setEditCustomerKontakt={setEditCustomerKontakt}
             setEditCustomerNazov={setEditCustomerNazov}
+            setEditCustomerPortalCode={setEditCustomerPortalCode}
             setEditCustomerTelefon={setEditCustomerTelefon}
             setEditEmployeeCanDelete={setEditEmployeeCanDelete}
             setEditEmployeeEmail={setEditEmployeeEmail}
