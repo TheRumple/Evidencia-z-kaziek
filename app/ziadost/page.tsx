@@ -47,8 +47,8 @@ export default function PublicRequestPage() {
       return
     }
 
-    if (!name.trim() || !phone.trim() || !email.trim() || !description.trim()) {
-      setMessage({ type: 'error', text: 'Vyplňte prosím meno, telefón, email a popis požiadavky.' })
+    if (!name.trim() || !email.trim() || !description.trim()) {
+      setMessage({ type: 'error', text: 'Vyplňte prosím meno, email a popis požiadavky.' })
       return
     }
 
@@ -62,7 +62,7 @@ export default function PublicRequestPage() {
       return
     }
 
-    if (phoneDigits.length < 7) {
+    if (phone.trim() && phoneDigits.length < 7) {
       setMessage({ type: 'error', text: 'Zadajte prosím platné telefónne číslo.' })
       return
     }
@@ -85,7 +85,7 @@ export default function PublicRequestPage() {
       `Typ požiadavky: ${typeLabel}`,
       `Meno: ${name.trim()}`,
       company.trim() ? `Firma: ${company.trim()}` : '',
-      `Telefón: ${phone.trim()}`,
+      phone.trim() ? `Telefón: ${phone.trim()}` : '',
       `Email: ${email.trim()}`,
       '',
       'Popis požiadavky:',
@@ -233,7 +233,7 @@ export default function PublicRequestPage() {
 
             <div>
               <label style={labelStyle} htmlFor="phone">
-                Telefón *
+                Telefón
               </label>
               <input id="phone" style={inputStyle} value={phone} onChange={(event) => setPhone(event.target.value)} />
             </div>
@@ -242,7 +242,7 @@ export default function PublicRequestPage() {
               <label style={labelStyle} htmlFor="email">
                 Email *
               </label>
-              <input id="email" type="email" style={inputStyle} value={email} onChange={(event) => setEmail(event.target.value)} />
+              <input id="email" type="email" required style={inputStyle} value={email} onChange={(event) => setEmail(event.target.value)} />
             </div>
 
             <div>
