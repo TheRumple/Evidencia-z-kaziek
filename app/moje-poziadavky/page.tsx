@@ -31,9 +31,11 @@ function getStatusLabel(item: CustomerLookupItem) {
       return 'Nová zákazka'
     case 'rozpracovana':
       return 'V riešení'
+    case 'obhliadka':
+      return 'Bude obhliadka'
     case 'caka':
     case 'cakame':
-      return 'Čaká'
+      return 'Čaká na materiál'
     default:
       return item.stav || 'Zákazka'
   }
@@ -43,6 +45,7 @@ function getStatusColor(item: CustomerLookupItem) {
   if (item.item_type === 'poziadavka') return { background: '#fef3c7', color: '#92400e', border: '#fcd34d', accent: '#f59e0b', glow: 'rgba(245, 158, 11, 0.2)' }
   if (item.stav === 'nova') return { background: '#dbeafe', color: '#1e40af', border: '#93c5fd', accent: '#2563eb', glow: 'rgba(37, 99, 235, 0.2)' }
   if (item.stav === 'rozpracovana') return { background: '#dcfce7', color: '#166534', border: '#86efac', accent: '#16a34a', glow: 'rgba(22, 163, 74, 0.24)' }
+  if (item.stav === 'obhliadka') return { background: '#ede9fe', color: '#5b21b6', border: '#c4b5fd', accent: '#8b5cf6', glow: 'rgba(139, 92, 246, 0.24)' }
   if (item.stav === 'caka' || item.stav === 'cakame') return { background: '#ffedd5', color: '#9a3412', border: '#fdba74', accent: '#f97316', glow: 'rgba(249, 115, 22, 0.28)' }
   return { background: '#e2e8f0', color: '#334155', border: '#cbd5e1', accent: '#94a3b8', glow: 'rgba(148, 163, 184, 0.18)' }
 }
@@ -50,9 +53,10 @@ function getStatusColor(item: CustomerLookupItem) {
 function getStatusPriority(item: CustomerLookupItem) {
   if (item.stav === 'caka' || item.stav === 'cakame') return 1
   if (item.stav === 'rozpracovana') return 2
-  if (item.stav === 'nova') return 3
-  if (item.item_type === 'poziadavka') return 4
-  return 5
+  if (item.stav === 'obhliadka') return 3
+  if (item.stav === 'nova') return 4
+  if (item.item_type === 'poziadavka') return 5
+  return 6
 }
 
 function sortCustomerItems(itemsToSort: CustomerLookupItem[]) {
@@ -108,7 +112,7 @@ export default function MyRequestsPage() {
     setItems(
       sortCustomerItems(
         ((data || []) as CustomerLookupItem[]).filter(
-          (item) => item.item_type === 'poziadavka' || ['nova', 'rozpracovana', 'caka', 'cakame'].includes(item.stav || '')
+          (item) => item.item_type === 'poziadavka' || ['nova', 'rozpracovana', 'obhliadka', 'caka', 'cakame'].includes(item.stav || '')
         )
       ).slice(0, 25)
     )

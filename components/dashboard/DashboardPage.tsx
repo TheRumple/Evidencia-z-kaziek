@@ -1734,6 +1734,12 @@ export default function DashboardPage() {
         items: rest.filter((o) => o.stav === 'rozpracovana' && !isOverdue(o)),
       },
       {
+        key: 'obhliadka',
+        title: 'Obhliadka',
+        description: 'Zákazky, kde je potrebná obhliadka u zákazníka.',
+        items: rest.filter((o) => o.stav === 'obhliadka' && !isOverdue(o)),
+      },
+      {
         key: 'caka',
         title: 'Čaká na materiál',
         description: 'Dočasne pozastavené alebo čakajúce zákazky.',

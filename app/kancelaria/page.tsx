@@ -130,7 +130,7 @@ export default function OfficeDashboardPage() {
 
   const stats = useMemo(() => {
     return {
-      active: orders.filter((order) => ['nova', 'rozpracovana', 'caka'].includes(order.stav)).length,
+      active: orders.filter((order) => ['nova', 'rozpracovana', 'obhliadka', 'caka'].includes(order.stav)).length,
       inProgress: orders.filter((order) => order.stav === 'rozpracovana').length,
       waiting: orders.filter((order) => order.stav === 'caka').length,
       invoiced: orders.filter((order) => order.stav === 'odovzdana').length,

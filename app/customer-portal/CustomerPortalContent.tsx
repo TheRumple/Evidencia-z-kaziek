@@ -37,6 +37,7 @@ type OrderSubtask = {
 const STATUSY = [
   { value: 'nova', label: 'Nová' },
   { value: 'rozpracovana', label: 'Rozpracovaná' },
+  { value: 'obhliadka', label: 'Obhliadka' },
   { value: 'caka', label: 'Čaká na materiál' },
   { value: 'hotova', label: 'Dokončená' },
   { value: 'odovzdana', label: 'Fakturovaná' },
@@ -67,6 +68,7 @@ function getStatusBadgeStyle(stav: string): CSSProperties {
   const map: Record<string, CSSProperties> = {
     nova: { background: '#e0e7ff', color: '#3730a3', border: '1px solid #c7d2fe' },
     rozpracovana: { background: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d' },
+    obhliadka: { background: '#ede9fe', color: '#5b21b6', border: '1px solid #c4b5fd' },
     caka: { background: '#ffedd5', color: '#9a3412', border: '1px solid #fdba74' },
     hotova: { background: '#ccfbf1', color: '#115e59', border: '1px solid #99f6e4' },
     odovzdana: { background: '#d1fae5', color: '#065f46', border: '1px solid #6ee7b7' },
@@ -82,6 +84,7 @@ function getStatusCardBorder(stav: string, isPriority: boolean): CSSProperties {
   const map: Record<string, CSSProperties> = {
     nova: { borderLeft: '7px solid #818cf8' },
     rozpracovana: { borderLeft: '7px solid #fbbf24' },
+    obhliadka: { borderLeft: '7px solid #8b5cf6' },
     caka: { borderLeft: '7px solid #fb923c' },
     hotova: { borderLeft: '7px solid #2dd4bf' },
     odovzdana: { borderLeft: '7px solid #34d399' },
