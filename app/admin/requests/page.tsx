@@ -171,6 +171,11 @@ export default function AdminRequestsPage() {
       const adminUserId = selectedCustomer.user_id
       console.log('Pokus o zápis do orders so priradeným user_id:', adminUserId)
 
+      const requestPersonName = getRequestName(targetRequest)
+      const orderDescription = requestPersonName && !/^Žiadateľ:/im.test(finalPopis)
+        ? [`Žiadateľ: ${requestPersonName}`, finalPopis.trim()].join('\n')
+        : finalPopis.trim()
+
       // 1. Vytvoríme ostrú zákazku v tabuľke 'orders'
       const { error: insertError } = await supabase
         .from('orders')
@@ -179,7 +184,7 @@ export default function AdminRequestsPage() {
             customer_id: selectedCustomer.id,
             user_id: adminUserId, // 🌟 Automaticky priradíme tvoje ID, aby si ju hneď videl
             nazov: finalNazov.trim(),
-            popis: finalPopis.trim(),
+            popis: orderDescription,
             termin: finalTermin ? finalTermin : null,
             stav: 'nova', // Interne zapíšeme 'nova', čo zodpovedá tvojmu filtru v hlavnej appke
             prijatie_zakazky: dnesnyDatum

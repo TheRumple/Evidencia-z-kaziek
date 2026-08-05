@@ -69,7 +69,7 @@ function sortCustomerItems(itemsToSort: CustomerLookupItem[]) {
 
 function getRequesterName(text: string | null, fallback: string | null) {
   if (!text) return fallback || ''
-  return text.match(/^Meno:\s*(.+)$/im)?.[1]?.trim() || fallback || ''
+  return text.match(/^Žiadateľ:\s*(.+)$/im)?.[1]?.trim() || text.match(/^Meno:\s*(.+)$/im)?.[1]?.trim() || fallback || ''
 }
 
 export default function MyRequestsPage() {
@@ -243,7 +243,7 @@ export default function MyRequestsPage() {
 
           {items.map((item) => {
             const statusColor = getStatusColor(item)
-            const requesterName = getRequesterName(item.popis, item.customer_name)
+            const requesterName = getRequesterName(item.popis, '')
             return (
               <article
                 key={`${item.item_type}-${item.id}`}
