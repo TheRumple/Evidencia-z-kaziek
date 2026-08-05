@@ -344,6 +344,20 @@ export default function PublicRequestPage() {
             Späť na itspot.sk
           </Link>
 
+          <Link
+            href="/moje-poziadavky"
+            style={{
+              color: '#cbd5e1',
+              border: '1px solid rgba(255,255,255,0.18)',
+              borderRadius: 10,
+              padding: '8px 12px',
+              textDecoration: 'none',
+              fontWeight: 800,
+            }}
+          >
+            Moje požiadavky
+          </Link>
+
           <div>Technická podpora: info@itspot.sk, +421 908 806 691</div>
         </div>
       </div>
