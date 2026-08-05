@@ -67,13 +67,9 @@ function sortCustomerItems(itemsToSort: CustomerLookupItem[]) {
   })
 }
 
-function cleanPublicDescription(text: string | null) {
-  if (!text) return ''
-  return text
-    .split('\n')
-    .filter((line) => !/^Email:/i.test(line.trim()) && !/^Telefón:/i.test(line.trim()) && !/^Telefon:/i.test(line.trim()))
-    .join('\n')
-    .trim()
+function getRequesterName(text: string | null, fallback: string | null) {
+  if (!text) return fallback || ''
+  return text.match(/^Meno:\s*(.+)$/im)?.[1]?.trim() || fallback || ''
 }
 
 export default function MyRequestsPage() {
@@ -247,6 +243,7 @@ export default function MyRequestsPage() {
 
           {items.map((item) => {
             const statusColor = getStatusColor(item)
+            const requesterName = getRequesterName(item.popis, item.customer_name)
             return (
               <article
                 key={`${item.item_type}-${item.id}`}
@@ -280,14 +277,8 @@ export default function MyRequestsPage() {
                 <div style={{ marginTop: 10, display: 'flex', gap: 12, flexWrap: 'wrap', color: '#64748b', fontSize: 13, fontWeight: 800 }}>
                   <span>Odoslané: {formatDate(item.created_at)}</span>
                   {item.termin && <span>Termín: {formatDate(item.termin)}</span>}
-                  {item.customer_name && <span>Zákazník: {item.customer_name}</span>}
+                  {requesterName && <span>Žiadateľ: {requesterName}</span>}
                 </div>
-
-                {cleanPublicDescription(item.popis) && (
-                  <p style={{ margin: '14px 0 0', whiteSpace: 'pre-wrap', color: '#334155', fontSize: 14, lineHeight: 1.55 }}>
-                    {cleanPublicDescription(item.popis)}
-                  </p>
-                )}
               </article>
             )
           })}

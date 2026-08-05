@@ -355,9 +355,10 @@ export function DashboardModals(props: DashboardModalsProps) {
                 <label style={labelStyle} htmlFor="order-description">
                   Popis
                 </label>
-                <input
+                <textarea
                   id="order-description"
-                  style={inputStyle}
+                  rows={4}
+                  style={{ ...inputStyle, minHeight: 110, resize: 'vertical', lineHeight: 1.45, fontFamily: 'inherit' }}
                   placeholder="Popis"
                   value={orderPopis}
                   onChange={(e) => setOrderPopis(e.target.value)}
@@ -531,9 +532,10 @@ export function DashboardModals(props: DashboardModalsProps) {
                 <label style={labelStyle} htmlFor="edit-order-description">
                   Popis
                 </label>
-                <input
+                <textarea
                   id="edit-order-description"
-                  style={inputStyle}
+                  rows={4}
+                  style={{ ...inputStyle, minHeight: 110, resize: 'vertical', lineHeight: 1.45, fontFamily: 'inherit' }}
                   placeholder="Popis"
                   value={editOrderPopis}
                   onChange={(e) => setEditOrderPopis(e.target.value)}
