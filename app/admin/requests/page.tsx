@@ -413,19 +413,19 @@ ITspot s.r.o.`
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10, marginBottom: 16 }}>
                   <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: 10 }}>
                     <div style={{ color: '#64748b', fontSize: 12, fontWeight: 900 }}>Meno</div>
-                    <strong>{getRequestName(req) || '-'}</strong>
+                    <strong style={{ color: '#0f172a', fontWeight: 900 }}>{getRequestName(req) || '-'}</strong>
                   </div>
                   <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: 10 }}>
                     <div style={{ color: '#64748b', fontSize: 12, fontWeight: 900 }}>Firma</div>
-                    <strong>{getRequestCompany(req) || '-'}</strong>
+                    <strong style={{ color: '#0f172a', fontWeight: 900 }}>{getRequestCompany(req) || '-'}</strong>
                   </div>
                   <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: 10 }}>
                     <div style={{ color: '#64748b', fontSize: 12, fontWeight: 900 }}>Telefón</div>
-                    <strong>{getRequestPhone(req) || '-'}</strong>
+                    <strong style={{ color: '#0f172a', fontWeight: 900 }}>{getRequestPhone(req) || '-'}</strong>
                   </div>
                   <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: 10 }}>
                     <div style={{ color: '#64748b', fontSize: 12, fontWeight: 900 }}>Email</div>
-                    <strong style={{ wordBreak: 'break-word' }}>{getRequestEmail(req) || '-'}</strong>
+                    <strong style={{ color: '#0f172a', fontWeight: 900, wordBreak: 'break-word' }}>{getRequestEmail(req) || '-'}</strong>
                   </div>
                 </div>
 

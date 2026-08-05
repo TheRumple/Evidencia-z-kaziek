@@ -13,6 +13,13 @@ const requestTypes = [
   { value: 'reklamacia', label: 'Reklamácia' },
 ]
 
+function getLocalDateValue(date = new Date()) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 export default function PublicRequestPage() {
   const [name, setName] = useState('')
   const [company, setCompany] = useState('')
@@ -21,6 +28,8 @@ export default function PublicRequestPage() {
   const [requestType, setRequestType] = useState('nova_instalacia')
   const [description, setDescription] = useState('')
   const [deadline, setDeadline] = useState('')
+  const [website, setWebsite] = useState('')
+  const [formStartedAt] = useState(() => Date.now())
   const [submitting, setSubmitting] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
@@ -28,8 +37,43 @@ export default function PublicRequestPage() {
     event.preventDefault()
     setMessage(null)
 
+    if (website.trim()) {
+      setMessage({ type: 'success', text: 'Požiadavka bola odoslaná. Ozveme sa vám po jej spracovaní.' })
+      return
+    }
+
+    if (Date.now() - formStartedAt < 3500) {
+      setMessage({ type: 'error', text: 'Formulár bol odoslaný príliš rýchlo. Skontrolujte údaje a skúste to znova.' })
+      return
+    }
+
     if (!name.trim() || !phone.trim() || !email.trim() || !description.trim()) {
       setMessage({ type: 'error', text: 'Vyplňte prosím meno, telefón, email a popis požiadavky.' })
+      return
+    }
+
+    const today = getLocalDateValue()
+    const phoneDigits = phone.replace(/\D/g, '')
+    const combinedText = [name, company, phone, email, description].join(' ')
+    const suspiciousPattern = /(https?:\/\/|www\.|casino|viagra|crypto|loan|forex|porn|betting)/i
+
+    if (deadline && deadline < today) {
+      setMessage({ type: 'error', text: 'Preferovaný termín nemôže byť v minulosti.' })
+      return
+    }
+
+    if (phoneDigits.length < 7) {
+      setMessage({ type: 'error', text: 'Zadajte prosím platné telefónne číslo.' })
+      return
+    }
+
+    if (description.trim().length < 15) {
+      setMessage({ type: 'error', text: 'Popis požiadavky je príliš krátky. Napíšte prosím aspoň stručne, čo potrebujete vyriešiť.' })
+      return
+    }
+
+    if (suspiciousPattern.test(combinedText)) {
+      setMessage({ type: 'error', text: 'Požiadavka neprešla kontrolou. Skontrolujte text a skúste to znova.' })
       return
     }
 
@@ -167,6 +211,11 @@ export default function PublicRequestPage() {
             boxShadow: '0 24px 60px rgba(0, 0, 0, 0.38)',
           }}
         >
+          <div style={{ position: 'absolute', left: -10000, width: 1, height: 1, overflow: 'hidden' }} aria-hidden="true">
+            <label htmlFor="website">Web stránka</label>
+            <input id="website" tabIndex={-1} autoComplete="off" value={website} onChange={(event) => setWebsite(event.target.value)} />
+          </div>
+
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 14 }}>
             <div>
               <label style={labelStyle} htmlFor="name">
