@@ -46,7 +46,8 @@ const FIXED_SK_HOLIDAYS: Record<string, string> = {
 }
 
 function getCurrentMonth() {
-  return new Date().toISOString().slice(0, 7)
+  const today = new Date()
+  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
 }
 
 function formatDate(date: string | null | undefined) {
@@ -292,13 +293,14 @@ export default function MesacnyVykazPage() {
   }, [orders, newLogCustomerId])
 
   const customerSummary = useMemo(() => {
-    const summary: Record<string, { customerName: string; hours: number; km: number; count: number }> = {}
+    const summary: Record<string, { customerId: string; customerName: string; hours: number; km: number; count: number }> = {}
     for (const log of invoiceLogs) {
+      const customerId = log.customer?.id || 'nepriradene'
       const customerName = log.customer?.nazov || 'Nepriradené'
-      summary[customerName] = summary[customerName] || { customerName, hours: 0, km: 0, count: 0 }
-      summary[customerName].hours += Number(log.hodiny || 0)
-      summary[customerName].km += Number(log.kilometre || 0)
-      summary[customerName].count += 1
+      summary[customerId] = summary[customerId] || { customerId, customerName, hours: 0, km: 0, count: 0 }
+      summary[customerId].hours += Number(log.hodiny || 0)
+      summary[customerId].km += Number(log.kilometre || 0)
+      summary[customerId].count += 1
     }
     return Object.values(summary).sort((a, b) => a.customerName.localeCompare(b.customerName, 'sk'))
   }, [invoiceLogs])
@@ -313,8 +315,12 @@ export default function MesacnyVykazPage() {
     )
   }, [invoiceLogs])
 
-  function copyInvoiceText() {
-    const lines = invoiceLogs.map((log) => {
+  const loggedDaysCount = useMemo(() => {
+    return new Set(invoiceLogs.map((log) => log.datum)).size
+  }, [invoiceLogs])
+
+  function copyLogsToClipboard(logs: InvoiceLog[]) {
+    const lines = logs.map((log) => {
       return [
         formatDate(log.datum),
         log.customer?.nazov || 'Nepriradené',
@@ -329,6 +335,25 @@ export default function MesacnyVykazPage() {
     })
 
     navigator.clipboard.writeText(lines.join('\n'))
+  }
+
+  function copyInvoiceText() {
+    copyLogsToClipboard(invoiceLogs)
+  }
+
+  function copyCustomerInvoiceText(customerId: string) {
+    copyLogsToClipboard(invoiceLogs.filter((log) => (log.customer?.id || 'nepriradene') === customerId))
+  }
+
+  function openTodayForLog() {
+    const today = toDateKey(new Date())
+    setMonth(today.slice(0, 7))
+    setExpandedDayIds((current) => (current.includes(today) ? current : [...current, today]))
+    openAddForDate(today)
+  }
+
+  function expandDaysWithLogs() {
+    setExpandedDayIds(Array.from(new Set(invoiceLogs.map((log) => log.datum))))
   }
 
   function openAddForDate(date: string) {
@@ -543,16 +568,47 @@ export default function MesacnyVykazPage() {
       <style jsx global>{`
         .invoiceGrid {
           display: grid;
-          grid-template-columns: 1fr 320px;
+          grid-template-columns: minmax(0, 1fr) 360px;
           gap: 12px;
           align-items: start;
         }
 
         .invoiceFilters {
           display: grid;
-          grid-template-columns: 180px 1fr 1.4fr auto;
+          grid-template-columns: 170px minmax(210px, 0.9fr) minmax(260px, 1.2fr) auto auto;
           gap: 10px;
           align-items: end;
+        }
+
+        .invoiceHeroStats {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(120px, 1fr));
+          gap: 10px;
+          min-width: min(620px, 100%);
+        }
+
+        .invoiceHeroStat {
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          border-radius: 14px;
+          padding: 12px;
+          background: rgba(255, 255, 255, 0.08);
+        }
+
+        .invoiceHeroStat span {
+          display: block;
+          color: rgba(226, 232, 240, 0.76);
+          font-size: 11px;
+          font-weight: 900;
+          text-transform: uppercase;
+        }
+
+        .invoiceHeroStat strong {
+          display: block;
+          margin-top: 5px;
+          color: #fff;
+          font-size: 22px;
+          line-height: 1;
+          font-weight: 900;
         }
 
         .invoiceDay {
@@ -568,20 +624,20 @@ export default function MesacnyVykazPage() {
         }
 
         .invoiceWeekend {
-          background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+          background: linear-gradient(90deg, #e0f2fe 0%, #f8fafc 18%, #ffffff 100%);
         }
 
         .invoiceHoliday {
-          background: linear-gradient(135deg, #fff7ed 0%, #fff 100%);
+          background: linear-gradient(90deg, #ffedd5 0%, #fff7ed 22%, #ffffff 100%);
         }
 
         .invoiceDayHeader {
           display: grid;
-          grid-template-columns: 58px 86px minmax(0, 1.1fr) minmax(0, 2fr) 86px 86px 120px;
+          grid-template-columns: 54px 84px minmax(92px, 0.9fr) minmax(0, 2.2fr) 82px 78px 112px;
           gap: 8px;
           align-items: center;
-          min-height: 42px;
-          padding: 6px 10px;
+          min-height: 38px;
+          padding: 5px 9px;
           cursor: pointer;
         }
 
@@ -705,10 +761,22 @@ export default function MesacnyVykazPage() {
           padding: 9px 0;
         }
 
+        .invoiceToolbar {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+          align-items: center;
+          justify-content: flex-end;
+        }
+
         @media (max-width: 980px) {
           .invoiceGrid,
           .invoiceFilters {
             grid-template-columns: 1fr;
+          }
+
+          .invoiceHeroStats {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
           }
 
           .invoiceLogRow {
@@ -739,7 +807,7 @@ export default function MesacnyVykazPage() {
             border: 'none',
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
             <div>
               <BrandLogo size="sm" tone="dark" style={{ marginBottom: 10 }} />
               <h1 style={{ margin: 0, fontSize: 28, fontWeight: 900 }}>Mesačný výkaz</h1>
@@ -748,9 +816,24 @@ export default function MesacnyVykazPage() {
               </div>
             </div>
 
-            <Link href="/" style={{ ...buttonStyle, background: '#84cc16', borderColor: '#65a30d' }}>
-              Späť na zákazky
-            </Link>
+            <div className="invoiceHeroStats">
+              <div className="invoiceHeroStat">
+                <span>Mesiac</span>
+                <strong>{getMonthLabelFromDate(`${month}-01`)}</strong>
+              </div>
+              <div className="invoiceHeroStat">
+                <span>Zapísané dni</span>
+                <strong>{loggedDaysCount}</strong>
+              </div>
+              <div className="invoiceHeroStat">
+                <span>Hodiny</span>
+                <strong>{Number(totals.hours || 0).toFixed(1)} h</strong>
+              </div>
+              <div className="invoiceHeroStat">
+                <span>Firmy</span>
+                <strong>{customerSummary.length}</strong>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -806,9 +889,26 @@ export default function MesacnyVykazPage() {
               />
             </div>
 
-            <button type="button" style={buttonStyle} onClick={copyInvoiceText}>
-              Kopírovať pre faktúru
-            </button>
+            <div className="invoiceToolbar">
+              <button type="button" style={{ ...buttonStyle, background: '#84cc16', borderColor: '#65a30d' }} onClick={openTodayForLog}>
+                Dnes + zápis
+              </button>
+              <button type="button" style={buttonStyle} onClick={expandDaysWithLogs}>
+                Otvoriť dni
+              </button>
+              <button type="button" style={buttonStyle} onClick={() => setExpandedDayIds([])}>
+                Zbaliť
+              </button>
+            </div>
+
+            <div className="invoiceToolbar">
+              <button type="button" style={buttonStyle} onClick={copyInvoiceText}>
+                Kopírovať pre faktúru
+              </button>
+              <Link href="/" style={buttonStyle}>
+                Zákazky
+              </Link>
+            </div>
           </div>
         </div>
 
@@ -1046,14 +1146,17 @@ export default function MesacnyVykazPage() {
             )}
           </div>
 
-          <aside style={boxStyle}>
-            <div style={{ fontSize: 13, color: '#64748b', fontWeight: 900, marginBottom: 5 }}>Súhrn mesiaca</div>
+          <aside style={{ ...boxStyle, position: 'sticky', top: 12 }}>
+            <div style={{ fontSize: 13, color: '#64748b', fontWeight: 900, marginBottom: 5 }}>Na fakturáciu</div>
             <div style={{ fontSize: 26, fontWeight: 900 }}>{formatHours(totals.hours)}</div>
             <div style={{ color: '#64748b', fontWeight: 800, marginTop: 4 }}>{Number(totals.km || 0).toFixed(0)} km spolu</div>
+            <button type="button" style={{ ...buttonStyle, width: '100%', marginTop: 12, background: '#84cc16', borderColor: '#65a30d' }} onClick={copyInvoiceText}>
+              Kopírovať celý mesiac
+            </button>
 
             <div style={{ marginTop: 18, display: 'grid', gap: 2 }}>
               {customerSummary.map((item) => (
-                <div key={item.customerName} className="invoiceSummaryRow">
+                <div key={item.customerId} className="invoiceSummaryRow">
                   <div>
                     <div className="invoiceStrong">{item.customerName}</div>
                     <div className="invoiceMuted">{item.count} zápisov</div>
@@ -1061,6 +1164,13 @@ export default function MesacnyVykazPage() {
                   <div style={{ textAlign: 'right', fontWeight: 900 }}>
                     {formatHours(item.hours)}
                     <div className="invoiceMuted">{item.km.toFixed(0)} km</div>
+                    <button
+                      type="button"
+                      style={{ ...buttonStyle, minHeight: 30, padding: '5px 8px', marginTop: 6, fontSize: 11 }}
+                      onClick={() => copyCustomerInvoiceText(item.customerId)}
+                    >
+                      Kopírovať
+                    </button>
                   </div>
                 </div>
               ))}
