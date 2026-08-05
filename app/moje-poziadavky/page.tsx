@@ -40,11 +40,27 @@ function getStatusLabel(item: CustomerLookupItem) {
 }
 
 function getStatusColor(item: CustomerLookupItem) {
-  if (item.item_type === 'poziadavka') return { background: '#fef3c7', color: '#92400e', border: '#fcd34d' }
-  if (item.stav === 'nova') return { background: '#dbeafe', color: '#1e40af', border: '#93c5fd' }
-  if (item.stav === 'rozpracovana') return { background: '#dcfce7', color: '#166534', border: '#86efac' }
-  if (item.stav === 'caka' || item.stav === 'cakame') return { background: '#ffedd5', color: '#9a3412', border: '#fdba74' }
-  return { background: '#e2e8f0', color: '#334155', border: '#cbd5e1' }
+  if (item.item_type === 'poziadavka') return { background: '#fef3c7', color: '#92400e', border: '#fcd34d', accent: '#f59e0b', glow: 'rgba(245, 158, 11, 0.2)' }
+  if (item.stav === 'nova') return { background: '#dbeafe', color: '#1e40af', border: '#93c5fd', accent: '#2563eb', glow: 'rgba(37, 99, 235, 0.2)' }
+  if (item.stav === 'rozpracovana') return { background: '#dcfce7', color: '#166534', border: '#86efac', accent: '#16a34a', glow: 'rgba(22, 163, 74, 0.24)' }
+  if (item.stav === 'caka' || item.stav === 'cakame') return { background: '#ffedd5', color: '#9a3412', border: '#fdba74', accent: '#f97316', glow: 'rgba(249, 115, 22, 0.28)' }
+  return { background: '#e2e8f0', color: '#334155', border: '#cbd5e1', accent: '#94a3b8', glow: 'rgba(148, 163, 184, 0.18)' }
+}
+
+function getStatusPriority(item: CustomerLookupItem) {
+  if (item.stav === 'caka' || item.stav === 'cakame') return 1
+  if (item.stav === 'rozpracovana') return 2
+  if (item.stav === 'nova') return 3
+  if (item.item_type === 'poziadavka') return 4
+  return 5
+}
+
+function sortCustomerItems(itemsToSort: CustomerLookupItem[]) {
+  return [...itemsToSort].sort((a, b) => {
+    const priorityDiff = getStatusPriority(a) - getStatusPriority(b)
+    if (priorityDiff !== 0) return priorityDiff
+    return new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime()
+  })
 }
 
 function cleanPublicDescription(text: string | null) {
@@ -90,9 +106,11 @@ export default function MyRequestsPage() {
     }
 
     setItems(
-      ((data || []) as CustomerLookupItem[])
-        .filter((item) => item.item_type === 'poziadavka' || ['nova', 'rozpracovana', 'caka', 'cakame'].includes(item.stav || ''))
-        .slice(0, 25)
+      sortCustomerItems(
+        ((data || []) as CustomerLookupItem[]).filter(
+          (item) => item.item_type === 'poziadavka' || ['nova', 'rozpracovana', 'caka', 'cakame'].includes(item.stav || '')
+        )
+      ).slice(0, 25)
     )
   }
 
@@ -229,12 +247,13 @@ export default function MyRequestsPage() {
               <article
                 key={`${item.item_type}-${item.id}`}
                 style={{
-                  border: '1px solid rgba(148, 163, 184, 0.22)',
+                  border: `2px solid ${statusColor.border}`,
+                  borderLeft: `9px solid ${statusColor.accent}`,
                   borderRadius: 16,
                   padding: 18,
                   background: 'rgba(248, 250, 252, 0.98)',
                   color: '#0f172a',
-                  boxShadow: '0 14px 32px rgba(0, 0, 0, 0.24)',
+                  boxShadow: `0 14px 32px rgba(0, 0, 0, 0.24), 0 0 0 4px ${statusColor.glow}`,
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
