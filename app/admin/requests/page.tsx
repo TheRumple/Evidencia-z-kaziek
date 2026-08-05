@@ -236,6 +236,25 @@ export default function AdminRequestsPage() {
     return getRequestField(req, 'Telefón')
   }
 
+  function getRequestType(req: PendingRequest) {
+    return getRequestField(req, 'Typ požiadavky')
+  }
+
+  function getRequestDescriptionOnly(req: PendingRequest) {
+    const marker = 'Popis požiadavky:'
+    const markerIndex = req.popis.toLowerCase().indexOf(marker.toLowerCase())
+
+    if (markerIndex >= 0) {
+      return req.popis.slice(markerIndex + marker.length).trim() || '-'
+    }
+
+    return req.popis
+      .split('\n')
+      .filter((line) => !/^(Typ požiadavky|Meno|Firma|Telefón|Telefon|Email):/i.test(line.trim()))
+      .join('\n')
+      .trim() || '-'
+  }
+
   function openMailDraft(to: string, subject: string, body: string) {
     if (!to) {
       alert('V požiadavke nie je nájdený email zákazníka.')
@@ -404,12 +423,7 @@ ITspot s.r.o.`
                   )}
                 </div>
 
-                {/* Obsah požiadavky */}
-                <h3 style={{ fontSize: 18, fontWeight: 700, color: '#1e293b', margin: '0 0 6px 0' }}>{req.nazov}</h3>
-                <p style={{ fontSize: 14, color: '#475569', margin: '0 0 20px 0', whiteSpace: 'pre-wrap', lineHeight: 1.5, background: '#f8fafc', padding: 14, borderRadius: 8, border: '1px solid #f1f5f9' }}>
-                  {req.popis}
-                </p>
-
+                <h3 style={{ fontSize: 18, fontWeight: 700, color: '#1e293b', margin: '0 0 12px 0' }}>{req.nazov}</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10, marginBottom: 16 }}>
                   <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: 10 }}>
                     <div style={{ color: '#64748b', fontSize: 12, fontWeight: 900 }}>Meno</div>
@@ -427,6 +441,16 @@ ITspot s.r.o.`
                     <div style={{ color: '#64748b', fontSize: 12, fontWeight: 900 }}>Email</div>
                     <strong style={{ color: '#0f172a', fontWeight: 900, wordBreak: 'break-word' }}>{getRequestEmail(req) || '-'}</strong>
                   </div>
+                </div>
+
+                {/* Obsah požiadavky */}
+                <div style={{ fontSize: 14, color: '#475569', margin: '0 0 20px 0', whiteSpace: 'pre-wrap', lineHeight: 1.5, background: '#f8fafc', padding: 14, borderRadius: 8, border: '1px solid #f1f5f9' }}>
+                  {getRequestType(req) && (
+                    <div style={{ marginBottom: 10, color: '#334155', fontWeight: 900 }}>
+                      Typ požiadavky: {getRequestType(req)}
+                    </div>
+                  )}
+                  <div>{getRequestDescriptionOnly(req)}</div>
                 </div>
 
                 <div style={{ marginBottom: 16, maxWidth: 360 }}>
