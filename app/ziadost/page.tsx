@@ -4,15 +4,6 @@ import { FormEvent, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 
-const requestTypes = [
-  { value: 'nova_instalacia', label: 'Nová inštalácia' },
-  { value: 'servis', label: 'Servis' },
-  { value: 'cenova_ponuka', label: 'Cenová ponuka' },
-  { value: 'rozsirenie_systemu', label: 'Rozšírenie existujúceho systému' },
-  { value: 'konzultacia', label: 'Konzultácia / obhliadka' },
-  { value: 'reklamacia', label: 'Reklamácia' },
-]
-
 function getLocalDateValue(date = new Date()) {
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -25,7 +16,6 @@ export default function PublicRequestPage() {
   const [company, setCompany] = useState('')
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
-  const [requestType, setRequestType] = useState('nova_instalacia')
   const [requestTitle, setRequestTitle] = useState('')
   const [description, setDescription] = useState('')
   const [deadline, setDeadline] = useState('')
@@ -80,10 +70,8 @@ export default function PublicRequestPage() {
 
     setSubmitting(true)
 
-    const typeLabel = requestTypes.find((type) => type.value === requestType)?.label || requestType
     const generatedTitle = requestTitle.trim()
     const fullDescription = [
-      `Typ požiadavky: ${typeLabel}`,
       `Meno: ${name.trim()}`,
       company.trim() ? `Firma: ${company.trim()}` : '',
       phone.trim() ? `Telefón: ${phone.trim()}` : '',
@@ -118,7 +106,6 @@ export default function PublicRequestPage() {
       setCompany('')
       setPhone('')
       setEmail('')
-      setRequestType('nova_instalacia')
       setRequestTitle('')
       setDescription('')
       setDeadline('')
@@ -248,19 +235,6 @@ export default function PublicRequestPage() {
             </div>
 
             <div>
-              <label style={labelStyle} htmlFor="request-type">
-                Typ požiadavky
-              </label>
-              <select id="request-type" style={inputStyle} value={requestType} onChange={(event) => setRequestType(event.target.value)}>
-                {requestTypes.map((type) => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
               <label style={labelStyle} htmlFor="deadline">
                 Preferovaný termín
               </label>
@@ -276,7 +250,7 @@ export default function PublicRequestPage() {
               id="request-title"
               required
               style={inputStyle}
-              placeholder="Napr. výmena motora, kamera pri bráne, cenová ponuka alarmu"
+              placeholder="Napr. servis kamery, cenová ponuka alarmu, výmena motora"
               value={requestTitle}
               onChange={(event) => setRequestTitle(event.target.value)}
             />
