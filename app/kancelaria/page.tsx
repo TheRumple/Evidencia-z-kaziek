@@ -132,6 +132,7 @@ export default function OfficeDashboardPage() {
     return {
       active: orders.filter((order) => ['nova', 'rozpracovana', 'obhliadka', 'caka'].includes(order.stav)).length,
       inProgress: orders.filter((order) => order.stav === 'rozpracovana').length,
+      inspections: orders.filter((order) => order.stav === 'obhliadka').length,
       waiting: orders.filter((order) => order.stav === 'caka').length,
       invoiced: orders.filter((order) => order.stav === 'odovzdana').length,
     }
@@ -429,7 +430,7 @@ export default function OfficeDashboardPage() {
 
         .statusGrid {
           display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
+          grid-template-columns: repeat(5, minmax(0, 1fr));
           gap: 10px;
         }
 
@@ -587,6 +588,10 @@ export default function OfficeDashboardPage() {
           <div className="statCard" style={{ '--accent': '#fbbf24', '--accentGlow': 'rgba(251, 191, 36, 0.17)' } as CSSProperties}>
             <div className="statLabel">Rozpracované</div>
             <div className="statValue">{stats.inProgress}</div>
+          </div>
+          <div className="statCard" style={{ '--accent': '#8b5cf6', '--accentGlow': 'rgba(139, 92, 246, 0.18)' } as CSSProperties}>
+            <div className="statLabel">Obhliadky</div>
+            <div className="statValue">{stats.inspections}</div>
           </div>
           <div className="statCard" style={{ '--accent': '#fb923c', '--accentGlow': 'rgba(251, 146, 60, 0.17)' } as CSSProperties}>
             <div className="statLabel">Čaká na materiál</div>
