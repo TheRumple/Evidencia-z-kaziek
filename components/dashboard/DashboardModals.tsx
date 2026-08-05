@@ -40,6 +40,7 @@ export function DashboardModals(props: DashboardModalsProps) {
     editOrderNazov,
     editOrderPopis,
     editOrderPrijatieZakazky,
+    editOrderRequester,
     editOrderTermin,
     editingWorkLogId,
     email,
@@ -73,6 +74,7 @@ export function DashboardModals(props: DashboardModalsProps) {
     orderNazov,
     orderPopis,
     orderPrijatieZakazky,
+    orderRequester,
     orderTermin,
     primaryButtonStyle,
     resetWorkLogForm,
@@ -102,6 +104,7 @@ export function DashboardModals(props: DashboardModalsProps) {
     setEditOrderNazov,
     setEditOrderPopis,
     setEditOrderPrijatieZakazky,
+    setEditOrderRequester,
     setEditOrderTermin,
     setEmail,
     setEmployeeCanDelete,
@@ -117,6 +120,7 @@ export function DashboardModals(props: DashboardModalsProps) {
     setOrderNazov,
     setOrderPopis,
     setOrderPrijatieZakazky,
+    setOrderRequester,
     setOrderTermin,
     setTelefon,
     setWorkLogDate,
@@ -352,6 +356,19 @@ export function DashboardModals(props: DashboardModalsProps) {
               </div>
 
               <div style={{ gridColumn: '1 / -1' }}>
+                <label style={labelStyle} htmlFor="order-requester">
+                  Žiadateľ
+                </label>
+                <input
+                  id="order-requester"
+                  style={inputStyle}
+                  placeholder="Meno osoby, ktorá zákazku objednala"
+                  value={orderRequester}
+                  onChange={(e) => setOrderRequester(e.target.value)}
+                />
+              </div>
+
+              <div style={{ gridColumn: '1 / -1' }}>
                 <label style={labelStyle} htmlFor="order-description">
                   Popis
                 </label>
@@ -362,6 +379,9 @@ export function DashboardModals(props: DashboardModalsProps) {
                   placeholder="Popis"
                   value={orderPopis}
                   onChange={(e) => setOrderPopis(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') e.stopPropagation()
+                  }}
                 />
               </div>
             </div>
@@ -529,6 +549,19 @@ export function DashboardModals(props: DashboardModalsProps) {
               </div>
 
               <div style={{ gridColumn: '1 / -1' }}>
+                <label style={labelStyle} htmlFor="edit-order-requester">
+                  Žiadateľ
+                </label>
+                <input
+                  id="edit-order-requester"
+                  style={inputStyle}
+                  placeholder="Meno osoby, ktorá zákazku objednala"
+                  value={editOrderRequester}
+                  onChange={(e) => setEditOrderRequester(e.target.value)}
+                />
+              </div>
+
+              <div style={{ gridColumn: '1 / -1' }}>
                 <label style={labelStyle} htmlFor="edit-order-description">
                   Popis
                 </label>
@@ -539,6 +572,9 @@ export function DashboardModals(props: DashboardModalsProps) {
                   placeholder="Popis"
                   value={editOrderPopis}
                   onChange={(e) => setEditOrderPopis(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') e.stopPropagation()
+                  }}
                 />
               </div>
             </div>
