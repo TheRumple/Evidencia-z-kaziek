@@ -2096,8 +2096,8 @@ export default function DashboardPage() {
             </Link>
 
             <button type="button" style={sideNavButton(activeTab === 'zakaznici')} onClick={() => setActiveTab('zakaznici')}>
-              <span>Zákazníci / portál</span>
-              <span className="sideMenuBadge">{customers.length}</span>
+              <span>Zákazníci</span>
+              <span className="sideMenuIcon">›</span>
             </button>
 
             <Link href="/fakturovane" style={sideNavButton(false)}>
