@@ -383,17 +383,40 @@ export default function MyRequestsPage() {
                         <textarea
                           rows={4}
                           style={{ width: '100%', borderRadius: 10, border: '1px solid #cbd5e1', padding: 10, fontSize: 14, color: '#0f172a', fontFamily: 'inherit', resize: 'vertical' }}
-                          placeholder="Doplňte informácie, napr. rozmery, fotku štítku, čas dostupnosti alebo upresnenie poruchy."
+                          placeholder="Napíšte úpravu alebo doplnenie, napr. rozmery, čas dostupnosti alebo upresnenie poruchy."
                           value={updateText}
                           onChange={(event) => setUpdateText(event.target.value)}
                         />
-                        <input
-                          type="file"
-                          multiple
-                          accept="image/jpeg,image/png,image/webp,application/pdf"
-                          onChange={(event) => setUpdateFiles(Array.from(event.target.files || []).slice(0, 5))}
-                          style={{ color: '#0f172a' }}
-                        />
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                          <label
+                            htmlFor={`update-files-${item.id}`}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              border: '1px solid #cbd5e1',
+                              background: '#fff',
+                              color: '#0f172a',
+                              borderRadius: 10,
+                              padding: '8px 12px',
+                              fontWeight: 900,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            Pridať fotku alebo súbor
+                          </label>
+                          <input
+                            id={`update-files-${item.id}`}
+                            type="file"
+                            multiple
+                            accept="image/jpeg,image/png,image/webp,application/pdf"
+                            onChange={(event) => setUpdateFiles(Array.from(event.target.files || []).slice(0, 5))}
+                            style={{ position: 'absolute', left: -10000, width: 1, height: 1, overflow: 'hidden' }}
+                          />
+                          <span style={{ color: '#64748b', fontSize: 13, fontWeight: 800 }}>
+                            {updateFiles.length > 0 ? `${updateFiles.length} súborov vybraných` : 'Bez prílohy'}
+                          </span>
+                        </div>
                         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                           <button
                             type="button"
@@ -401,7 +424,7 @@ export default function MyRequestsPage() {
                             onClick={() => void submitOrderUpdate(item.id)}
                             style={{ border: '1px solid #84cc16', background: '#84cc16', color: '#111827', borderRadius: 10, padding: '8px 12px', fontWeight: 900, cursor: sendingUpdate ? 'not-allowed' : 'pointer' }}
                           >
-                            {sendingUpdate ? 'Odosielam...' : 'Odoslať doplnenie'}
+                            {sendingUpdate ? 'Odosielam...' : 'Odoslať úpravu'}
                           </button>
                           <button
                             type="button"
@@ -422,7 +445,7 @@ export default function MyRequestsPage() {
                         onClick={() => setUpdateOrderId(item.id)}
                         style={{ border: `1px solid ${statusColor.border}`, background: statusColor.background, color: statusColor.color, borderRadius: 10, padding: '8px 12px', fontWeight: 900, cursor: 'pointer' }}
                       >
-                        Doplniť informácie
+                        Upraviť
                       </button>
                     )}
                   </div>
