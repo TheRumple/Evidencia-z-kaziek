@@ -211,8 +211,10 @@ export default function AdminRequestsPage() {
 
       setEditingRequest(null)
       void loadPendingRequests()
-      openCustomerEmail(targetRequest, 'approved', finalNazov.trim(), selectedCustomer.nazov)
-      alert('Zákazka bola úspešne schválená a publikovaná klientovi!')
+      if (confirm('Zákazka bola schválená. Chceš zákazníkovi otvoriť email o schválení?')) {
+        openCustomerEmail(targetRequest, 'approved', finalNazov.trim(), selectedCustomer.nazov)
+      }
+      alert('Zákazka bola úspešne schválená.')
 
     } catch (err: any) {
       alert(`Systémová neočakávaná chyba: ${err.message}`)
@@ -349,12 +351,12 @@ ITspot s.r.o.`
   }
 
   // ❌ Odmietnutie / Zmazanie požiadavky
-  async function handleDelete(reqId: string, withEmail = false) {
+  async function handleDelete(reqId: string, askEmail = false) {
     const targetRequest = requests.find(r => r.id === reqId)
     if (!targetRequest) return
-    if (!confirm(withEmail ? 'Otvoriť email o zamietnutí a zmazať požiadavku?' : 'Naozaj chcete túto požiadavku natrvalo zmazať?')) return
+    if (!confirm(askEmail ? 'Zamietnuť a zmazať túto požiadavku?' : 'Naozaj chcete túto požiadavku natrvalo zmazať?')) return
 
-    if (withEmail) {
+    if (askEmail && confirm('Chceš zákazníkovi otvoriť email o zamietnutí?')) {
       openCustomerEmail(targetRequest, 'rejected')
     }
 
@@ -391,7 +393,7 @@ ITspot s.r.o.`
         <div className="adminRequestsHeader" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28, flexWrap: 'wrap', gap: 16, color: '#fff' }}>
           <div>
             <h1 style={{ fontSize: 28, fontWeight: 900, color: '#fff', margin: 0 }}>Nové požiadavky od klientov</h1>
-            <p style={{ color: 'rgba(255,255,255,0.72)', margin: '4px 0 0 0', fontSize: 14 }}>Po schválení alebo zamietnutí sa otvorí pripravený email v poštovom klientovi.</p>
+            <p style={{ color: 'rgba(255,255,255,0.72)', margin: '4px 0 0 0', fontSize: 14 }}>Po schválení alebo zamietnutí sa rozhodnete, či chcete otvoriť pripravený email.</p>
           </div>
           
           {/* Akčné tlačidlá vpravo hore */}
@@ -556,7 +558,7 @@ ITspot s.r.o.`
                     onClick={() => handleDelete(req.id, true)}
                     style={{ background: '#ffedd5', color: '#9a3412', border: 'none', padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
                   >
-                    Zamietnuť + email
+                    Zamietnuť
                   </button>
                   <button
                     onClick={() => handleDelete(req.id)}
@@ -574,7 +576,7 @@ ITspot s.r.o.`
                     onClick={() => handleApprove(req.id, req.nazov, req.popis, req.termin || '', selectedCustomerIds[req.id])}
                     style={{ background: '#16a34a', color: '#fff', border: 'none', padding: '8px 18px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 4px rgba(22, 163, 74, 0.2)' }}
                   >
-                    🚀 Schváliť & Publikovať
+                    🚀 Schváliť
                   </button>
                 </div>
 
@@ -590,7 +592,7 @@ ITspot s.r.o.`
           <div className="requestEditModal" style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 600, padding: 24, boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0' }}>
             
             <h3 style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', margin: '0 0 4px 0' }}>✏️ Úprava požiadavky pred publikovaním</h3>
-            <p style={{ color: '#64748b', fontSize: 13, margin: '0 0 20px 0' }}>Upravte texty podľa potreby. Po schválení sa otvorí pripravený email zákazníkovi.</p>
+            <p style={{ color: '#64748b', fontSize: 13, margin: '0 0 20px 0' }}>Upravte texty podľa potreby. Po schválení si vyberiete, či chcete odoslať email.</p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -643,7 +645,7 @@ ITspot s.r.o.`
                   onClick={() => handleApprove(editingRequest.id, editNazov, editPopis, editTermin, editCustomerId)}
                   style={{ background: '#16a34a', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
                 >
-                  💾 Uložiť & Schváliť
+                  💾 Uložiť a schváliť
                 </button>
               </div>
             </div>
