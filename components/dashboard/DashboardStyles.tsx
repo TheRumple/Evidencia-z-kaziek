@@ -77,6 +77,28 @@ export function DashboardStyles() {
           max-width: 100%;
         }
 
+        .portalRequestShortcut {
+          display: none;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+          min-height: 34px;
+          border-radius: 10px;
+          padding: 7px 9px;
+          text-decoration: none;
+          background: rgba(255, 255, 255, 0.07);
+          border: 1px solid rgba(148, 163, 184, 0.18);
+          color: #f8fafc;
+          font-size: 12px;
+          font-weight: 950;
+        }
+
+        .portalRequestShortcutAlert {
+          background: rgba(239, 68, 68, 0.16);
+          border-color: rgba(248, 113, 113, 0.5);
+          color: #fee2e2;
+        }
+
         .sideMenuBadge {
           min-width: 24px;
           height: 24px;
@@ -685,6 +707,10 @@ export function DashboardStyles() {
 
           .sideMenuSubTitle {
             display: none;
+          }
+
+          .portalRequestShortcut {
+            display: flex;
           }
 
           .sideMenuNav {

@@ -1942,11 +1942,28 @@ export default function DashboardPage() {
             <div className="sideMenuSubTitle">ITspot evidencia</div>
           </div>
 
+          <Link
+            className={pendingRequestsCount > 0 ? 'portalRequestShortcut portalRequestShortcutAlert' : 'portalRequestShortcut'}
+            href="/admin/requests"
+          >
+            <span>Žiadosti z portálu</span>
+            <span className={pendingRequestsCount > 0 ? 'sideMenuBadge sideMenuBadgeAlert' : 'sideMenuBadge'}>
+              {pendingRequestsCount}
+            </span>
+          </Link>
+
           <nav className="sideMenuNav" aria-label="Hlavná navigácia">
             <button type="button" style={sideNavButton(activeTab === 'zakazky')} onClick={() => setActiveTab('zakazky')}>
               <span>Zákazky</span>
               <span className="sideMenuBadge">{orders.filter((order) => AKTIVNE_STATUSY.includes(order.stav)).length}</span>
             </button>
+
+            <Link href="/admin/requests" style={sideNavButton(pendingRequestsCount > 0)}>
+              <span>Žiadosti</span>
+              <span className={pendingRequestsCount > 0 ? 'sideMenuBadge sideMenuBadgeAlert' : 'sideMenuBadge'}>
+                {pendingRequestsCount}
+              </span>
+            </Link>
 
             <button type="button" style={sideNavButton(activeTab === 'kalendar')} onClick={() => setActiveTab('kalendar')}>
               <span>Kalendár</span>
@@ -1956,13 +1973,6 @@ export default function DashboardPage() {
             <Link href="/mesacny-vykaz" style={sideNavButton(false)}>
               <span>Mesačný výkaz</span>
               <span className="sideMenuIcon">›</span>
-            </Link>
-
-            <Link href="/admin/requests" style={sideNavButton(pendingRequestsCount > 0)}>
-              <span>Žiadosti z portálu</span>
-              <span className={pendingRequestsCount > 0 ? 'sideMenuBadge sideMenuBadgeAlert' : 'sideMenuBadge'}>
-                {pendingRequestsCount}
-              </span>
             </Link>
 
             <Link href="/kancelaria" style={sideNavButton(false)}>
