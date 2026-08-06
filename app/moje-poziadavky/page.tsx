@@ -204,11 +204,11 @@ export default function MyRequestsPage() {
 
   const inputStyle = {
     width: '100%',
-    minHeight: 46,
+    minHeight: 40,
     borderRadius: 10,
     border: '1px solid rgba(148, 163, 184, 0.35)',
-    padding: '10px 12px',
-    fontSize: 15,
+    padding: '8px 11px',
+    fontSize: 14,
     color: '#f8fafc',
     background: 'rgba(15, 23, 42, 0.72)',
     outlineColor: '#84cc16',
@@ -216,8 +216,8 @@ export default function MyRequestsPage() {
 
   const labelStyle = {
     display: 'block',
-    marginBottom: 6,
-    fontSize: 13,
+    marginBottom: 5,
+    fontSize: 12,
     fontWeight: 800,
     color: '#dbeafe',
   }
@@ -230,17 +230,72 @@ export default function MyRequestsPage() {
           'radial-gradient(circle at 70% 0%, rgba(132, 204, 22, 0.18), transparent 32%), linear-gradient(180deg, #05070a 0%, #111827 58%, #05070a 100%)',
         color: '#f8fafc',
         fontFamily: 'Arial, Helvetica, sans-serif',
-        padding: '22px 14px',
+        padding: '12px 14px',
       }}
     >
       <div style={{ maxWidth: 980, margin: '0 auto' }}>
+        <style jsx global>{`
+          .customerLookupGrid {
+            display: grid;
+            grid-template-columns: minmax(220px, 1.1fr) minmax(130px, 0.7fr) minmax(170px, 0.8fr);
+            gap: 12px;
+            align-items: end;
+          }
+
+          @media (max-width: 760px) {
+            .customerHero {
+              padding: 12px !important;
+              border-radius: 14px !important;
+            }
+
+            .customerHero img {
+              width: 210px !important;
+              height: 64px !important;
+            }
+
+            .customerHero h1 {
+              font-size: 22px !important;
+            }
+
+            .customerHero > div {
+              font-size: 12px !important;
+            }
+
+            .customerLookupForm {
+              padding: 12px !important;
+              border-radius: 14px !important;
+            }
+
+            .customerLookupGrid {
+              grid-template-columns: 1fr 112px;
+              gap: 9px;
+            }
+
+            .customerLookupGrid button {
+              grid-column: 1 / -1;
+            }
+
+            .customerRequestCard {
+              padding: 10px !important;
+              border-radius: 12px !important;
+            }
+          }
+
+          @media (max-width: 460px) {
+            .customerLookupGrid {
+              grid-template-columns: 1fr;
+            }
+          }
+        `}</style>
+
         <section
+          className="customerHero"
           style={{
             background: 'rgba(15, 23, 42, 0.82)',
             border: '1px solid rgba(148, 163, 184, 0.22)',
             borderRadius: 18,
-            padding: '24px clamp(18px, 4vw, 34px)',
-            marginBottom: 14,
+            padding: '14px clamp(16px, 3vw, 24px)',
+            marginBottom: 10,
             textAlign: 'center',
             boxShadow: '0 20px 42px rgba(0, 0, 0, 0.32)',
           }}
@@ -248,25 +303,26 @@ export default function MyRequestsPage() {
           <img
             src="/logo-new.png"
             alt="ITspot"
-            style={{ width: 420, maxWidth: '86vw', height: 150, objectFit: 'contain', display: 'block', margin: '0 auto 4px' }}
+            style={{ width: 260, maxWidth: '72vw', height: 82, objectFit: 'contain', display: 'block', margin: '0 auto 2px' }}
           />
-          <h1 style={{ margin: 0, fontSize: 30, fontWeight: 900, lineHeight: 1.18 }}>Moje požiadavky</h1>
-          <div style={{ marginTop: 10, color: 'rgba(226,232,240,0.72)', fontSize: 15, fontWeight: 800 }}>
+          <h1 style={{ margin: 0, fontSize: 25, fontWeight: 900, lineHeight: 1.12 }}>Moje požiadavky</h1>
+          <div style={{ marginTop: 6, color: 'rgba(226,232,240,0.72)', fontSize: 13, fontWeight: 800 }}>
             Zadajte názov firmy alebo meno a zákaznícky PIN. Právnu formu ako s.r.o. písať nemusíte.
           </div>
         </section>
 
         <form
+          className="customerLookupForm"
           onSubmit={handleSubmit}
           style={{
             background: 'linear-gradient(180deg, rgba(17, 24, 39, 0.96), rgba(2, 6, 23, 0.96))',
             border: '1px solid rgba(148, 163, 184, 0.22)',
             borderRadius: 18,
-            padding: '22px clamp(16px, 4vw, 30px)',
+            padding: '14px clamp(14px, 3vw, 22px)',
             boxShadow: '0 24px 60px rgba(0, 0, 0, 0.38)',
           }}
         >
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 14, alignItems: 'end' }}>
+          <div className="customerLookupGrid">
             <div>
               <label style={labelStyle} htmlFor="customer-name">
                 Firma alebo meno *
@@ -299,14 +355,14 @@ export default function MyRequestsPage() {
               type="submit"
               disabled={loading}
               style={{
-                minHeight: 46,
+                minHeight: 40,
                 border: '1px solid #84cc16',
                 borderRadius: 12,
                 background: '#84cc16',
                 color: '#111827',
-                padding: '10px 18px',
+                padding: '8px 16px',
                 fontWeight: 900,
-                fontSize: 15,
+                fontSize: 14,
                 cursor: loading ? 'not-allowed' : 'pointer',
                 opacity: loading ? 0.7 : 1,
               }}
@@ -318,9 +374,9 @@ export default function MyRequestsPage() {
           {message && (
             <div
               style={{
-                marginTop: 16,
+                marginTop: 10,
                 borderRadius: 12,
-                padding: 14,
+                padding: 10,
                 border: messageType === 'success' ? '1px solid #84cc16' : '1px solid #f87171',
                 background: messageType === 'success' ? 'rgba(132, 204, 22, 0.12)' : 'rgba(248, 113, 113, 0.12)',
                 color: messageType === 'success' ? '#bef264' : '#fecaca',
@@ -332,7 +388,7 @@ export default function MyRequestsPage() {
           )}
         </form>
 
-        <section style={{ marginTop: 14, display: 'grid', gap: 10 }}>
+        <section style={{ marginTop: 10, display: 'grid', gap: 8 }}>
           {searched && items.length === 0 && !message && (
             <div style={{ border: '1px solid rgba(148, 163, 184, 0.22)', borderRadius: 16, padding: 18, background: 'rgba(15, 23, 42, 0.82)', color: '#cbd5e1', fontWeight: 800 }}>
               Nenašli sme žiadnu požiadavku pre zadaný názov a prístupový kód.
@@ -345,26 +401,27 @@ export default function MyRequestsPage() {
             return (
               <article
                 key={`${item.item_type}-${item.id}`}
+                className="customerRequestCard"
                 style={{
                   border: `2px solid ${statusColor.border}`,
-                  borderLeft: `9px solid ${statusColor.accent}`,
-                  borderRadius: 16,
-                  padding: 18,
+                  borderLeft: `7px solid ${statusColor.accent}`,
+                  borderRadius: 14,
+                  padding: '12px 14px',
                   background: 'rgba(248, 250, 252, 0.98)',
                   color: '#0f172a',
                   boxShadow: `0 14px 32px rgba(0, 0, 0, 0.24), 0 0 0 4px ${statusColor.glow}`,
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-                  <h2 style={{ margin: 0, fontSize: 19, fontWeight: 900 }}>{item.nazov || 'Požiadavka'}</h2>
+                  <h2 style={{ margin: 0, fontSize: 17, fontWeight: 900, lineHeight: 1.15 }}>{item.nazov || 'Požiadavka'}</h2>
                   <span
                     style={{
                       border: `1px solid ${statusColor.border}`,
                       background: statusColor.background,
                       color: statusColor.color,
                       borderRadius: 999,
-                      padding: '6px 10px',
-                      fontSize: 12,
+                      padding: '5px 9px',
+                      fontSize: 11,
                       fontWeight: 900,
                     }}
                   >
@@ -372,26 +429,26 @@ export default function MyRequestsPage() {
                   </span>
                 </div>
 
-                <div style={{ marginTop: 10, display: 'flex', gap: 12, flexWrap: 'wrap', color: '#64748b', fontSize: 13, fontWeight: 800 }}>
+                <div style={{ marginTop: 7, display: 'flex', gap: 10, flexWrap: 'wrap', color: '#64748b', fontSize: 12, fontWeight: 800 }}>
                   <span>Odoslané: {formatDate(item.created_at)}</span>
                   {item.termin && <span>Termín: {formatDate(item.termin)}</span>}
                   {requesterName && <span>Žiadateľ: {requesterName}</span>}
                 </div>
 
                 {item.public_message && (
-                  <div style={{ marginTop: 12, borderRadius: 12, border: '1px solid #bbf7d0', background: '#f0fdf4', color: '#166534', padding: 12, fontSize: 14, lineHeight: 1.45, whiteSpace: 'pre-wrap', fontWeight: 800 }}>
-                    <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Správa od ITspot</div>
+                  <div style={{ marginTop: 9, borderRadius: 10, border: '1px solid #bbf7d0', background: '#f0fdf4', color: '#166534', padding: 9, fontSize: 13, lineHeight: 1.35, whiteSpace: 'pre-wrap', fontWeight: 800 }}>
+                    <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>Správa od ITspot</div>
                     {item.public_message}
                   </div>
                 )}
 
                 {item.item_type === 'zakazka' && (
-                  <div style={{ marginTop: 12 }}>
+                  <div style={{ marginTop: 8 }}>
                     {updateOrderId === item.id ? (
-                      <div style={{ display: 'grid', gap: 8, borderTop: '1px solid #e2e8f0', paddingTop: 12 }}>
+                      <div style={{ display: 'grid', gap: 8, borderTop: '1px solid #e2e8f0', paddingTop: 10 }}>
                         <textarea
                           rows={4}
-                          style={{ width: '100%', borderRadius: 10, border: '1px solid #cbd5e1', padding: 10, fontSize: 14, color: '#0f172a', fontFamily: 'inherit', resize: 'vertical' }}
+                            style={{ width: '100%', borderRadius: 10, border: '1px solid #cbd5e1', padding: 9, fontSize: 14, color: '#0f172a', fontFamily: 'inherit', resize: 'vertical' }}
                           placeholder="Napíšte úpravu alebo doplnenie, napr. rozmery, čas dostupnosti alebo upresnenie poruchy."
                           value={updateText}
                           onChange={(event) => setUpdateText(event.target.value)}
@@ -407,7 +464,7 @@ export default function MyRequestsPage() {
                               background: '#fff',
                               color: '#0f172a',
                               borderRadius: 10,
-                              padding: '8px 12px',
+                              padding: '7px 10px',
                               fontWeight: 900,
                               cursor: 'pointer',
                             }}
@@ -438,7 +495,7 @@ export default function MyRequestsPage() {
                             type="button"
                             disabled={sendingUpdate}
                             onClick={() => void submitOrderUpdate(item.id)}
-                            style={{ border: '1px solid #84cc16', background: '#84cc16', color: '#111827', borderRadius: 10, padding: '8px 12px', fontWeight: 900, cursor: sendingUpdate ? 'not-allowed' : 'pointer' }}
+                            style={{ border: '1px solid #84cc16', background: '#84cc16', color: '#111827', borderRadius: 10, padding: '7px 10px', fontWeight: 900, cursor: sendingUpdate ? 'not-allowed' : 'pointer' }}
                           >
                             {sendingUpdate ? 'Odosielam...' : 'Odoslať úpravu'}
                           </button>
@@ -449,7 +506,7 @@ export default function MyRequestsPage() {
                               setUpdateText('')
                               setUpdateFiles([])
                             }}
-                            style={{ border: '1px solid #cbd5e1', background: '#fff', color: '#334155', borderRadius: 10, padding: '8px 12px', fontWeight: 800, cursor: 'pointer' }}
+                            style={{ border: '1px solid #cbd5e1', background: '#fff', color: '#334155', borderRadius: 10, padding: '7px 10px', fontWeight: 800, cursor: 'pointer' }}
                           >
                             Zrušiť
                           </button>
@@ -459,7 +516,7 @@ export default function MyRequestsPage() {
                       <button
                         type="button"
                         onClick={() => setUpdateOrderId(item.id)}
-                        style={{ border: `1px solid ${statusColor.border}`, background: statusColor.background, color: statusColor.color, borderRadius: 10, padding: '8px 12px', fontWeight: 900, cursor: 'pointer' }}
+                        style={{ border: `1px solid ${statusColor.border}`, background: statusColor.background, color: statusColor.color, borderRadius: 10, padding: '7px 11px', fontWeight: 900, cursor: 'pointer' }}
                       >
                         Upraviť
                       </button>
@@ -471,7 +528,7 @@ export default function MyRequestsPage() {
           })}
         </section>
 
-        <div style={{ marginTop: 14, display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', color: '#94a3b8', fontSize: 13 }}>
+        <div style={{ marginTop: 10, display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', color: '#94a3b8', fontSize: 12 }}>
           <Link href="/ziadost" style={{ color: '#cbd5e1', border: '1px solid rgba(255,255,255,0.18)', borderRadius: 10, padding: '8px 12px', textDecoration: 'none', fontWeight: 800 }}>
             Nová požiadavka
           </Link>
