@@ -191,7 +191,7 @@ export default function MyRequestsPage() {
       setUpdateOrderId('')
       setUpdateText('')
       setUpdateFiles([])
-      setMessage(uploadedAttachmentUrls.length > 0 ? 'Úprava aj prílohy boli odoslané.' : 'Úprava bola odoslaná.')
+      setMessage('Vaša úprava bola odoslaná.')
       setMessageType('success')
     } catch (error) {
       const text = error instanceof Error ? error.message : 'Neznáma chyba.'

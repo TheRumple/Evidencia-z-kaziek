@@ -264,6 +264,15 @@ export default function AdminRequestsPage() {
     return Array.from(new Set(text.match(/https?:\/\/[^\s)]+/g) || []))
   }
 
+  function stripAttachmentUrls(text: string) {
+    return text
+      .split('\n')
+      .filter((line) => !/^[-\s]*https?:\/\//i.test(line.trim()) && !/^prílohy:$/i.test(line.trim()))
+      .join('\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim()
+  }
+
   function isImageUrl(url: string) {
     return /\.(jpe?g|png|webp)(\?|#|$)/i.test(url) || /customer-request-files\/(ziadosti|doplnene)\//i.test(url)
   }
@@ -460,6 +469,7 @@ ITspot s.r.o.`
                 {(() => {
                   const description = getRequestDescriptionOnly(req)
                   const attachmentUrls = getAttachmentUrls(description)
+                  const cleanDescription = stripAttachmentUrls(description)
                   return (
                     <div style={{ fontSize: 14, color: '#475569', margin: '0 0 20px 0', whiteSpace: 'pre-wrap', lineHeight: 1.5, background: '#f8fafc', padding: 14, borderRadius: 8, border: '1px solid #f1f5f9' }}>
                       {getRequestType(req) && (
@@ -467,7 +477,7 @@ ITspot s.r.o.`
                           Typ požiadavky: {getRequestType(req)}
                         </div>
                       )}
-                      <div>{description}</div>
+                      <div>{cleanDescription}</div>
                       {attachmentUrls.length > 0 && (
                         <div style={{ display: 'grid', gap: 8, marginTop: 12, whiteSpace: 'normal' }}>
                           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>

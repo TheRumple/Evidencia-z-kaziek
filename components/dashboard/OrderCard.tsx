@@ -42,6 +42,15 @@ function getAttachmentUrls(update: CustomerUpdate) {
   return Array.from(new Set([...fromColumn, ...fromMessage]))
 }
 
+function stripAttachmentUrls(text: string) {
+  return text
+    .split('\n')
+    .filter((line) => !/^[-\s]*https?:\/\//i.test(line.trim()) && !/^prílohy:$/i.test(line.trim()))
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
 function isImageUrl(url: string) {
   return /\.(jpe?g|png|webp)(\?|#|$)/i.test(url) || /customer-request-files\/(ziadosti|doplnene)\//i.test(url)
 }
@@ -305,10 +314,11 @@ export function OrderCard({
               <div style={{ display: 'grid', gap: 8 }}>
                 {customerUpdates.map((update) => {
                   const attachmentUrls = getAttachmentUrls(update)
+                  const cleanMessage = stripAttachmentUrls(update.message)
                   return (
                     <div key={update.id} style={{ border: '1px solid #dbeafe', borderRadius: 10, padding: 10, background: '#eff6ff' }}>
                       <div style={{ fontSize: 12, color: '#64748b', fontWeight: 800 }}>{formatDate(update.created_at || null)}</div>
-                      <div style={{ marginTop: 4, whiteSpace: 'pre-wrap', color: '#0f172a' }}>{update.message}</div>
+                      {cleanMessage && <div style={{ marginTop: 4, whiteSpace: 'pre-wrap', color: '#0f172a' }}>{cleanMessage}</div>}
                       {attachmentUrls.length > 0 && (
                         <div style={{ display: 'grid', gap: 8, marginTop: 8 }}>
                           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>

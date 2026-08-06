@@ -141,7 +141,7 @@ export default function PublicRequestPage() {
       setDescription('')
       setDeadline('')
       setAttachments([])
-      setMessage({ type: 'success', text: 'Požiadavku sme prijali. Preveríme ju a ozveme sa vám s ďalším postupom. Ak máte zákaznícky PIN, stav nájdete v časti Moje požiadavky.' })
+      setMessage({ type: 'success', text: 'Vaša požiadavka bola odoslaná. Stav môžete sledovať v časti Moje požiadavky.' })
     } catch (error) {
       const text = error instanceof Error ? error.message : 'Neznáma chyba spojenia.'
       setMessage({ type: 'error', text: `Požiadavku sa nepodarilo odoslať: ${text}` })
