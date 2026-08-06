@@ -43,7 +43,7 @@ function getAttachmentUrls(update: CustomerUpdate) {
 }
 
 function isImageUrl(url: string) {
-  return /\.(jpe?g|png|webp)(\?|#|$)/i.test(url)
+  return /\.(jpe?g|png|webp)(\?|#|$)/i.test(url) || /customer-request-files\/(ziadosti|doplnene)\//i.test(url)
 }
 
 export function OrderCard({

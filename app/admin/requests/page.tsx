@@ -260,6 +260,14 @@ export default function AdminRequestsPage() {
       .trim() || '-'
   }
 
+  function getAttachmentUrls(text: string) {
+    return Array.from(new Set(text.match(/https?:\/\/[^\s)]+/g) || []))
+  }
+
+  function isImageUrl(url: string) {
+    return /\.(jpe?g|png|webp)(\?|#|$)/i.test(url) || /customer-request-files\/(ziadosti|doplnene)\//i.test(url)
+  }
+
   function openMailDraft(to: string, subject: string, body: string) {
     if (!to) {
       alert('V požiadavke nie je nájdený email zákazníka.')
@@ -449,14 +457,42 @@ ITspot s.r.o.`
                 </div>
 
                 {/* Obsah požiadavky */}
-                <div style={{ fontSize: 14, color: '#475569', margin: '0 0 20px 0', whiteSpace: 'pre-wrap', lineHeight: 1.5, background: '#f8fafc', padding: 14, borderRadius: 8, border: '1px solid #f1f5f9' }}>
-                  {getRequestType(req) && (
-                    <div style={{ marginBottom: 10, color: '#334155', fontWeight: 900 }}>
-                      Typ požiadavky: {getRequestType(req)}
+                {(() => {
+                  const description = getRequestDescriptionOnly(req)
+                  const attachmentUrls = getAttachmentUrls(description)
+                  return (
+                    <div style={{ fontSize: 14, color: '#475569', margin: '0 0 20px 0', whiteSpace: 'pre-wrap', lineHeight: 1.5, background: '#f8fafc', padding: 14, borderRadius: 8, border: '1px solid #f1f5f9' }}>
+                      {getRequestType(req) && (
+                        <div style={{ marginBottom: 10, color: '#334155', fontWeight: 900 }}>
+                          Typ požiadavky: {getRequestType(req)}
+                        </div>
+                      )}
+                      <div>{description}</div>
+                      {attachmentUrls.length > 0 && (
+                        <div style={{ display: 'grid', gap: 8, marginTop: 12, whiteSpace: 'normal' }}>
+                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                            {attachmentUrls.map((url, index) => (
+                              <a key={url} href={url} target="_blank" rel="noreferrer" style={{ color: '#1d4ed8', fontWeight: 900 }}>
+                                Príloha {index + 1}
+                              </a>
+                            ))}
+                          </div>
+                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                            {attachmentUrls.filter(isImageUrl).map((url) => (
+                              <a key={`preview-${url}`} href={url} target="_blank" rel="noreferrer">
+                                <img
+                                  src={url}
+                                  alt="Príloha od zákazníka"
+                                  style={{ width: 120, height: 90, objectFit: 'cover', borderRadius: 10, border: '1px solid #cbd5e1', display: 'block' }}
+                                />
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  )}
-                  <div>{getRequestDescriptionOnly(req)}</div>
-                </div>
+                  )
+                })()}
 
                 <div style={{ marginBottom: 16, maxWidth: 360 }}>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 800, color: '#475569', marginBottom: 6 }}>
