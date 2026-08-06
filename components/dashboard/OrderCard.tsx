@@ -17,6 +17,7 @@ type OrderCardProps = {
   isPinned: boolean
   orderLogs: WorkLog[]
   customerUpdates: CustomerUpdate[]
+  unseenCustomerUpdatesCount: number
   boxStyle: CSSProperties
   buttonStyle: CSSProperties
   dangerButtonStyle: CSSProperties
@@ -41,6 +42,7 @@ export function OrderCard({
   isPinned,
   orderLogs,
   customerUpdates,
+  unseenCustomerUpdatesCount,
   boxStyle,
   buttonStyle,
   dangerButtonStyle,
@@ -152,6 +154,21 @@ export function OrderCard({
                     }}
                   >
                     Pripnuté
+                  </span>
+                )}
+                {unseenCustomerUpdatesCount > 0 && (
+                  <span
+                    style={{
+                      background: '#fee2e2',
+                      color: '#991b1b',
+                      border: '1px solid #fca5a5',
+                      borderRadius: 999,
+                      padding: '2px 7px',
+                      fontSize: 10,
+                      fontWeight: 900,
+                    }}
+                  >
+                    Nová úprava {unseenCustomerUpdatesCount}
                   </span>
                 )}
               </div>
@@ -267,7 +284,14 @@ export function OrderCard({
 
           {customerUpdates.length > 0 && (
             <div style={{ ...boxStyle, padding: 12, marginTop: 10 }}>
-              <div style={{ fontSize: 12, fontWeight: 800, color: '#64748b', marginBottom: 8 }}>Doplnené od zákazníka</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', marginBottom: 8, flexWrap: 'wrap' }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: '#64748b' }}>Doplnené od zákazníka</div>
+                {unseenCustomerUpdatesCount > 0 && (
+                  <span style={{ background: '#fee2e2', color: '#991b1b', border: '1px solid #fca5a5', borderRadius: 999, padding: '3px 8px', fontSize: 11, fontWeight: 900 }}>
+                    Nové
+                  </span>
+                )}
+              </div>
               <div style={{ display: 'grid', gap: 8 }}>
                 {customerUpdates.map((update) => (
                   <div key={update.id} style={{ border: '1px solid #dbeafe', borderRadius: 10, padding: 10, background: '#eff6ff' }}>

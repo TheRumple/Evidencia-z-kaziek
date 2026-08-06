@@ -42,6 +42,7 @@ type OrdersViewProps = {
   updateOrderStatus: (orderId: string, status: string) => void
   workLogsByOrder: Record<string, WorkLog[]>
   customerUpdatesByOrder: Record<string, CustomerUpdate[]>
+  unseenCustomerUpdatesByOrder: Record<string, number>
 }
 
 export function OrdersView({
@@ -76,6 +77,7 @@ export function OrdersView({
   updateOrderStatus,
   workLogsByOrder,
   customerUpdatesByOrder,
+  unseenCustomerUpdatesByOrder,
 }: OrdersViewProps) {
   return (
     <>
@@ -178,6 +180,7 @@ export function OrdersView({
                     isPinned={isPinnedOrder(order.id)}
                     orderLogs={workLogsByOrder[order.id] || []}
                     customerUpdates={customerUpdatesByOrder[order.id] || []}
+                    unseenCustomerUpdatesCount={unseenCustomerUpdatesByOrder[order.id] || 0}
                     boxStyle={boxStyle}
                     buttonStyle={buttonStyle}
                     dangerButtonStyle={dangerButtonStyle}

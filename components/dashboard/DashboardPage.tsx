@@ -80,6 +80,7 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<'zakazky' | 'kalendar' | 'zakaznici'>('zakazky')
   const [expandedOrderIds, setExpandedOrderIds] = useState<string[]>([])
   const [pinnedOrderIds, setPinnedOrderIds] = useState<string[]>([])
+  const [seenCustomerUpdateIds, setSeenCustomerUpdateIds] = useState<string[]>([])
 
   const [nazov, setNazov] = useState('')
   const [kontakt, setKontakt] = useState('')
@@ -229,8 +230,28 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return
+    try {
+      const storedSeen = window.localStorage.getItem('customer-updates-seen-v1')
+      if (storedSeen) {
+        const parsed = JSON.parse(storedSeen)
+        if (Array.isArray(parsed)) {
+          setSeenCustomerUpdateIds(parsed.filter((item): item is string => typeof item === 'string'))
+        }
+      }
+    } catch {
+      // ignore localStorage read errors
+    }
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
     window.localStorage.setItem('orders-pinned-v1', JSON.stringify(pinnedOrderIds))
   }, [pinnedOrderIds])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    window.localStorage.setItem('customer-updates-seen-v1', JSON.stringify(seenCustomerUpdateIds))
+  }, [seenCustomerUpdateIds])
 
   async function loadPendingCount() {
     try {
@@ -1632,6 +1653,22 @@ export default function DashboardPage() {
     return grouped
   }, [customerUpdates])
 
+  const unseenCustomerUpdateIds = useMemo(() => {
+    const seen = new Set(seenCustomerUpdateIds)
+    return customerUpdates.filter((update) => !seen.has(update.id)).map((update) => update.id)
+  }, [customerUpdates, seenCustomerUpdateIds])
+
+  const unseenCustomerUpdatesByOrder = useMemo(() => {
+    const unseen = new Set(unseenCustomerUpdateIds)
+    const grouped: Record<string, number> = {}
+
+    for (const update of customerUpdates) {
+      if (unseen.has(update.id)) grouped[update.order_id] = (grouped[update.order_id] || 0) + 1
+    }
+
+    return grouped
+  }, [customerUpdates, unseenCustomerUpdateIds])
+
   const totalHoursByOrder = useMemo(() => {
     const totals: Record<string, number> = {}
 
@@ -1943,6 +1980,11 @@ export default function DashboardPage() {
   }
 
   function toggleExpandedOrder(orderId: string) {
+    const updateIdsForOrder = customerUpdatesByOrder[orderId]?.map((update) => update.id) || []
+    if (updateIdsForOrder.length > 0) {
+      setSeenCustomerUpdateIds((current) => Array.from(new Set([...current, ...updateIdsForOrder])))
+    }
+
     setExpandedOrderIds((curr) =>
       curr.includes(orderId) ? curr.filter((id) => id !== orderId) : [...curr, orderId]
     )
@@ -1994,6 +2036,13 @@ export default function DashboardPage() {
             <button type="button" style={sideNavButton(activeTab === 'zakazky')} onClick={() => setActiveTab('zakazky')}>
               <span>Zákazky</span>
               <span className="sideMenuBadge">{orders.filter((order) => AKTIVNE_STATUSY.includes(order.stav)).length}</span>
+            </button>
+
+            <button type="button" style={sideNavButton(unseenCustomerUpdateIds.length > 0)} onClick={() => setActiveTab('zakazky')}>
+              <span>Úpravy od zákazníkov</span>
+              <span className={unseenCustomerUpdateIds.length > 0 ? 'sideMenuBadge sideMenuBadgeAlert' : 'sideMenuBadge'}>
+                {unseenCustomerUpdateIds.length}
+              </span>
             </button>
 
             <Link href="/admin/requests" style={sideNavButton(pendingRequestsCount > 0)}>
@@ -2208,6 +2257,7 @@ export default function DashboardPage() {
             updateOrderStatus={updateOrderStatus}
             workLogsByOrder={workLogsByOrder}
             customerUpdatesByOrder={customerUpdatesByOrder}
+            unseenCustomerUpdatesByOrder={unseenCustomerUpdatesByOrder}
           />
         )}
 
