@@ -619,13 +619,11 @@ export function DashboardStyles() {
 
           .headerCompact {
             align-items: flex-start;
-            gap: 10px;
+            gap: 6px;
           }
 
           .headerCompactActions {
-            width: 100%;
-            justify-content: flex-start;
-            gap: 5px;
+            display: none;
           }
 
           .headerCompactActions a,
@@ -704,6 +702,10 @@ export function DashboardStyles() {
             box-shadow: none !important;
           }
 
+          .sideMenuFooter button:not(:first-child) {
+            display: none !important;
+          }
+
           .sideMenuBadge {
             min-width: 20px;
             height: 20px;
@@ -719,29 +721,41 @@ export function DashboardStyles() {
           }
 
           .ordersControlPanel {
-            padding: 13px !important;
+            padding: 10px !important;
+            border-radius: 12px !important;
           }
 
           .ordersControlHeader h2 {
-            font-size: 20px;
+            font-size: 18px;
           }
 
           .ordersControlHeader p {
-            font-size: 12px;
+            font-size: 11px;
+          }
+
+          .ordersEyebrow {
+            font-size: 10px;
+            margin-bottom: 4px;
+          }
+
+          .ordersVisibleBadge {
+            padding: 5px 8px;
+            font-size: 11px;
           }
 
           .ordersSection {
-            padding: 10px;
+            padding: 8px;
           }
 
           .ordersSectionHeader {
             align-items: flex-start;
-            padding: 9px 10px;
+            padding: 8px 9px;
+            border-radius: 11px;
           }
 
           .orderRowSummary {
-            padding: 9px;
-            gap: 8px;
+            padding: 8px;
+            gap: 6px;
           }
 
           .orderRowMeta {
@@ -762,9 +776,9 @@ export function DashboardStyles() {
           }
 
           .mobileListCard {
-            border-radius: 14px;
-            padding: 12px;
-            margin-bottom: 10px;
+            border-radius: 12px;
+            padding: 10px;
+            margin-bottom: 8px;
           }
 
           .mobileActionRow {
@@ -813,11 +827,11 @@ export function DashboardStyles() {
           }
 
           .headerCompact h1 {
-            font-size: 21px !important;
+            font-size: 19px !important;
           }
 
           .headerCompact > div:first-child > div {
-            font-size: 12px !important;
+            font-size: 11px !important;
           }
 
           .orderMetaChip {
