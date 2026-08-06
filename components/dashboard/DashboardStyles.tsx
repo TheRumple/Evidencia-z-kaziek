@@ -23,6 +23,8 @@ export function DashboardStyles() {
 
         .appShell {
           align-items: start;
+          width: 100%;
+          min-width: 0;
         }
 
         .sideMenu {
@@ -40,6 +42,8 @@ export function DashboardStyles() {
           display: flex;
           flex-direction: column;
           gap: 18px;
+          min-width: 0;
+          max-width: 100%;
         }
 
         .sideMenuTitle {
@@ -59,6 +63,8 @@ export function DashboardStyles() {
         .sideMenuNav {
           display: grid;
           gap: 5px;
+          min-width: 0;
+          max-width: 100%;
         }
 
         .sideMenuFooter {
@@ -67,6 +73,8 @@ export function DashboardStyles() {
           gap: 8px;
           border-top: 1px solid rgba(148, 163, 184, 0.18);
           padding-top: 12px;
+          min-width: 0;
+          max-width: 100%;
         }
 
         .sideMenuBadge {
@@ -96,6 +104,7 @@ export function DashboardStyles() {
 
         .mainPanel {
           min-width: 0;
+          max-width: 100%;
         }
 
         .desktopTable {
@@ -601,6 +610,20 @@ export function DashboardStyles() {
         }
 
         @media (max-width: 768px) {
+          body {
+            overflow-x: hidden;
+          }
+
+          .layoutWrap,
+          .appShell,
+          .mainPanel,
+          .sideMenu {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            box-sizing: border-box;
+          }
+
           .filtersGrid,
           .filtersGridOrders,
           .modalGrid,
@@ -668,6 +691,10 @@ export function DashboardStyles() {
             display: flex;
             gap: 6px;
             overflow-x: auto;
+            overflow-y: hidden;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
             padding-bottom: 1px;
             -webkit-overflow-scrolling: touch;
           }
@@ -687,6 +714,10 @@ export function DashboardStyles() {
             display: flex;
             gap: 6px;
             overflow-x: auto;
+            overflow-y: hidden;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
             padding-top: 7px;
             -webkit-overflow-scrolling: touch;
           }
@@ -723,6 +754,8 @@ export function DashboardStyles() {
           .ordersControlPanel {
             padding: 10px !important;
             border-radius: 12px !important;
+            max-width: 100%;
+            overflow: hidden;
           }
 
           .ordersControlHeader h2 {

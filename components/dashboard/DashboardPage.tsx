@@ -1930,6 +1930,8 @@ export default function DashboardPage() {
         padding: 12,
         fontFamily: 'Arial, Helvetica, sans-serif',
         color: '#0f172a',
+        overflowX: 'hidden',
+        boxSizing: 'border-box',
       }}
     >
       <div className="layoutWrap appShell" style={{ maxWidth: 1480, margin: '0 auto', display: 'grid', gridTemplateColumns: '230px minmax(0, 1fr)', gap: 14 }}>
