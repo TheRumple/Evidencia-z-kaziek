@@ -79,6 +79,22 @@ export type CalendarPlan = {
   created_at?: string
 }
 
+export type MaintenanceRevision = {
+  id: string
+  user_id: string
+  customer_id: string
+  system_type: string
+  title: string
+  contact_name: string | null
+  last_check_date: string | null
+  interval_months: number
+  next_due_date: string
+  note: string | null
+  active: boolean
+  created_at?: string
+  updated_at?: string
+}
+
 export type Notice =
   | {
       type: 'success' | 'error'

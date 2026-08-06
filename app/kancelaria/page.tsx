@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
 import Link from 'next/link'
-import type { Order } from '@/lib/dashboard-types'
+import type { MaintenanceRevision, Order } from '@/lib/dashboard-types'
 import { supabase } from '@/lib/supabase'
 
 type WeatherState = {
@@ -46,6 +46,7 @@ export default function OfficeDashboardPage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [now, setNow] = useState(new Date())
   const [orders, setOrders] = useState<Order[]>([])
+  const [revisions, setRevisions] = useState<MaintenanceRevision[]>([])
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0)
   const [weather, setWeather] = useState<WeatherState>({ temperature: null, windSpeed: null, code: null })
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
@@ -102,13 +103,15 @@ export default function OfficeDashboardPage() {
   }, [])
 
   async function loadData(currentUserId: string) {
-    const [ordersResult, pendingResult] = await Promise.all([
+    const [ordersResult, pendingResult, revisionsResult] = await Promise.all([
       supabase.from('orders').select('*').eq('user_id', currentUserId),
       supabase.from('customer_requests').select('*', { count: 'exact', head: true }).eq('stav', 'na_schvalenie'),
+      supabase.from('maintenance_revisions').select('*').eq('user_id', currentUserId).eq('active', true),
     ])
 
     if (!ordersResult.error) setOrders((ordersResult.data || []) as Order[])
     if (!pendingResult.error && pendingResult.count !== null) setPendingRequestsCount(pendingResult.count)
+    if (!revisionsResult.error) setRevisions((revisionsResult.data || []) as MaintenanceRevision[])
     setLastRefresh(new Date())
   }
 
@@ -135,8 +138,15 @@ export default function OfficeDashboardPage() {
       inspections: orders.filter((order) => order.stav === 'obhliadka').length,
       waiting: orders.filter((order) => order.stav === 'caka').length,
       invoiced: orders.filter((order) => order.stav === 'odovzdana').length,
+      revisionsDue: revisions.filter((revision) => {
+        if (!revision.next_due_date) return false
+        const today = new Date(new Date().toISOString().slice(0, 10)).getTime()
+        const due = new Date(revision.next_due_date).getTime()
+        const days = Math.ceil((due - today) / 86400000)
+        return days <= 30
+      }).length,
     }
-  }, [orders])
+  }, [orders, revisions])
 
   if (checkingAuth) {
     return <div style={{ padding: 24, fontFamily: 'Arial, Helvetica, sans-serif' }}>Načítavam...</div>
@@ -430,7 +440,7 @@ export default function OfficeDashboardPage() {
 
         .statusGrid {
           display: grid;
-          grid-template-columns: repeat(5, minmax(0, 1fr));
+          grid-template-columns: repeat(6, minmax(0, 1fr));
           gap: 10px;
         }
 
@@ -597,6 +607,10 @@ export default function OfficeDashboardPage() {
             <div className="statLabel">Čaká na materiál</div>
             <div className="statValue">{stats.waiting}</div>
           </div>
+          <div className="statCard" style={{ '--accent': stats.revisionsDue > 0 ? '#ef4444' : '#84cc16', '--accentGlow': stats.revisionsDue > 0 ? 'rgba(239, 68, 68, 0.22)' : 'rgba(132, 204, 22, 0.16)' } as CSSProperties}>
+            <div className="statLabel">Revízie do 30 dní</div>
+            <div className="statValue">{stats.revisionsDue}</div>
+          </div>
           <div className="statCard" style={{ '--accent': '#22c55e', '--accentGlow': 'rgba(34, 197, 94, 0.17)' } as CSSProperties}>
             <div className="statLabel">Zrealizované zákazky</div>
             <div className="statValue">{stats.invoiced}</div>
@@ -611,6 +625,9 @@ export default function OfficeDashboardPage() {
             </Link>
             <Link className="officeLink" href="/admin/requests">
               Žiadosti z portálu
+            </Link>
+            <Link className="officeLink" href="/revizie">
+              Revízie
             </Link>
           </div>
         </footer>

@@ -2085,6 +2085,11 @@ export default function DashboardPage() {
               <span className="sideMenuIcon">›</span>
             </Link>
 
+            <Link href="/revizie" style={sideNavButton(false)}>
+              <span>Revízie</span>
+              <span className="sideMenuIcon">›</span>
+            </Link>
+
             <Link href="/kancelaria" style={sideNavButton(false)}>
               <span>Kancelária</span>
               <span className="sideMenuIcon">›</span>
