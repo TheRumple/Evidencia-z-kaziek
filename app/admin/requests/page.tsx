@@ -364,18 +364,18 @@ ITspot s.r.o.`
   }
 
   return (
-    <div style={{ fontFamily: 'sans-serif', background: 'linear-gradient(180deg, #0b1120 0%, #111827 42%, #eef4ff 42%, #f8fafc 100%)', minHeight: '100vh', padding: '40px 20px' }}>
-      <div style={{ maxWidth: 1000, margin: '0 auto' }}>
+    <div className="adminRequestsPage" style={{ fontFamily: 'sans-serif', background: 'linear-gradient(180deg, #0b1120 0%, #111827 42%, #eef4ff 42%, #f8fafc 100%)', minHeight: '100vh', padding: '40px 20px' }}>
+      <div className="adminRequestsWrap" style={{ maxWidth: 1000, margin: '0 auto' }}>
         
         {/* Hlavička adminu s navigačnými prvkami */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28, flexWrap: 'wrap', gap: 16, color: '#fff' }}>
+        <div className="adminRequestsHeader" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28, flexWrap: 'wrap', gap: 16, color: '#fff' }}>
           <div>
             <h1 style={{ fontSize: 28, fontWeight: 900, color: '#fff', margin: 0 }}>Nové požiadavky od klientov</h1>
             <p style={{ color: 'rgba(255,255,255,0.72)', margin: '4px 0 0 0', fontSize: 14 }}>Po schválení alebo zamietnutí sa otvorí pripravený email v poštovom klientovi.</p>
           </div>
           
           {/* Akčné tlačidlá vpravo hore */}
-          <div style={{ display: 'flex', gap: 10 }}>
+          <div className="adminTopActions" style={{ display: 'flex', gap: 10 }}>
             <Link 
               href="/" 
               style={{ 
@@ -409,7 +409,7 @@ ITspot s.r.o.`
             </div>
           ) : (
             requests.map((req) => (
-              <div key={req.id} style={{ background: '#fff', borderRadius: 16, padding: 24, boxShadow: '0 18px 42px rgba(15,23,42,0.12)', border: '1px solid #e2e8f0' }}>
+              <div className="requestCard" key={req.id} style={{ background: '#fff', borderRadius: 16, padding: 24, boxShadow: '0 18px 42px rgba(15,23,42,0.12)', border: '1px solid #e2e8f0' }}>
                 
                 {/* Horný infopanel požiadavky */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, borderBottom: '1px solid #f1f5f9', paddingBottom: 14, marginBottom: 14 }}>
@@ -429,7 +429,7 @@ ITspot s.r.o.`
                 </div>
 
                 <h3 style={{ fontSize: 18, fontWeight: 700, color: '#1e293b', margin: '0 0 12px 0' }}>{req.nazov}</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10, marginBottom: 16 }}>
+                <div className="requestContactGrid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10, marginBottom: 16 }}>
                   <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: 10 }}>
                     <div style={{ color: '#64748b', fontSize: 12, fontWeight: 900 }}>Meno</div>
                     <strong style={{ color: '#0f172a', fontWeight: 900 }}>{getRequestName(req) || '-'}</strong>
@@ -496,7 +496,7 @@ ITspot s.r.o.`
                 </div>
 
                 {/* Akčné tlačidlá */}
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                <div className="requestActionRow" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, flexWrap: 'wrap' }}>
                   <button
                     onClick={() => openCustomerEmail(req, 'received')}
                     style={{ background: '#e0f2fe', color: '#075985', border: 'none', padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
@@ -538,7 +538,7 @@ ITspot s.r.o.`
       {/* MODÁLNE OKNO PRE ÚPRAVU PRED SCHVÁLENÍM */}
       {editingRequest && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: 16, zIndex: 999 }}>
-          <div style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 600, padding: 24, boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0' }}>
+          <div className="requestEditModal" style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 600, padding: 24, boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0' }}>
             
             <h3 style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', margin: '0 0 4px 0' }}>✏️ Úprava požiadavky pred publikovaním</h3>
             <p style={{ color: '#64748b', fontSize: 13, margin: '0 0 20px 0' }}>Upravte texty podľa potreby. Po schválení sa otvorí pripravený email zákazníkovi.</p>
@@ -585,7 +585,7 @@ ITspot s.r.o.`
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 10 }}>
+              <div className="requestModalActions" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
                 <button type="button" onClick={() => setEditingRequest(null)} style={{ background: '#f1f5f9', color: '#475569', border: 'none', padding: '10px 16px', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
                   Zrušiť
                 </button>
@@ -602,6 +602,111 @@ ITspot s.r.o.`
           </div>
         </div>
       )}
+
+      <style jsx global>{`
+        @media (max-width: 640px) {
+          .adminRequestsPage {
+            padding: 16px 10px !important;
+            background: linear-gradient(180deg, #0b1120 0%, #111827 230px, #eef4ff 231px, #f8fafc 100%) !important;
+          }
+
+          .adminRequestsHeader {
+            margin-bottom: 14px !important;
+            gap: 10px !important;
+          }
+
+          .adminRequestsHeader h1 {
+            font-size: 21px !important;
+            line-height: 1.12 !important;
+          }
+
+          .adminRequestsHeader p {
+            font-size: 12px !important;
+            line-height: 1.35 !important;
+          }
+
+          .adminTopActions {
+            width: 100%;
+            gap: 8px !important;
+          }
+
+          .adminTopActions a,
+          .adminTopActions button {
+            flex: 1 1 0;
+            justify-content: center;
+            padding: 8px 10px !important;
+            font-size: 12px !important;
+            min-width: 0;
+          }
+
+          .requestCard {
+            border-radius: 12px !important;
+            padding: 12px !important;
+          }
+
+          .requestCard h3 {
+            font-size: 16px !important;
+            line-height: 1.25 !important;
+          }
+
+          .requestContactGrid {
+            grid-template-columns: 1fr 1fr !important;
+            gap: 8px !important;
+          }
+
+          .requestContactGrid > div {
+            padding: 8px !important;
+            min-width: 0;
+          }
+
+          .requestContactGrid strong {
+            font-size: 13px !important;
+            overflow-wrap: anywhere;
+          }
+
+          .requestActionRow {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px !important;
+          }
+
+          .requestActionRow button {
+            width: 100%;
+            min-width: 0;
+            padding: 9px 8px !important;
+            font-size: 12px !important;
+            line-height: 1.15;
+            white-space: normal;
+          }
+
+          .requestActionRow button:last-child {
+            grid-column: 1 / -1;
+          }
+
+          .requestEditModal {
+            padding: 14px !important;
+            border-radius: 12px !important;
+            max-height: calc(100vh - 24px);
+            overflow: auto;
+          }
+
+          .requestModalActions {
+            display: grid !important;
+            grid-template-columns: 1fr;
+          }
+
+          .requestModalActions button {
+            width: 100%;
+            padding: 10px 12px !important;
+          }
+        }
+
+        @media (max-width: 380px) {
+          .requestContactGrid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
 
     </div>
   )

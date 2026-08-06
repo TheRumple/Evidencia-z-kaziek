@@ -638,31 +638,77 @@ export function DashboardStyles() {
 
           .sideMenu {
             border-radius: 14px;
-            padding: 12px;
-            gap: 12px;
+            padding: 9px;
+            gap: 8px;
+          }
+
+          .sideMenu > div:first-child {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          }
+
+          .sideMenu > div:first-child > div:first-child {
+            margin-bottom: 0 !important;
+          }
+
+          .sideMenu > div:first-child span:first-child {
+            width: 92px !important;
+            height: 30px !important;
+            border-radius: 8px !important;
+          }
+
+          .sideMenuTitle {
+            font-size: 13px;
+          }
+
+          .sideMenuSubTitle {
+            display: none;
           }
 
           .sideMenuNav {
             display: flex;
-            gap: 7px;
+            gap: 6px;
             overflow-x: auto;
-            padding-bottom: 2px;
+            padding-bottom: 1px;
             -webkit-overflow-scrolling: touch;
           }
 
           .sideMenuNav a,
           .sideMenuNav button {
             width: auto !important;
-            min-width: 136px;
+            min-width: 106px;
+            min-height: 34px !important;
             flex: 0 0 auto;
+            padding: 7px 8px !important;
+            font-size: 12px !important;
+            border-radius: 9px !important;
           }
 
           .sideMenuFooter {
-            grid-template-columns: 1fr 1fr;
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding-top: 7px;
+            -webkit-overflow-scrolling: touch;
           }
 
           .sideMenuFooter button {
-            min-height: 38px;
+            width: auto !important;
+            min-width: 118px;
+            min-height: 34px !important;
+            flex: 0 0 auto;
+            padding: 7px 8px !important;
+            font-size: 12px !important;
+            border-radius: 9px !important;
+            box-shadow: none !important;
+          }
+
+          .sideMenuBadge {
+            min-width: 20px;
+            height: 20px;
+            padding: 0 6px;
+            font-size: 11px;
           }
 
           .summaryStrip {
@@ -751,6 +797,10 @@ export function DashboardStyles() {
         }
 
         @media (max-width: 520px) {
+          .layoutWrap {
+            gap: 8px !important;
+          }
+
           .headerCompactActions {
             overflow-x: auto;
             flex-wrap: nowrap;
@@ -760,6 +810,14 @@ export function DashboardStyles() {
           .headerCompactActions a,
           .headerCompactActions button {
             white-space: nowrap;
+          }
+
+          .headerCompact h1 {
+            font-size: 21px !important;
+          }
+
+          .headerCompact > div:first-child > div {
+            font-size: 12px !important;
           }
 
           .orderMetaChip {
