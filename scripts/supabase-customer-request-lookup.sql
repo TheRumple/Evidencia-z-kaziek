@@ -136,6 +136,8 @@ as $$
   );
 $$;
 
+drop function if exists public.lookup_customer_requests(text, text);
+
 create or replace function public.lookup_customer_requests(
   p_customer_name text,
   p_portal_code text
