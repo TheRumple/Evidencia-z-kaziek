@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
-import Link from 'next/link'
 import type { MaintenanceRevision, Order } from '@/lib/dashboard-types'
 import { supabase } from '@/lib/supabase'
 
@@ -194,7 +193,7 @@ export default function OfficeDashboardPage() {
           height: calc(100vh - 28px);
           margin: 0 auto;
           display: grid;
-          grid-template-rows: 74px minmax(0, 1fr) 108px 30px;
+          grid-template-rows: 74px minmax(0, 1fr) 108px 22px;
           gap: 10px;
         }
 
@@ -440,7 +439,7 @@ export default function OfficeDashboardPage() {
 
         .statusGrid {
           display: grid;
-          grid-template-columns: repeat(6, minmax(0, 1fr));
+          grid-template-columns: repeat(5, minmax(0, 1fr));
           gap: 10px;
         }
 
@@ -503,21 +502,11 @@ export default function OfficeDashboardPage() {
 
         .footerBar {
           display: flex;
-          justify-content: space-between;
+          justify-content: center;
           align-items: center;
-          gap: 12px;
           color: rgba(226, 232, 240, 0.7);
           font-size: 12px;
           font-weight: 800;
-        }
-
-        .officeLink {
-          color: #ecfccb;
-          text-decoration: none;
-          border: 1px solid rgba(190, 242, 100, 0.34);
-          border-radius: 999px;
-          padding: 6px 10px;
-          background: rgba(132, 204, 22, 0.1);
         }
 
         @media (max-width: 980px) {
@@ -537,10 +526,6 @@ export default function OfficeDashboardPage() {
             width: 100%;
           }
 
-          .footerBar {
-            align-items: flex-start;
-            flex-direction: column;
-          }
         }
       `}</style>
 
@@ -595,10 +580,6 @@ export default function OfficeDashboardPage() {
             <div className="statLabel">Aktívne zákazky</div>
             <div className="statValue">{stats.active}</div>
           </div>
-          <div className="statCard" style={{ '--accent': '#fbbf24', '--accentGlow': 'rgba(251, 191, 36, 0.17)' } as CSSProperties}>
-            <div className="statLabel">Rozpracované</div>
-            <div className="statValue">{stats.inProgress}</div>
-          </div>
           <div className="statCard" style={{ '--accent': '#8b5cf6', '--accentGlow': 'rgba(139, 92, 246, 0.18)' } as CSSProperties}>
             <div className="statLabel">Obhliadky</div>
             <div className="statValue">{stats.inspections}</div>
@@ -607,7 +588,18 @@ export default function OfficeDashboardPage() {
             <div className="statLabel">Čaká na materiál</div>
             <div className="statValue">{stats.waiting}</div>
           </div>
-          <div className="statCard" style={{ '--accent': stats.revisionsDue > 0 ? '#ef4444' : '#84cc16', '--accentGlow': stats.revisionsDue > 0 ? 'rgba(239, 68, 68, 0.22)' : 'rgba(132, 204, 22, 0.16)' } as CSSProperties}>
+          <div
+            className="statCard"
+            style={{
+              '--accent': stats.revisionsDue > 0 ? '#ef4444' : '#84cc16',
+              '--accentGlow': stats.revisionsDue > 0 ? 'rgba(239, 68, 68, 0.24)' : 'rgba(132, 204, 22, 0.16)',
+              background:
+                stats.revisionsDue > 0
+                  ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.95), rgba(153, 27, 27, 0.84))'
+                  : undefined,
+              color: stats.revisionsDue > 0 ? '#fff' : undefined,
+            } as CSSProperties}
+          >
             <div className="statLabel">Revízie do 30 dní</div>
             <div className="statValue">{stats.revisionsDue}</div>
           </div>
@@ -618,18 +610,7 @@ export default function OfficeDashboardPage() {
         </section>
 
         <footer className="footerBar">
-          <div>ITspot s.r.o. · Servisné centrum · Stav systému OK</div>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <Link className="officeLink" href="/">
-              Správa zákaziek
-            </Link>
-            <Link className="officeLink" href="/admin/requests">
-              Žiadosti z portálu
-            </Link>
-            <Link className="officeLink" href="/revizie">
-              Revízie
-            </Link>
-          </div>
+          ITspot s.r.o. · Servisné centrum · Stav systému OK
         </footer>
       </div>
     </main>
