@@ -16,6 +16,7 @@ type OrdersViewProps = {
   customers: Customer[]
   dangerButtonStyle: CSSProperties
   deleteOrder: (orderId: string) => void
+  deleteCustomerUpdate: (updateId: string) => void
   expandedOrderIds: string[]
   exportOrderWorkLogs: (orderId: string) => void
   filteredOrders: Order[]
@@ -51,6 +52,7 @@ export function OrdersView({
   customers,
   dangerButtonStyle,
   deleteOrder,
+  deleteCustomerUpdate,
   expandedOrderIds,
   exportOrderWorkLogs,
   filteredOrders,
@@ -188,6 +190,7 @@ export function OrdersView({
                     inputStyle={inputStyle}
                     labelStyle={labelStyle}
                     deleteOrder={deleteOrder}
+                    deleteCustomerUpdate={deleteCustomerUpdate}
                     exportOrderWorkLogs={exportOrderWorkLogs}
                     getCustomerName={getCustomerName}
                     getOrderKilometres={getOrderKilometres}

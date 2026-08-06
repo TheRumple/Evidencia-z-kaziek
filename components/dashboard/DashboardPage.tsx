@@ -866,6 +866,29 @@ export default function DashboardPage() {
     setNotice({ type: 'success', text: 'Zákazka bola zmazaná.' })
   }
 
+  async function deleteCustomerUpdate(updateId: string) {
+    if (!userId) return
+    if (!window.confirm('Zmazať túto poznámku od zákazníka?')) return
+
+    const previousUpdates = customerUpdates
+    setCustomerUpdates((current) => current.filter((update) => update.id !== updateId))
+    setSeenCustomerUpdateIds((current) => current.filter((id) => id !== updateId))
+
+    const { error } = await supabase
+      .from('customer_order_updates')
+      .delete()
+      .eq('id', updateId)
+      .eq('user_id', userId)
+
+    if (error) {
+      setCustomerUpdates(previousUpdates)
+      setNotice({ type: 'error', text: error.message })
+      return
+    }
+
+    setNotice({ type: 'success', text: 'Poznámka od zákazníka bola zmazaná.' })
+  }
+
   async function deleteCustomer(customerIdToDelete: string) {
     if (!userId) return
 
@@ -2230,6 +2253,7 @@ export default function DashboardPage() {
             buttonStyle={buttonStyle}
             customers={customers}
             dangerButtonStyle={dangerButtonStyle}
+            deleteCustomerUpdate={deleteCustomerUpdate}
             deleteOrder={deleteOrder}
             expandedOrderIds={expandedOrderIds}
             exportOrderWorkLogs={exportOrderWorkLogs}

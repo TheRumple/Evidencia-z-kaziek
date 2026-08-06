@@ -34,6 +34,7 @@ type OrderCardProps = {
   toggleExpandedOrder: (orderId: string) => void
   togglePinnedOrder: (orderId: string) => void
   updateOrderStatus: (orderId: string, status: string) => void
+  deleteCustomerUpdate: (updateId: string) => void
 }
 
 function getAttachmentUrls(update: CustomerUpdate) {
@@ -78,6 +79,7 @@ export function OrderCard({
   toggleExpandedOrder,
   togglePinnedOrder,
   updateOrderStatus,
+  deleteCustomerUpdate,
 }: OrderCardProps) {
   const overdue = isOverdue(order)
 
@@ -317,7 +319,25 @@ export function OrderCard({
                   const cleanMessage = stripAttachmentUrls(update.message)
                   return (
                     <div key={update.id} style={{ border: '1px solid #dbeafe', borderRadius: 10, padding: 10, background: '#eff6ff' }}>
-                      <div style={{ fontSize: 12, color: '#64748b', fontWeight: 800 }}>{formatDate(update.created_at || null)}</div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                        <div style={{ fontSize: 12, color: '#64748b', fontWeight: 800 }}>{formatDate(update.created_at || null)}</div>
+                        <button
+                          type="button"
+                          onClick={() => deleteCustomerUpdate(update.id)}
+                          style={{
+                            border: '1px solid #fecaca',
+                            background: '#fff1f2',
+                            color: '#be123c',
+                            borderRadius: 8,
+                            padding: '4px 8px',
+                            fontSize: 12,
+                            fontWeight: 900,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Zmazať
+                        </button>
+                      </div>
                       {cleanMessage && <div style={{ marginTop: 4, whiteSpace: 'pre-wrap', color: '#0f172a' }}>{cleanMessage}</div>}
                       {attachmentUrls.length > 0 && (
                         <div style={{ display: 'grid', gap: 8, marginTop: 8 }}>
