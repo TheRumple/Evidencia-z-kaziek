@@ -21,6 +21,83 @@ export function DashboardStyles() {
           text-align: center;
         }
 
+        .appShell {
+          align-items: start;
+        }
+
+        .sideMenu {
+          position: sticky;
+          top: 12px;
+          min-height: calc(100vh - 24px);
+          border-radius: 18px;
+          padding: 16px;
+          background:
+            radial-gradient(circle at 20% 8%, rgba(132, 204, 22, 0.2), transparent 30%),
+            linear-gradient(180deg, #07111f 0%, #0f172a 52%, #111827 100%);
+          border: 1px solid rgba(148, 163, 184, 0.22);
+          box-shadow: 0 24px 60px rgba(2, 6, 23, 0.28);
+          color: #fff;
+          display: flex;
+          flex-direction: column;
+          gap: 18px;
+        }
+
+        .sideMenuTitle {
+          font-size: 16px;
+          font-weight: 950;
+          line-height: 1.1;
+          color: #f8fafc;
+        }
+
+        .sideMenuSubTitle {
+          margin-top: 4px;
+          font-size: 12px;
+          color: rgba(203, 213, 225, 0.72);
+          font-weight: 800;
+        }
+
+        .sideMenuNav {
+          display: grid;
+          gap: 5px;
+        }
+
+        .sideMenuFooter {
+          margin-top: auto;
+          display: grid;
+          gap: 8px;
+          border-top: 1px solid rgba(148, 163, 184, 0.18);
+          padding-top: 12px;
+        }
+
+        .sideMenuBadge {
+          min-width: 24px;
+          height: 24px;
+          padding: 0 7px;
+          border-radius: 999px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(255, 255, 255, 0.12);
+          color: #fff;
+          font-size: 12px;
+          font-weight: 950;
+        }
+
+        .sideMenuBadgeAlert {
+          background: #ef4444;
+          color: #fff;
+          box-shadow: 0 0 0 5px rgba(239, 68, 68, 0.16);
+        }
+
+        .sideMenuIcon {
+          color: rgba(203, 213, 225, 0.72);
+          font-weight: 950;
+        }
+
+        .mainPanel {
+          min-width: 0;
+        }
+
         .desktopTable {
           display: block;
         }
@@ -507,6 +584,20 @@ export function DashboardStyles() {
             position: static !important;
             grid-template-columns: 1fr !important;
           }
+
+          .sideMenu {
+            position: static;
+            min-height: 0;
+          }
+
+          .sideMenuNav {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+          }
+
+          .sideMenuFooter {
+            margin-top: 0;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
         }
 
         @media (max-width: 768px) {
@@ -543,6 +634,35 @@ export function DashboardStyles() {
             min-width: 0;
             flex: 0 0 auto;
             font-size: 11px;
+          }
+
+          .sideMenu {
+            border-radius: 14px;
+            padding: 12px;
+            gap: 12px;
+          }
+
+          .sideMenuNav {
+            display: flex;
+            gap: 7px;
+            overflow-x: auto;
+            padding-bottom: 2px;
+            -webkit-overflow-scrolling: touch;
+          }
+
+          .sideMenuNav a,
+          .sideMenuNav button {
+            width: auto !important;
+            min-width: 136px;
+            flex: 0 0 auto;
+          }
+
+          .sideMenuFooter {
+            grid-template-columns: 1fr 1fr;
+          }
+
+          .sideMenuFooter button {
+            min-height: 38px;
           }
 
           .summaryStrip {

@@ -1878,15 +1878,31 @@ export default function DashboardPage() {
     color: '#0f172a',
   }
 
-  const tabButton = (active: boolean): CSSProperties => ({
-    padding: '7px 10px',
-    borderRadius: 12,
-    border: active ? '1px solid #0f172a' : '1px solid #cbd5e1',
-    background: active ? '#84cc16' : '#fff',
-    color: active ? '#111827' : '#0f172a',
+  const sideNavButton = (active = false): CSSProperties => ({
+    width: '100%',
+    minHeight: 40,
+    borderRadius: 10,
+    border: active ? '1px solid rgba(132, 204, 22, 0.7)' : '1px solid transparent',
+    background: active ? 'rgba(132, 204, 22, 0.16)' : 'transparent',
+    color: active ? '#ecfccb' : 'rgba(226,232,240,0.86)',
     cursor: 'pointer',
-    fontWeight: 700,
+    fontWeight: 900,
+    textDecoration: 'none',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+    padding: '9px 10px',
+    textAlign: 'left',
+    fontSize: 13,
   })
+
+  const sideUtilityButton: CSSProperties = {
+    ...sideNavButton(false),
+    background: 'rgba(255,255,255,0.06)',
+    border: '1px solid rgba(148,163,184,0.18)',
+    color: '#f8fafc',
+  }
 
   function toggleExpandedOrder(orderId: string) {
     setExpandedOrderIds((curr) =>
@@ -1916,13 +1932,107 @@ export default function DashboardPage() {
         color: '#0f172a',
       }}
     >
-      <div className="layoutWrap" style={{ maxWidth: 1380, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
-        <div>
+      <div className="layoutWrap appShell" style={{ maxWidth: 1480, margin: '0 auto', display: 'grid', gridTemplateColumns: '230px minmax(0, 1fr)', gap: 14 }}>
+        <aside className="sideMenu">
+          <div>
+            <BrandLogo size="md" tone="dark" style={{ marginBottom: 12 }} />
+            <div className="sideMenuTitle">Servisné centrum</div>
+            <div className="sideMenuSubTitle">ITspot evidencia</div>
+          </div>
+
+          <nav className="sideMenuNav" aria-label="Hlavná navigácia">
+            <button type="button" style={sideNavButton(activeTab === 'zakazky')} onClick={() => setActiveTab('zakazky')}>
+              <span>Zákazky</span>
+              <span className="sideMenuBadge">{orders.filter((order) => AKTIVNE_STATUSY.includes(order.stav)).length}</span>
+            </button>
+
+            <button type="button" style={sideNavButton(activeTab === 'kalendar')} onClick={() => setActiveTab('kalendar')}>
+              <span>Kalendár</span>
+              <span className="sideMenuIcon">›</span>
+            </button>
+
+            <Link href="/mesacny-vykaz" style={sideNavButton(false)}>
+              <span>Mesačný výkaz</span>
+              <span className="sideMenuIcon">›</span>
+            </Link>
+
+            <Link href="/admin/requests" style={sideNavButton(pendingRequestsCount > 0)}>
+              <span>Žiadosti z portálu</span>
+              <span className={pendingRequestsCount > 0 ? 'sideMenuBadge sideMenuBadgeAlert' : 'sideMenuBadge'}>
+                {pendingRequestsCount}
+              </span>
+            </Link>
+
+            <Link href="/kancelaria" style={sideNavButton(false)}>
+              <span>Kancelária</span>
+              <span className="sideMenuIcon">›</span>
+            </Link>
+
+            <button type="button" style={sideNavButton(activeTab === 'zakaznici')} onClick={() => setActiveTab('zakaznici')}>
+              <span>Zákazníci / portál</span>
+              <span className="sideMenuBadge">{customers.length}</span>
+            </button>
+
+            <Link href="/fakturovane" style={sideNavButton(false)}>
+              <span>Fakturované</span>
+              <span className="sideMenuIcon">›</span>
+            </Link>
+          </nav>
+
+          <div className="sideMenuFooter">
+            <button
+              type="button"
+              style={{ ...primaryButtonStyle, width: '100%', justifyContent: 'center' }}
+              onClick={() => {
+                resetAddOrderForm()
+                setOpenAddOrder(true)
+              }}
+            >
+              + Nová zákazka
+            </button>
+
+            <button
+              type="button"
+              style={sideUtilityButton}
+              onClick={() => {
+                resetAddCustomerForm()
+                setOpenAddCustomer(true)
+              }}
+            >
+              <span>Nový zákazník</span>
+              <span className="sideMenuIcon">+</span>
+            </button>
+
+            <button
+              type="button"
+              style={sideUtilityButton}
+              onClick={() => {
+                resetEmployeeForm()
+                setOpenAddEmployee(true)
+              }}
+            >
+              <span>Nový zamestnanec</span>
+              <span className="sideMenuIcon">+</span>
+            </button>
+
+            <button
+              type="button"
+              style={sideUtilityButton}
+              onClick={logout}
+              disabled={loggingOut}
+            >
+              <span>{loggingOut ? 'Odhlasujem...' : 'Odhlásiť'}</span>
+              <span className="sideMenuIcon">×</span>
+            </button>
+          </div>
+        </aside>
+
+        <main className="mainPanel">
           <div
             style={{
               ...boxStyle,
               marginBottom: 12,
-              padding: 18,
+              padding: 16,
               background: 'linear-gradient(135deg, #0b1120 0%, #1f2937 74%, #365314 100%)',
               color: '#fff',
               border: 'none',
@@ -1930,7 +2040,6 @@ export default function DashboardPage() {
           >
             <div className="headerCompact">
               <div>
-                <BrandLogo size="sm" tone="dark" style={{ marginBottom: 10 }} />
                 <h1 style={{ margin: 0, fontSize: 26, fontWeight: 900 }}>
                   {selectedCustomer ? selectedCustomer.nazov : 'Servisné zákazky'}
                 </h1>
@@ -2077,83 +2186,6 @@ export default function DashboardPage() {
           />
         )}
 
-        <div
-          style={{
-            ...boxStyle,
-            marginTop: 16,
-            padding: 16,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 12,
-            flexWrap: 'wrap',
-          }}
-        >
-          <div>
-            <div style={{ fontSize: 13, color: '#64748b', fontWeight: 800, marginBottom: 4 }}>
-              Ostatné nastavenia
-            </div>
-            <div style={{ fontSize: 18, fontWeight: 900 }}>Navigácia a správa databázy</div>
-          </div>
-
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button type="button" style={tabButton(activeTab === 'zakazky')} onClick={() => setActiveTab('zakazky')}>
-              Zákazky
-            </button>
-
-            <button type="button" style={tabButton(activeTab === 'kalendar')} onClick={() => setActiveTab('kalendar')}>
-              Kalendár
-            </button>
-
-            <Link href="/kancelaria" style={buttonStyle}>
-              Kancelária
-            </Link>
-
-            <Link href="/mesacny-vykaz" style={buttonStyle}>
-              Mesačný výkaz
-            </Link>
-
-            <button type="button" style={tabButton(activeTab === 'zakaznici')} onClick={() => setActiveTab('zakaznici')}>
-              Zákazníci / portál
-            </button>
-
-            <Link href="/fakturovane" style={buttonStyle}>
-              Fakturované / Stornované
-            </Link>
-
-            <button
-              type="button"
-              style={buttonStyle}
-              onClick={() => {
-                resetAddCustomerForm()
-                setOpenAddCustomer(true)
-              }}
-            >
-              + Nový zákazník
-            </button>
-
-            <button
-              type="button"
-              style={buttonStyle}
-              onClick={() => {
-                resetEmployeeForm()
-                setOpenAddEmployee(true)
-              }}
-            >
-              + Nový zamestnanec
-            </button>
-
-            <button
-              type="button"
-              style={{ ...buttonStyle, color: '#0f172a', fontWeight: 800 }}
-              onClick={logout}
-              disabled={loggingOut}
-            >
-              {loggingOut ? 'Odhlasujem...' : 'Odhlásiť'}
-            </button>
-          </div>
-        </div>
-
         <DashboardModals
             addCustomer={addCustomer}
             addEmployee={addEmployee}
@@ -2298,7 +2330,7 @@ export default function DashboardPage() {
             Načítavam dáta...
           </div>
         )}
-        </div>
+        </main>
       </div>
 
       <DashboardStyles />
