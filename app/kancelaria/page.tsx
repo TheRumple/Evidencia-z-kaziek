@@ -439,7 +439,7 @@ export default function OfficeDashboardPage() {
 
         .statusGrid {
           display: grid;
-          grid-template-columns: repeat(5, minmax(0, 1fr));
+          grid-template-columns: repeat(6, minmax(0, 1fr));
           gap: 10px;
         }
 
@@ -579,6 +579,10 @@ export default function OfficeDashboardPage() {
           <div className="statCard" style={{ '--accent': '#a3e635', '--accentGlow': 'rgba(163, 230, 53, 0.16)' } as CSSProperties}>
             <div className="statLabel">Aktívne zákazky</div>
             <div className="statValue">{stats.active}</div>
+          </div>
+          <div className="statCard" style={{ '--accent': '#fbbf24', '--accentGlow': 'rgba(251, 191, 36, 0.17)' } as CSSProperties}>
+            <div className="statLabel">Rozpracované</div>
+            <div className="statValue">{stats.inProgress}</div>
           </div>
           <div className="statCard" style={{ '--accent': '#8b5cf6', '--accentGlow': 'rgba(139, 92, 246, 0.18)' } as CSSProperties}>
             <div className="statLabel">Obhliadky</div>
