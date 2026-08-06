@@ -224,6 +224,7 @@ export default function MyRequestsPage() {
 
   return (
     <main
+      className="customerPage"
       style={{
         minHeight: '100vh',
         background:
@@ -259,9 +260,15 @@ export default function MyRequestsPage() {
           }
 
           @media (max-width: 760px) {
+            .customerPage {
+              padding: 10px 10px 8px !important;
+            }
+
             .customerHero {
-              padding: 14px !important;
+              padding: 8px 12px 14px !important;
               border-radius: 14px !important;
+              margin-bottom: 8px !important;
+              box-shadow: 0 14px 30px rgba(0, 0, 0, 0.28) !important;
             }
 
             .customerHeroInner {
@@ -269,31 +276,45 @@ export default function MyRequestsPage() {
             }
 
             .customerHero img {
-              width: 360px !important;
-              height: 128px !important;
-              margin: 0 auto !important;
+              width: 380px !important;
+              height: 112px !important;
+              margin: -8px auto -10px !important;
             }
 
             .customerHero h1 {
-              font-size: 23px !important;
+              font-size: 22px !important;
             }
 
-            .customerHero > div {
+            .customerHeroSubtitle {
               font-size: 12px !important;
+              line-height: 1.22 !important;
+              margin-top: 4px !important;
             }
 
             .customerLookupForm {
-              padding: 12px !important;
+              padding: 10px !important;
               border-radius: 14px !important;
+              box-shadow: 0 12px 28px rgba(0, 0, 0, 0.24) !important;
             }
 
             .customerLookupGrid {
               grid-template-columns: 1fr 112px;
-              gap: 9px;
+              gap: 8px;
+            }
+
+            .customerLookupGrid label {
+              margin-bottom: 4px !important;
+            }
+
+            .customerLookupGrid input {
+              min-height: 38px !important;
+              padding: 7px 10px !important;
             }
 
             .customerLookupGrid button {
               grid-column: 1 / -1;
+              min-height: 38px !important;
+              padding: 7px 14px !important;
             }
 
             .customerRequestCard {
@@ -308,6 +329,15 @@ export default function MyRequestsPage() {
 
             .customerRequestActions {
               justify-content: flex-start;
+            }
+
+            .customerFooter {
+              margin-top: 8px !important;
+              gap: 8px !important;
+            }
+
+            .customerFooter a {
+              padding: 7px 10px !important;
             }
           }
 
@@ -346,7 +376,7 @@ export default function MyRequestsPage() {
             />
             <div>
               <h1 style={{ margin: 0, fontSize: 27, fontWeight: 900, lineHeight: 1.04 }}>Moje požiadavky</h1>
-              <div style={{ marginTop: 5, color: 'rgba(226,232,240,0.74)', fontSize: 14, fontWeight: 800, lineHeight: 1.32 }}>
+              <div className="customerHeroSubtitle" style={{ marginTop: 5, color: 'rgba(226,232,240,0.74)', fontSize: 14, fontWeight: 800, lineHeight: 1.32 }}>
                 Zadajte názov firmy alebo meno a zákaznícky PIN. S.r.o. písať nemusíte.
               </div>
             </div>
@@ -579,7 +609,7 @@ export default function MyRequestsPage() {
           })}
         </section>
 
-        <div style={{ marginTop: 10, display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', color: '#94a3b8', fontSize: 12 }}>
+        <div className="customerFooter" style={{ marginTop: 10, display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', color: '#94a3b8', fontSize: 12 }}>
           <Link href="/ziadost" style={{ color: '#cbd5e1', border: '1px solid rgba(255,255,255,0.18)', borderRadius: 10, padding: '8px 12px', textDecoration: 'none', fontWeight: 800 }}>
             Nová požiadavka
           </Link>
