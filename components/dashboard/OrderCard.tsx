@@ -36,6 +36,16 @@ type OrderCardProps = {
   updateOrderStatus: (orderId: string, status: string) => void
 }
 
+function getAttachmentUrls(update: CustomerUpdate) {
+  const fromColumn = Array.isArray(update.attachment_urls) ? update.attachment_urls : []
+  const fromMessage = (update.message || '').match(/https?:\/\/[^\s)]+/g) || []
+  return Array.from(new Set([...fromColumn, ...fromMessage]))
+}
+
+function isImageUrl(url: string) {
+  return /\.(jpe?g|png|webp)(\?|#|$)/i.test(url)
+}
+
 export function OrderCard({
   order,
   expanded,
@@ -293,21 +303,37 @@ export function OrderCard({
                 )}
               </div>
               <div style={{ display: 'grid', gap: 8 }}>
-                {customerUpdates.map((update) => (
-                  <div key={update.id} style={{ border: '1px solid #dbeafe', borderRadius: 10, padding: 10, background: '#eff6ff' }}>
-                    <div style={{ fontSize: 12, color: '#64748b', fontWeight: 800 }}>{formatDate(update.created_at || null)}</div>
-                    <div style={{ marginTop: 4, whiteSpace: 'pre-wrap', color: '#0f172a' }}>{update.message}</div>
-                    {update.attachment_urls && update.attachment_urls.length > 0 && (
-                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
-                        {update.attachment_urls.map((url, index) => (
-                          <a key={url} href={url} target="_blank" rel="noreferrer" style={{ color: '#1d4ed8', fontWeight: 800, fontSize: 13 }}>
-                            Príloha {index + 1}
-                          </a>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                {customerUpdates.map((update) => {
+                  const attachmentUrls = getAttachmentUrls(update)
+                  return (
+                    <div key={update.id} style={{ border: '1px solid #dbeafe', borderRadius: 10, padding: 10, background: '#eff6ff' }}>
+                      <div style={{ fontSize: 12, color: '#64748b', fontWeight: 800 }}>{formatDate(update.created_at || null)}</div>
+                      <div style={{ marginTop: 4, whiteSpace: 'pre-wrap', color: '#0f172a' }}>{update.message}</div>
+                      {attachmentUrls.length > 0 && (
+                        <div style={{ display: 'grid', gap: 8, marginTop: 8 }}>
+                          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                            {attachmentUrls.map((url, index) => (
+                              <a key={url} href={url} target="_blank" rel="noreferrer" style={{ color: '#1d4ed8', fontWeight: 800, fontSize: 13 }}>
+                                Príloha {index + 1}
+                              </a>
+                            ))}
+                          </div>
+                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                            {attachmentUrls.filter(isImageUrl).map((url) => (
+                              <a key={`preview-${url}`} href={url} target="_blank" rel="noreferrer">
+                                <img
+                                  src={url}
+                                  alt="Príloha od zákazníka"
+                                  style={{ width: 88, height: 66, objectFit: 'cover', borderRadius: 8, border: '1px solid #bfdbfe', display: 'block' }}
+                                />
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             </div>
           )}

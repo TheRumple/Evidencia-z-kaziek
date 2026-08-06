@@ -170,10 +170,19 @@ export default function MyRequestsPage() {
         if (data.publicUrl) uploadedAttachmentUrls.push(data.publicUrl)
       }
 
+      const messageWithAttachments = [
+        updateText.trim(),
+        uploadedAttachmentUrls.length ? '' : '',
+        uploadedAttachmentUrls.length ? 'Prílohy:' : '',
+        ...uploadedAttachmentUrls.map((url) => `- ${url}`),
+      ]
+        .filter(Boolean)
+        .join('\n')
+
       const { error } = await supabase.rpc('add_customer_order_update', {
         p_order_id: orderId,
         p_portal_code: cleanPortalCode,
-        p_message: updateText.trim(),
+        p_message: messageWithAttachments,
         p_attachment_urls: uploadedAttachmentUrls,
       })
 
@@ -182,7 +191,7 @@ export default function MyRequestsPage() {
       setUpdateOrderId('')
       setUpdateText('')
       setUpdateFiles([])
-      setMessage('Informácie boli odoslané. Ďakujeme, doplníme ich k zákazke.')
+      setMessage(uploadedAttachmentUrls.length > 0 ? 'Úprava aj prílohy boli odoslané.' : 'Úprava bola odoslaná.')
       setMessageType('success')
     } catch (error) {
       const text = error instanceof Error ? error.message : 'Neznáma chyba.'
@@ -417,6 +426,13 @@ export default function MyRequestsPage() {
                             {updateFiles.length > 0 ? `${updateFiles.length} súborov vybraných` : 'Bez prílohy'}
                           </span>
                         </div>
+                        {updateFiles.length > 0 && (
+                          <div style={{ display: 'grid', gap: 4, color: '#475569', fontSize: 12, fontWeight: 800 }}>
+                            {updateFiles.map((file) => (
+                              <div key={`${file.name}-${file.size}`}>• {file.name}</div>
+                            ))}
+                          </div>
+                        )}
                         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                           <button
                             type="button"
