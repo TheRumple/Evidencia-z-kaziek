@@ -265,9 +265,12 @@ export default function AdminRequestsPage() {
   }
 
   function stripAttachmentUrls(text: string) {
-    return text
+    const attachmentBlockIndex = text.toLowerCase().indexOf('prílohy:')
+    const textWithoutAttachmentBlock = attachmentBlockIndex >= 0 ? text.slice(0, attachmentBlockIndex) : text
+
+    return textWithoutAttachmentBlock
       .split('\n')
-      .filter((line) => !/^[-\s]*https?:\/\//i.test(line.trim()) && !/^prílohy:$/i.test(line.trim()))
+      .filter((line) => !/^[-\s]*https?:\/\//i.test(line.trim()) && !/^[-\s]*$/i.test(line.trim()))
       .join('\n')
       .replace(/\n{3,}/g, '\n\n')
       .trim()
