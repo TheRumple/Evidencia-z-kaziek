@@ -259,6 +259,14 @@ export default function MyRequestsPage() {
             justify-content: flex-end;
           }
 
+          .customerEditButton {
+            border-radius: 10px;
+            padding: 7px 12px;
+            font-weight: 900;
+            cursor: pointer;
+            white-space: nowrap;
+          }
+
           @media (max-width: 760px) {
             .customerPage {
               padding: 10px 10px 8px !important;
@@ -329,6 +337,14 @@ export default function MyRequestsPage() {
 
             .customerRequestActions {
               justify-content: flex-start;
+            }
+
+            .customerEditButton {
+              padding: 5px 8px !important;
+              border-radius: 8px !important;
+              font-size: 12px !important;
+              background: transparent !important;
+              box-shadow: none !important;
             }
 
             .customerFooter {
@@ -514,9 +530,10 @@ export default function MyRequestsPage() {
                   {item.item_type === 'zakazka' && updateOrderId !== item.id && (
                     <div className="customerRequestActions">
                       <button
+                        className="customerEditButton"
                         type="button"
                         onClick={() => setUpdateOrderId(item.id)}
-                        style={{ border: `1px solid ${statusColor.border}`, background: statusColor.background, color: statusColor.color, borderRadius: 10, padding: '7px 12px', fontWeight: 900, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                        style={{ border: `1px solid ${statusColor.border}`, background: statusColor.background, color: statusColor.color }}
                       >
                         Upraviť
                       </button>
