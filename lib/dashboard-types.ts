@@ -17,9 +17,19 @@ export type Order = {
   stav: string
   praca: string | null
   popis: string | null
+  public_message?: string | null
   termin: string | null
   prijatie_zakazky: string | null
   hodiny?: number | null
+  created_at?: string
+}
+
+export type CustomerUpdate = {
+  id: string
+  order_id: string
+  customer_id: string
+  message: string
+  attachment_urls: string[] | null
   created_at?: string
 }
 

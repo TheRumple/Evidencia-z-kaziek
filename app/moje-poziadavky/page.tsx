@@ -13,6 +13,7 @@ type CustomerLookupItem = {
   termin: string | null
   created_at: string | null
   customer_name: string | null
+  public_message?: string | null
 }
 
 function formatDate(date: string | null | undefined) {
@@ -78,16 +79,23 @@ export default function MyRequestsPage() {
   const [loading, setLoading] = useState(false)
   const [searched, setSearched] = useState(false)
   const [message, setMessage] = useState('')
+  const [messageType, setMessageType] = useState<'success' | 'error'>('error')
   const [items, setItems] = useState<CustomerLookupItem[]>([])
+  const [updateOrderId, setUpdateOrderId] = useState('')
+  const [updateText, setUpdateText] = useState('')
+  const [updateFiles, setUpdateFiles] = useState<File[]>([])
+  const [sendingUpdate, setSendingUpdate] = useState(false)
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     setMessage('')
+    setMessageType('error')
     setSearched(false)
 
     const cleanPortalCode = portalCode.replace(/\D/g, '')
     if (!customerName.trim() || cleanPortalCode.length !== 4) {
       setMessage('Zadajte názov firmy alebo meno a 4-miestny PIN zákazníka.')
+      setMessageType('error')
       return
     }
 
@@ -101,6 +109,7 @@ export default function MyRequestsPage() {
 
     if (error) {
       setMessage('Vyhľadanie zatiaľ nie je aktívne. Je potrebné spustiť SQL skript pre zákaznícky prehľad v Supabase.')
+      setMessageType('error')
       setItems([])
       return
     }
@@ -112,6 +121,76 @@ export default function MyRequestsPage() {
         )
       ).slice(0, 25)
     )
+  }
+
+  async function submitOrderUpdate(orderId: string) {
+    const cleanPortalCode = portalCode.replace(/\D/g, '')
+    if (!updateText.trim()) {
+      setMessage('Napíšte prosím, čo chcete k zákazke doplniť.')
+      setMessageType('error')
+      return
+    }
+
+    if (cleanPortalCode.length !== 4) {
+      setMessage('Pre doplnenie informácií je potrebný platný 4-miestny PIN.')
+      setMessageType('error')
+      return
+    }
+
+    if (updateFiles.length > 5) {
+      setMessage('Priložiť môžete najviac 5 súborov.')
+      setMessageType('error')
+      return
+    }
+
+    const allowedAttachmentTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
+    const invalidAttachment = updateFiles.find((file) => !allowedAttachmentTypes.includes(file.type) || file.size > 8 * 1024 * 1024)
+    if (invalidAttachment) {
+      setMessage('Prílohy môžu byť len obrázky alebo PDF, maximálne 8 MB na súbor.')
+      setMessageType('error')
+      return
+    }
+
+    setSendingUpdate(true)
+    setMessage('')
+    setMessageType('error')
+
+    try {
+      const uploadedAttachmentUrls: string[] = []
+      for (const file of updateFiles) {
+        const extension = file.name.split('.').pop()?.toLowerCase() || 'bin'
+        const filePath = `doplnene/${orderId}/${Date.now()}-${crypto.randomUUID()}.${extension}`
+        const { error: uploadError } = await supabase.storage
+          .from('customer-request-files')
+          .upload(filePath, file, { cacheControl: '3600', upsert: false })
+
+        if (uploadError) throw uploadError
+
+        const { data } = supabase.storage.from('customer-request-files').getPublicUrl(filePath)
+        if (data.publicUrl) uploadedAttachmentUrls.push(data.publicUrl)
+      }
+
+      const { error } = await supabase.rpc('add_customer_order_update', {
+        p_order_id: orderId,
+        p_portal_code: cleanPortalCode,
+        p_message: updateText.trim(),
+        p_attachment_urls: uploadedAttachmentUrls,
+      })
+
+      if (error) throw error
+
+      setUpdateOrderId('')
+      setUpdateText('')
+      setUpdateFiles([])
+      setMessage('Informácie boli odoslané. Ďakujeme, doplníme ich k zákazke.')
+      setMessageType('success')
+    } catch (error) {
+      const text = error instanceof Error ? error.message : 'Neznáma chyba.'
+      setMessage(`Doplnenie sa nepodarilo odoslať. Detail: ${text}`)
+      setMessageType('error')
+    } finally {
+      setSendingUpdate(false)
+    }
   }
 
   const inputStyle = {
@@ -228,7 +307,17 @@ export default function MyRequestsPage() {
           </div>
 
           {message && (
-            <div style={{ marginTop: 16, borderRadius: 12, padding: 14, border: '1px solid #f87171', background: 'rgba(248, 113, 113, 0.12)', color: '#fecaca', fontWeight: 800 }}>
+            <div
+              style={{
+                marginTop: 16,
+                borderRadius: 12,
+                padding: 14,
+                border: messageType === 'success' ? '1px solid #84cc16' : '1px solid #f87171',
+                background: messageType === 'success' ? 'rgba(132, 204, 22, 0.12)' : 'rgba(248, 113, 113, 0.12)',
+                color: messageType === 'success' ? '#bef264' : '#fecaca',
+                fontWeight: 800,
+              }}
+            >
               {message}
             </div>
           )}
@@ -279,6 +368,65 @@ export default function MyRequestsPage() {
                   {item.termin && <span>Termín: {formatDate(item.termin)}</span>}
                   {requesterName && <span>Žiadateľ: {requesterName}</span>}
                 </div>
+
+                {item.public_message && (
+                  <div style={{ marginTop: 12, borderRadius: 12, border: '1px solid #bbf7d0', background: '#f0fdf4', color: '#166534', padding: 12, fontSize: 14, lineHeight: 1.45, whiteSpace: 'pre-wrap', fontWeight: 800 }}>
+                    <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Správa od ITspot</div>
+                    {item.public_message}
+                  </div>
+                )}
+
+                {item.item_type === 'zakazka' && (
+                  <div style={{ marginTop: 12 }}>
+                    {updateOrderId === item.id ? (
+                      <div style={{ display: 'grid', gap: 8, borderTop: '1px solid #e2e8f0', paddingTop: 12 }}>
+                        <textarea
+                          rows={4}
+                          style={{ width: '100%', borderRadius: 10, border: '1px solid #cbd5e1', padding: 10, fontSize: 14, color: '#0f172a', fontFamily: 'inherit', resize: 'vertical' }}
+                          placeholder="Doplňte informácie, napr. rozmery, fotku štítku, čas dostupnosti alebo upresnenie poruchy."
+                          value={updateText}
+                          onChange={(event) => setUpdateText(event.target.value)}
+                        />
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/jpeg,image/png,image/webp,application/pdf"
+                          onChange={(event) => setUpdateFiles(Array.from(event.target.files || []).slice(0, 5))}
+                          style={{ color: '#0f172a' }}
+                        />
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                          <button
+                            type="button"
+                            disabled={sendingUpdate}
+                            onClick={() => void submitOrderUpdate(item.id)}
+                            style={{ border: '1px solid #84cc16', background: '#84cc16', color: '#111827', borderRadius: 10, padding: '8px 12px', fontWeight: 900, cursor: sendingUpdate ? 'not-allowed' : 'pointer' }}
+                          >
+                            {sendingUpdate ? 'Odosielam...' : 'Odoslať doplnenie'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setUpdateOrderId('')
+                              setUpdateText('')
+                              setUpdateFiles([])
+                            }}
+                            style={{ border: '1px solid #cbd5e1', background: '#fff', color: '#334155', borderRadius: 10, padding: '8px 12px', fontWeight: 800, cursor: 'pointer' }}
+                          >
+                            Zrušiť
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setUpdateOrderId(item.id)}
+                        style={{ border: `1px solid ${statusColor.border}`, background: statusColor.background, color: statusColor.color, borderRadius: 10, padding: '8px 12px', fontWeight: 900, cursor: 'pointer' }}
+                      >
+                        Doplniť informácie
+                      </button>
+                    )}
+                  </div>
+                )}
               </article>
             )
           })}

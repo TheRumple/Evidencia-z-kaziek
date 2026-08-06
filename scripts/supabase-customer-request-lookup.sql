@@ -5,6 +5,63 @@
 alter table public.customers
   add column if not exists portal_code text;
 
+alter table public.orders
+  add column if not exists public_message text;
+
+create table if not exists public.customer_order_updates (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  order_id uuid not null references public.orders(id) on delete cascade,
+  customer_id uuid not null references public.customers(id) on delete cascade,
+  message text not null,
+  attachment_urls text[] not null default '{}',
+  created_at timestamptz not null default now()
+);
+
+alter table public.customer_order_updates enable row level security;
+
+drop policy if exists "Users can read own customer order updates" on public.customer_order_updates;
+create policy "Users can read own customer order updates"
+on public.customer_order_updates
+for select
+to authenticated
+using (auth.uid() = user_id);
+
+drop policy if exists "Users can delete own customer order updates" on public.customer_order_updates;
+create policy "Users can delete own customer order updates"
+on public.customer_order_updates
+for delete
+to authenticated
+using (auth.uid() = user_id);
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'customer-request-files',
+  'customer-request-files',
+  true,
+  8388608,
+  array['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
+)
+on conflict (id) do update
+set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "Public can upload customer request files" on storage.objects;
+create policy "Public can upload customer request files"
+on storage.objects
+for insert
+to anon, authenticated
+with check (bucket_id = 'customer-request-files');
+
+drop policy if exists "Public can read customer request files" on storage.objects;
+create policy "Public can read customer request files"
+on storage.objects
+for select
+to anon, authenticated
+using (bucket_id = 'customer-request-files');
+
 alter table public.customers
   alter column portal_code drop default;
 
@@ -91,7 +148,8 @@ returns table (
   stav text,
   termin date,
   created_at timestamptz,
-  customer_name text
+  customer_name text,
+  public_message text
 )
 language sql
 security definer
@@ -127,7 +185,8 @@ as $$
       cr.stav,
       cr.termin,
       cr.created_at,
-      c.nazov as customer_name
+      c.nazov as customer_name,
+      null::text as public_message
     from public.customer_requests cr
     join matched_customer c on (
       cr.customer_id = c.id
@@ -144,7 +203,8 @@ as $$
       o.stav,
       o.termin,
       coalesce(o.created_at, o.prijatie_zakazky::timestamptz) as created_at,
-      c.nazov as customer_name
+      c.nazov as customer_name,
+      o.public_message
     from public.orders o
     join matched_customer c on c.id = o.customer_id
     where o.stav in ('nova', 'rozpracovana', 'obhliadka', 'caka', 'cakame')
@@ -158,3 +218,66 @@ $$;
 revoke all on function public.lookup_customer_requests(text, text) from public;
 grant execute on function public.lookup_customer_requests(text, text) to anon;
 grant execute on function public.lookup_customer_requests(text, text) to authenticated;
+
+create or replace function public.add_customer_order_update(
+  p_order_id uuid,
+  p_portal_code text,
+  p_message text,
+  p_attachment_urls text[] default '{}'
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  target_order public.orders%rowtype;
+  clean_code text;
+  inserted_id uuid;
+begin
+  clean_code := regexp_replace(coalesce(p_portal_code, ''), '[^0-9]', '', 'g');
+
+  if length(clean_code) <> 4 then
+    raise exception 'invalid portal code';
+  end if;
+
+  if length(trim(coalesce(p_message, ''))) < 3 then
+    raise exception 'message is too short';
+  end if;
+
+  select o.*
+  into target_order
+  from public.orders o
+  join public.customers c on c.id = o.customer_id
+  where o.id = p_order_id
+    and c.portal_code = clean_code
+    and o.stav in ('nova', 'rozpracovana', 'obhliadka', 'caka', 'cakame')
+  limit 1;
+
+  if not found then
+    raise exception 'order not found';
+  end if;
+
+  insert into public.customer_order_updates (
+    user_id,
+    order_id,
+    customer_id,
+    message,
+    attachment_urls
+  )
+  values (
+    target_order.user_id,
+    target_order.id,
+    target_order.customer_id,
+    trim(p_message),
+    coalesce(p_attachment_urls, '{}')
+  )
+  returning id into inserted_id;
+
+  return inserted_id;
+end;
+$$;
+
+revoke all on function public.add_customer_order_update(uuid, text, text, text[]) from public;
+grant execute on function public.add_customer_order_update(uuid, text, text, text[]) to anon;
+grant execute on function public.add_customer_order_update(uuid, text, text, text[]) to authenticated;

@@ -1,7 +1,7 @@
 'use client'
 
 import type { CSSProperties } from 'react'
-import type { Order, WorkLog } from '@/lib/dashboard-types'
+import type { CustomerUpdate, Order, WorkLog } from '@/lib/dashboard-types'
 import {
   STATUSY,
   formatDate,
@@ -16,6 +16,7 @@ type OrderCardProps = {
   expanded: boolean
   isPinned: boolean
   orderLogs: WorkLog[]
+  customerUpdates: CustomerUpdate[]
   boxStyle: CSSProperties
   buttonStyle: CSSProperties
   dangerButtonStyle: CSSProperties
@@ -39,6 +40,7 @@ export function OrderCard({
   expanded,
   isPinned,
   orderLogs,
+  customerUpdates,
   boxStyle,
   buttonStyle,
   dangerButtonStyle,
@@ -222,6 +224,12 @@ export function OrderCard({
                 <div>
                   <strong>Poznámky k zákazke:</strong> {order.popis || '-'}
                 </div>
+                {order.public_message && (
+                  <div style={{ border: '1px solid #bbf7d0', background: '#f0fdf4', borderRadius: 10, padding: 10 }}>
+                    <strong>Správa pre zákazníka:</strong>
+                    <div style={{ marginTop: 4, whiteSpace: 'pre-wrap', color: '#166534' }}>{order.public_message}</div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -256,6 +264,29 @@ export function OrderCard({
               )}
             </div>
           </div>
+
+          {customerUpdates.length > 0 && (
+            <div style={{ ...boxStyle, padding: 12, marginTop: 10 }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: '#64748b', marginBottom: 8 }}>Doplnené od zákazníka</div>
+              <div style={{ display: 'grid', gap: 8 }}>
+                {customerUpdates.map((update) => (
+                  <div key={update.id} style={{ border: '1px solid #dbeafe', borderRadius: 10, padding: 10, background: '#eff6ff' }}>
+                    <div style={{ fontSize: 12, color: '#64748b', fontWeight: 800 }}>{formatDate(update.created_at || null)}</div>
+                    <div style={{ marginTop: 4, whiteSpace: 'pre-wrap', color: '#0f172a' }}>{update.message}</div>
+                    {update.attachment_urls && update.attachment_urls.length > 0 && (
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
+                        {update.attachment_urls.map((url, index) => (
+                          <a key={url} href={url} target="_blank" rel="noreferrer" style={{ color: '#1d4ed8', fontWeight: 800, fontSize: 13 }}>
+                            Príloha {index + 1}
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div style={{ marginTop: 14 }}>
             <label style={labelStyle} htmlFor={`status-${order.id}`}>

@@ -19,6 +19,7 @@ export default function PublicRequestPage() {
   const [requestTitle, setRequestTitle] = useState('')
   const [description, setDescription] = useState('')
   const [deadline, setDeadline] = useState('')
+  const [attachments, setAttachments] = useState<File[]>([])
   const [website, setWebsite] = useState('')
   const [formStartedAt] = useState(() => Date.now())
   const [submitting, setSubmitting] = useState(false)
@@ -47,6 +48,7 @@ export default function PublicRequestPage() {
     const phoneDigits = phone.replace(/\D/g, '')
     const combinedText = [name, company, phone, email, requestTitle, description].join(' ')
     const suspiciousPattern = /(https?:\/\/|www\.|casino|viagra|crypto|loan|forex|porn|betting)/i
+    const allowedAttachmentTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
 
     if (deadline && deadline < today) {
       setMessage({ type: 'error', text: 'Preferovaný termín nemôže byť v minulosti.' })
@@ -68,22 +70,51 @@ export default function PublicRequestPage() {
       return
     }
 
+    if (attachments.length > 5) {
+      setMessage({ type: 'error', text: 'Priložiť môžete najviac 5 súborov.' })
+      return
+    }
+
+    const invalidAttachment = attachments.find((file) => !allowedAttachmentTypes.includes(file.type) || file.size > 8 * 1024 * 1024)
+    if (invalidAttachment) {
+      setMessage({ type: 'error', text: 'Prílohy môžu byť len obrázky alebo PDF, maximálne 8 MB na súbor.' })
+      return
+    }
+
     setSubmitting(true)
 
-    const generatedTitle = requestTitle.trim()
-    const fullDescription = [
-      `Meno: ${name.trim()}`,
-      company.trim() ? `Firma: ${company.trim()}` : '',
-      phone.trim() ? `Telefón: ${phone.trim()}` : '',
-      `Email: ${email.trim()}`,
-      '',
-      'Popis požiadavky:',
-      description.trim(),
-    ]
-      .filter(Boolean)
-      .join('\n')
+    const uploadedAttachmentUrls: string[] = []
 
     try {
+      for (const file of attachments) {
+        const extension = file.name.split('.').pop()?.toLowerCase() || 'bin'
+        const filePath = `ziadosti/${Date.now()}-${crypto.randomUUID()}.${extension}`
+        const { error: uploadError } = await supabase.storage
+          .from('customer-request-files')
+          .upload(filePath, file, { cacheControl: '3600', upsert: false })
+
+        if (uploadError) throw uploadError
+
+        const { data } = supabase.storage.from('customer-request-files').getPublicUrl(filePath)
+        if (data.publicUrl) uploadedAttachmentUrls.push(data.publicUrl)
+      }
+
+      const generatedTitle = requestTitle.trim()
+      const fullDescription = [
+        `Meno: ${name.trim()}`,
+        company.trim() ? `Firma: ${company.trim()}` : '',
+        phone.trim() ? `Telefón: ${phone.trim()}` : '',
+        `Email: ${email.trim()}`,
+        '',
+        'Popis požiadavky:',
+        description.trim(),
+        uploadedAttachmentUrls.length ? '' : '',
+        uploadedAttachmentUrls.length ? 'Prílohy:' : '',
+        ...uploadedAttachmentUrls.map((url) => `- ${url}`),
+      ]
+        .filter(Boolean)
+        .join('\n')
+
       const { error } = await supabase.from('customer_requests').insert([
         {
           customer_id: null,
@@ -109,7 +140,8 @@ export default function PublicRequestPage() {
       setRequestTitle('')
       setDescription('')
       setDeadline('')
-      setMessage({ type: 'success', text: 'Požiadavka bola odoslaná. Ozveme sa vám po jej spracovaní.' })
+      setAttachments([])
+      setMessage({ type: 'success', text: 'Požiadavku sme prijali. Preveríme ju a ozveme sa vám s ďalším postupom. Ak máte zákaznícky PIN, stav nájdete v časti Moje požiadavky.' })
     } catch (error) {
       const text = error instanceof Error ? error.message : 'Neznáma chyba spojenia.'
       setMessage({ type: 'error', text: `Požiadavku sa nepodarilo odoslať: ${text}` })
@@ -268,6 +300,23 @@ export default function PublicRequestPage() {
               value={description}
               onChange={(event) => setDescription(event.target.value)}
             />
+          </div>
+
+          <div style={{ marginTop: 14 }}>
+            <label style={labelStyle} htmlFor="attachments">
+              Fotky alebo PDF
+            </label>
+            <input
+              id="attachments"
+              type="file"
+              multiple
+              accept="image/jpeg,image/png,image/webp,application/pdf"
+              style={inputStyle}
+              onChange={(event) => setAttachments(Array.from(event.target.files || []).slice(0, 5))}
+            />
+            <div style={{ marginTop: 6, color: '#94a3b8', fontSize: 12, fontWeight: 700 }}>
+              Môžete priložiť najviac 5 súborov, napríklad fotku štítku, chyby alebo miesta montáže.
+            </div>
           </div>
 
           {message && (

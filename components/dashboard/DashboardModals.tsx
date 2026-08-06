@@ -39,6 +39,7 @@ export function DashboardModals(props: DashboardModalsProps) {
     editOrderCustomerId,
     editOrderNazov,
     editOrderPopis,
+    editOrderPublicMessage,
     editOrderPrijatieZakazky,
     editOrderRequester,
     editOrderTermin,
@@ -73,6 +74,7 @@ export function DashboardModals(props: DashboardModalsProps) {
     openWorkLog,
     orderNazov,
     orderPopis,
+    orderPublicMessage,
     orderPrijatieZakazky,
     orderRequester,
     orderTermin,
@@ -103,6 +105,7 @@ export function DashboardModals(props: DashboardModalsProps) {
     setEditOrderCustomerId,
     setEditOrderNazov,
     setEditOrderPopis,
+    setEditOrderPublicMessage,
     setEditOrderPrijatieZakazky,
     setEditOrderRequester,
     setEditOrderTermin,
@@ -119,6 +122,7 @@ export function DashboardModals(props: DashboardModalsProps) {
     setNewCustomerTelefon,
     setOrderNazov,
     setOrderPopis,
+    setOrderPublicMessage,
     setOrderPrijatieZakazky,
     setOrderRequester,
     setOrderTermin,
@@ -384,6 +388,23 @@ export function DashboardModals(props: DashboardModalsProps) {
                   }}
                 />
               </div>
+
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label style={labelStyle} htmlFor="order-public-message">
+                  Správa pre zákazníka
+                </label>
+                <textarea
+                  id="order-public-message"
+                  rows={3}
+                  style={{ ...inputStyle, minHeight: 88, resize: 'vertical', lineHeight: 1.45, fontFamily: 'inherit' }}
+                  placeholder="Toto uvidí zákazník v časti Moje požiadavky. Napr. čakáme na dodanie materiálu."
+                  value={orderPublicMessage}
+                  onChange={(e) => setOrderPublicMessage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') e.stopPropagation()
+                  }}
+                />
+              </div>
             </div>
 
             <div style={{ display: 'flex', gap: 10, marginTop: 18, flexWrap: 'wrap' }}>
@@ -572,6 +593,23 @@ export function DashboardModals(props: DashboardModalsProps) {
                   placeholder="Popis"
                   value={editOrderPopis}
                   onChange={(e) => setEditOrderPopis(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') e.stopPropagation()
+                  }}
+                />
+              </div>
+
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label style={labelStyle} htmlFor="edit-order-public-message">
+                  Správa pre zákazníka
+                </label>
+                <textarea
+                  id="edit-order-public-message"
+                  rows={3}
+                  style={{ ...inputStyle, minHeight: 88, resize: 'vertical', lineHeight: 1.45, fontFamily: 'inherit' }}
+                  placeholder="Toto uvidí zákazník v časti Moje požiadavky."
+                  value={editOrderPublicMessage}
+                  onChange={(e) => setEditOrderPublicMessage(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') e.stopPropagation()
                   }}

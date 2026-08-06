@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 import { OrderCard } from '@/components/dashboard/OrderCard'
-import type { Customer, Order, WorkLog } from '@/lib/dashboard-types'
+import type { Customer, CustomerUpdate, Order, WorkLog } from '@/lib/dashboard-types'
 import { AKTIVNE_STATUSY, STATUSY } from '@/lib/dashboard-utils'
 
 type OrderSection = {
@@ -41,6 +41,7 @@ type OrdersViewProps = {
   togglePinnedOrder: (orderId: string) => void
   updateOrderStatus: (orderId: string, status: string) => void
   workLogsByOrder: Record<string, WorkLog[]>
+  customerUpdatesByOrder: Record<string, CustomerUpdate[]>
 }
 
 export function OrdersView({
@@ -74,6 +75,7 @@ export function OrdersView({
   togglePinnedOrder,
   updateOrderStatus,
   workLogsByOrder,
+  customerUpdatesByOrder,
 }: OrdersViewProps) {
   return (
     <>
@@ -175,6 +177,7 @@ export function OrdersView({
                     expanded={expandedOrderIds.includes(order.id)}
                     isPinned={isPinnedOrder(order.id)}
                     orderLogs={workLogsByOrder[order.id] || []}
+                    customerUpdates={customerUpdatesByOrder[order.id] || []}
                     boxStyle={boxStyle}
                     buttonStyle={buttonStyle}
                     dangerButtonStyle={dangerButtonStyle}
