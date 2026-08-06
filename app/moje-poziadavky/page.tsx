@@ -269,8 +269,8 @@ export default function MyRequestsPage() {
             }
 
             .customerHero img {
-              width: 330px !important;
-              height: 112px !important;
+              width: 360px !important;
+              height: 128px !important;
               margin: 0 auto !important;
             }
 
@@ -325,7 +325,7 @@ export default function MyRequestsPage() {
               'linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(15, 23, 42, 0.78)), radial-gradient(circle at 82% 18%, rgba(132, 204, 22, 0.14), transparent 24%)',
             border: '1px solid rgba(148, 163, 184, 0.24)',
             borderRadius: 18,
-            padding: '18px clamp(18px, 3vw, 30px) 22px',
+            padding: '14px clamp(18px, 3vw, 30px) 20px',
             marginBottom: 12,
             boxShadow: '0 22px 48px rgba(0, 0, 0, 0.34)',
           }}
@@ -335,17 +335,17 @@ export default function MyRequestsPage() {
               src="/logo-new.png"
               alt="ITspot"
               style={{
-                width: 390,
-                maxWidth: '86vw',
-                height: 128,
+                width: 560,
+                maxWidth: '88vw',
+                height: 180,
                 objectFit: 'contain',
                 display: 'block',
-                margin: '0 auto -2px',
+                margin: '0 auto -12px',
                 filter: 'drop-shadow(0 0 18px rgba(132, 204, 22, 0.24)) drop-shadow(0 12px 28px rgba(0, 0, 0, 0.3))',
               }}
             />
             <div>
-              <h1 style={{ margin: 0, fontSize: 32, fontWeight: 900, lineHeight: 1.04 }}>Moje požiadavky</h1>
+              <h1 style={{ margin: 0, fontSize: 27, fontWeight: 900, lineHeight: 1.04 }}>Moje požiadavky</h1>
               <div style={{ marginTop: 5, color: 'rgba(226,232,240,0.74)', fontSize: 14, fontWeight: 800, lineHeight: 1.32 }}>
                 Zadajte názov firmy alebo meno a zákaznícky PIN. S.r.o. písať nemusíte.
               </div>
