@@ -237,9 +237,21 @@ export default function MyRequestsPage() {
         <style jsx global>{`
           .customerHeroInner {
             display: grid;
-            grid-template-columns: 300px minmax(0, 1fr);
-            gap: 18px;
+            grid-template-columns: 360px minmax(0, 1fr);
+            gap: 22px;
             align-items: center;
+          }
+
+          .customerHeroLogoWrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 122px;
+            border-radius: 16px;
+            background:
+              radial-gradient(circle at 54% 48%, rgba(132, 204, 22, 0.18), transparent 48%),
+              rgba(2, 6, 23, 0.28);
+            border: 1px solid rgba(148, 163, 184, 0.16);
           }
 
           .customerLookupGrid {
@@ -274,9 +286,15 @@ export default function MyRequestsPage() {
             }
 
             .customerHero img {
-              width: 220px !important;
-              height: 72px !important;
+              width: 270px !important;
+              height: 88px !important;
               margin: 0 auto !important;
+            }
+
+            .customerHeroLogoWrap {
+              min-height: 96px;
+              background: transparent;
+              border: none;
             }
 
             .customerHero h1 {
@@ -336,11 +354,20 @@ export default function MyRequestsPage() {
           }}
         >
           <div className="customerHeroInner">
-            <img
-              src="/logo-new.png"
-              alt="ITspot"
-              style={{ width: 285, maxWidth: '72vw', height: 92, objectFit: 'contain', display: 'block' }}
-            />
+            <div className="customerHeroLogoWrap">
+              <img
+                src="/logo-new.png"
+                alt="ITspot"
+                style={{
+                  width: 340,
+                  maxWidth: '82vw',
+                  height: 112,
+                  objectFit: 'contain',
+                  display: 'block',
+                  filter: 'drop-shadow(0 0 18px rgba(132, 204, 22, 0.24)) drop-shadow(0 12px 28px rgba(0, 0, 0, 0.3))',
+                }}
+              />
+            </div>
             <div>
               <h1 style={{ margin: 0, fontSize: 30, fontWeight: 900, lineHeight: 1.08 }}>Moje požiadavky</h1>
               <div style={{ marginTop: 7, color: 'rgba(226,232,240,0.74)', fontSize: 14, fontWeight: 800, lineHeight: 1.4 }}>
