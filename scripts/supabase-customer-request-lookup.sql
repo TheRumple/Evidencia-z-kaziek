@@ -209,7 +209,7 @@ as $$
       o.public_message
     from public.orders o
     join matched_customer c on c.id = o.customer_id
-    where o.stav in ('nova', 'rozpracovana', 'obhliadka', 'caka', 'cakame')
+    where o.stav in ('nova', 'rozpracovana', 'obhliadka', 'caka', 'cakame', 'hotova')
   )
   select * from pending_requests
   union all
@@ -253,7 +253,7 @@ begin
   join public.customers c on c.id = o.customer_id
   where o.id = p_order_id
     and c.portal_code = clean_code
-    and o.stav in ('nova', 'rozpracovana', 'obhliadka', 'caka', 'cakame')
+    and o.stav in ('nova', 'rozpracovana', 'obhliadka', 'caka', 'cakame', 'hotova')
   limit 1;
 
   if not found then

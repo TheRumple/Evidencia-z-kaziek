@@ -37,6 +37,8 @@ function getStatusLabel(item: CustomerLookupItem) {
     case 'caka':
     case 'cakame':
       return 'Čaká na materiál'
+    case 'hotova':
+      return 'Dokončená'
     default:
       return item.stav || 'Zákazka'
   }
@@ -48,6 +50,7 @@ function getStatusColor(item: CustomerLookupItem) {
   if (item.stav === 'rozpracovana') return { background: '#dcfce7', color: '#166534', border: '#86efac', accent: '#16a34a', glow: 'rgba(22, 163, 74, 0.24)' }
   if (item.stav === 'obhliadka') return { background: '#ede9fe', color: '#5b21b6', border: '#c4b5fd', accent: '#8b5cf6', glow: 'rgba(139, 92, 246, 0.24)' }
   if (item.stav === 'caka' || item.stav === 'cakame') return { background: '#ffedd5', color: '#9a3412', border: '#fdba74', accent: '#f97316', glow: 'rgba(249, 115, 22, 0.28)' }
+  if (item.stav === 'hotova') return { background: '#cffafe', color: '#155e75', border: '#67e8f9', accent: '#06b6d4', glow: 'rgba(6, 182, 212, 0.18)' }
   return { background: '#e2e8f0', color: '#334155', border: '#cbd5e1', accent: '#94a3b8', glow: 'rgba(148, 163, 184, 0.18)' }
 }
 
@@ -57,7 +60,8 @@ function getStatusPriority(item: CustomerLookupItem) {
   if (item.stav === 'obhliadka') return 3
   if (item.stav === 'nova') return 4
   if (item.item_type === 'poziadavka') return 5
-  return 6
+  if (item.stav === 'hotova') return 6
+  return 7
 }
 
 function sortCustomerItems(itemsToSort: CustomerLookupItem[]) {
@@ -117,7 +121,7 @@ export default function MyRequestsPage() {
     setItems(
       sortCustomerItems(
         ((data || []) as CustomerLookupItem[]).filter(
-          (item) => item.item_type === 'poziadavka' || ['nova', 'rozpracovana', 'obhliadka', 'caka', 'cakame'].includes(item.stav || '')
+          (item) => item.item_type === 'poziadavka' || ['nova', 'rozpracovana', 'obhliadka', 'caka', 'cakame', 'hotova'].includes(item.stav || '')
         )
       ).slice(0, 25)
     )
