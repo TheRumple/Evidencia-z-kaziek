@@ -322,31 +322,45 @@ export default function DashboardPage() {
   }
 
   async function loadCustomerContacts(currentUserId: string) {
-    const { data, error } = await supabase
+    const { data: contactsData, error: contactsError } = await supabase
       .from('customer_contacts')
-      .select(`
-        *,
-        customers:customer_contact_customers (
-          id,
-          contact_id,
-          customer_id,
-          role,
-          created_at
-        )
-      `)
+      .select('*')
       .eq('user_id', currentUserId)
       .order('name', { ascending: true })
 
-    if (error) {
-      if (error.code === '42P01') {
+    if (contactsError) {
+      if (contactsError.code === '42P01') {
         setCustomerContacts([])
         return
       }
-      setNotice({ type: 'error', text: `Kontakty zákazníkov: ${error.message}` })
+      setNotice({ type: 'error', text: `Kontakty zákazníkov: ${contactsError.message}` })
       return
     }
 
-    setCustomerContacts((data || []) as CustomerContact[])
+    const contacts = (contactsData || []) as CustomerContact[]
+    const contactIds = contacts.map((contact) => contact.id)
+    if (contactIds.length === 0) {
+      setCustomerContacts([])
+      return
+    }
+
+    const { data: linkData, error: linkError } = await supabase
+      .from('customer_contact_customers')
+      .select('id, contact_id, customer_id, role, created_at')
+      .in('contact_id', contactIds)
+
+    if (linkError) {
+      setNotice({ type: 'error', text: `Priradené firmy ku kontaktom: ${linkError.message}` })
+      setCustomerContacts(contacts.map((contact) => ({ ...contact, customers: [] })))
+      return
+    }
+
+    setCustomerContacts(
+      contacts.map((contact) => ({
+        ...contact,
+        customers: (linkData || []).filter((link) => link.contact_id === contact.id),
+      }))
+    )
   }
 
   async function loadOrders(currentUserId: string) {
