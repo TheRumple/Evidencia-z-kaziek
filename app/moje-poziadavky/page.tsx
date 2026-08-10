@@ -796,10 +796,15 @@ export default function MyRequestsPage() {
           })}
         </section>
 
-        <div className="customerFooter" style={{ marginTop: 10, display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', color: '#94a3b8', fontSize: 12 }}>
-          <Link href="/ziadost" style={{ color: '#cbd5e1', border: '1px solid rgba(255,255,255,0.18)', borderRadius: 10, padding: '8px 12px', textDecoration: 'none', fontWeight: 800 }}>
+        <div className="customerFooter" style={{ marginTop: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', color: '#94a3b8', fontSize: 13 }}>
+          <Link href="https://www.itspot.sk/" style={{ color: '#cbd5e1', border: '1px solid rgba(255,255,255,0.18)', borderRadius: 10, padding: '8px 12px', textDecoration: 'none', fontWeight: 800 }}>
+            Späť na itspot.sk
+          </Link>
+
+          <Link href="/ziadost" style={{ color: '#111827', border: '1px solid #84cc16', background: '#84cc16', boxShadow: '0 10px 24px rgba(132, 204, 22, 0.22)', borderRadius: 12, padding: '9px 14px', textDecoration: 'none', fontWeight: 900 }}>
             Nová požiadavka
           </Link>
+
           <div>Technická podpora: info@itspot.sk, +421 908 806 691</div>
         </div>
       </div>
