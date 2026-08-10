@@ -165,6 +165,21 @@ export default function MyRequestsPage() {
     return Array.from(new Set(items.flatMap((item) => getAttachmentUrls(item.popis).filter(isImageUrl))))
   }, [items])
 
+  const groupedItems = useMemo(() => {
+    const groups = new Map<string, CustomerLookupItem[]>()
+    for (const item of items) {
+      const customerNameValue = item.customer_name || 'Nezaradené'
+      groups.set(customerNameValue, [...(groups.get(customerNameValue) || []), item])
+    }
+
+    return Array.from(groups.entries())
+      .map(([customerNameValue, groupItems]) => ({
+        customerName: customerNameValue,
+        items: sortCustomerItems(groupItems),
+      }))
+      .sort((a, b) => a.customerName.localeCompare(b.customerName, 'sk'))
+  }, [items])
+
   function toggleItemDetail(itemKey: string) {
     setExpandedItemIds((current) => (current.includes(itemKey) ? [] : [itemKey]))
   }
@@ -707,44 +722,66 @@ export default function MyRequestsPage() {
             </div>
           )}
 
-          {items.map((item) => {
-            const statusColor = getStatusColor(item)
-            const requesterName = getRequesterName(item.popis, '')
-            const itemKey = `${item.item_type}-${item.id}`
-            const expanded = expandedItemIds.includes(itemKey)
-            const attachmentUrls = getAttachmentUrls(item.popis)
-            const imageUrls = attachmentUrls.filter(isImageUrl)
-            const cleanDescription = getCustomerDescription(item.popis)
-            const canUpdate = item.item_type === 'zakazka' && item.stav !== 'hotova'
-            return (
-              <article
-                key={itemKey}
-                className="customerRequestCard"
-                role="button"
-                tabIndex={0}
-                onClick={(event) => {
-                  const target = event.target as HTMLElement
-                  if (target.closest('button, a, input, textarea, select, label, .customerDetailGrid')) return
-                  toggleItemDetail(itemKey)
-                }}
-                onKeyDown={(event) => {
-                  if (event.key !== 'Enter' && event.key !== ' ') return
-                  const target = event.target as HTMLElement
-                  if (target.closest('button, a, input, textarea, select, label, .customerDetailGrid')) return
-                  event.preventDefault()
-                  toggleItemDetail(itemKey)
-                }}
+          {groupedItems.map((group) => (
+            <div key={group.customerName} style={{ display: 'grid', gap: 8 }}>
+              <div
                 style={{
-                  border: `2px solid ${statusColor.border}`,
-                  borderLeft: `7px solid ${statusColor.accent}`,
-                  borderRadius: 16,
-                  padding: '14px 16px',
-                  background: 'linear-gradient(135deg, rgba(255,255,255,0.99), rgba(248,250,252,0.96))',
-                  color: '#0f172a',
-                  boxShadow: `0 12px 24px rgba(0, 0, 0, 0.2), 0 0 0 3px ${statusColor.glow}`,
-                  cursor: 'pointer',
+                  border: '1px solid rgba(132, 204, 22, 0.28)',
+                  background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(20, 83, 45, 0.74))',
+                  color: '#f8fafc',
+                  borderRadius: 14,
+                  padding: '10px 13px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  gap: 10,
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
                 }}
               >
+                <div style={{ fontSize: 16, fontWeight: 900 }}>{group.customerName}</div>
+                <div style={{ color: '#bef264', fontSize: 12, fontWeight: 900 }}>
+                  {group.items.length} {group.items.length === 1 ? 'položka' : group.items.length < 5 ? 'položky' : 'položiek'}
+                </div>
+              </div>
+
+              {group.items.map((item) => {
+                const statusColor = getStatusColor(item)
+                const requesterName = getRequesterName(item.popis, '')
+                const itemKey = `${item.item_type}-${item.id}`
+                const expanded = expandedItemIds.includes(itemKey)
+                const attachmentUrls = getAttachmentUrls(item.popis)
+                const imageUrls = attachmentUrls.filter(isImageUrl)
+                const cleanDescription = getCustomerDescription(item.popis)
+                const canUpdate = item.item_type === 'zakazka' && item.stav !== 'hotova'
+                return (
+                  <article
+                    key={itemKey}
+                    className="customerRequestCard"
+                    role="button"
+                    tabIndex={0}
+                    onClick={(event) => {
+                      const target = event.target as HTMLElement
+                      if (target.closest('button, a, input, textarea, select, label, .customerDetailGrid')) return
+                      toggleItemDetail(itemKey)
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key !== 'Enter' && event.key !== ' ') return
+                      const target = event.target as HTMLElement
+                      if (target.closest('button, a, input, textarea, select, label, .customerDetailGrid')) return
+                      event.preventDefault()
+                      toggleItemDetail(itemKey)
+                    }}
+                    style={{
+                      border: `2px solid ${statusColor.border}`,
+                      borderLeft: `7px solid ${statusColor.accent}`,
+                      borderRadius: 16,
+                      padding: '14px 16px',
+                      background: 'linear-gradient(135deg, rgba(255,255,255,0.99), rgba(248,250,252,0.96))',
+                      color: '#0f172a',
+                      boxShadow: `0 12px 24px rgba(0, 0, 0, 0.2), 0 0 0 3px ${statusColor.glow}`,
+                      cursor: 'pointer',
+                    }}
+                  >
                 <div className="customerRequestTop">
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -766,6 +803,7 @@ export default function MyRequestsPage() {
                     </div>
 
                     <div style={{ marginTop: 7, display: 'flex', gap: 10, flexWrap: 'wrap', color: '#64748b', fontSize: 12, fontWeight: 800 }}>
+                      <span style={{ color: '#166534' }}>Firma: {item.customer_name || group.customerName}</span>
                       <span>Odoslané: {formatDate(item.created_at)}</span>
                       {item.termin && <span>Termín: {formatDate(item.termin)}</span>}
                       {requesterName && <span>Žiadateľ: {requesterName}</span>}
@@ -915,9 +953,11 @@ export default function MyRequestsPage() {
                     ) : null}
                   </div>
                 )}
-              </article>
-            )
-          })}
+                  </article>
+                )
+              })}
+            </div>
+          ))}
         </section>
 
         <div className="customerFooter" style={{ marginTop: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', color: '#94a3b8', fontSize: 13 }}>
