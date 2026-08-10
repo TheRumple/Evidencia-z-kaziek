@@ -1,6 +1,6 @@
 'use client'
 
-import { FormEvent, useState } from 'react'
+import { FormEvent, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 
@@ -44,6 +44,26 @@ function getStatusLabel(item: CustomerLookupItem) {
   }
 }
 
+function getCustomerStatusText(item: CustomerLookupItem) {
+  if (item.item_type === 'poziadavka') return 'Požiadavku sme prijali a čaká na spracovanie.'
+
+  switch (item.stav) {
+    case 'nova':
+      return 'Požiadavka je zaradená medzi zákazky.'
+    case 'rozpracovana':
+      return 'Na zákazke sa aktuálne pracuje.'
+    case 'obhliadka':
+      return 'Je potrebná obhliadka alebo dohodnutie termínu.'
+    case 'caka':
+    case 'cakame':
+      return 'Čaká sa na materiál alebo potrebné podklady.'
+    case 'hotova':
+      return 'Práca je dokončená.'
+    default:
+      return 'Zákazka je evidovaná.'
+  }
+}
+
 function getStatusColor(item: CustomerLookupItem) {
   if (item.item_type === 'poziadavka') return { background: '#fef3c7', color: '#92400e', border: '#fcd34d', accent: '#f59e0b', glow: 'rgba(245, 158, 11, 0.2)' }
   if (item.stav === 'nova') return { background: '#dbeafe', color: '#1e40af', border: '#93c5fd', accent: '#2563eb', glow: 'rgba(37, 99, 235, 0.2)' }
@@ -77,6 +97,36 @@ function getRequesterName(text: string | null, fallback: string | null) {
   return text.match(/^Žiadateľ:\s*(.+)$/im)?.[1]?.trim() || text.match(/^Meno:\s*(.+)$/im)?.[1]?.trim() || fallback || ''
 }
 
+function getAttachmentUrls(text: string | null | undefined) {
+  return Array.from(new Set((text || '').match(/https?:\/\/[^\s)]+/g) || []))
+}
+
+function stripAttachmentUrls(text: string | null | undefined) {
+  const value = text || ''
+  const attachmentBlockIndex = value.toLowerCase().indexOf('prílohy:')
+  const textWithoutAttachmentBlock = attachmentBlockIndex >= 0 ? value.slice(0, attachmentBlockIndex) : value
+
+  return textWithoutAttachmentBlock
+    .split('\n')
+    .filter((line) => !/^[-\s]*https?:\/\//i.test(line.trim()) && !/^[-\s]*$/i.test(line.trim()))
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
+function getCustomerDescription(text: string | null | undefined) {
+  const cleaned = stripAttachmentUrls(text)
+  return cleaned
+    .split('\n')
+    .filter((line) => !/^Žiadateľ:/i.test(line.trim()))
+    .join('\n')
+    .trim()
+}
+
+function isImageUrl(url: string) {
+  return /\.(jpe?g|png|webp)(\?|#|$)/i.test(url) || /customer-request-files\/(ziadosti|doplnene)\//i.test(url)
+}
+
 export default function MyRequestsPage() {
   const [customerName, setCustomerName] = useState('')
   const [portalCode, setPortalCode] = useState('')
@@ -89,6 +139,50 @@ export default function MyRequestsPage() {
   const [updateText, setUpdateText] = useState('')
   const [updateFiles, setUpdateFiles] = useState<File[]>([])
   const [sendingUpdate, setSendingUpdate] = useState(false)
+  const [expandedItemIds, setExpandedItemIds] = useState<string[]>([])
+  const [galleryImages, setGalleryImages] = useState<string[]>([])
+  const [galleryIndex, setGalleryIndex] = useState<number | null>(null)
+  const galleryOpen = galleryIndex !== null && galleryImages.length > 0
+  const activeGalleryIndex = galleryIndex ?? 0
+  const activeGalleryImage = galleryImages[activeGalleryIndex] || ''
+
+  useEffect(() => {
+    if (!galleryOpen) return
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') setGalleryIndex(null)
+      if (event.key === 'ArrowRight') setGalleryIndex((current) => (current === null ? 0 : (current + 1) % galleryImages.length))
+      if (event.key === 'ArrowLeft') setGalleryIndex((current) => (current === null ? 0 : (current - 1 + galleryImages.length) % galleryImages.length))
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [galleryImages.length, galleryOpen])
+
+  const allItemImageUrls = useMemo(() => {
+    return Array.from(new Set(items.flatMap((item) => getAttachmentUrls(item.popis).filter(isImageUrl))))
+  }, [items])
+
+  function toggleItemDetail(itemKey: string) {
+    setExpandedItemIds((current) =>
+      current.includes(itemKey) ? current.filter((id) => id !== itemKey) : [...current, itemKey]
+    )
+  }
+
+  function openGallery(url: string) {
+    const imageUrls = allItemImageUrls.length > 0 ? allItemImageUrls : [url]
+    const index = imageUrls.indexOf(url)
+    setGalleryImages(imageUrls)
+    setGalleryIndex(index >= 0 ? index : 0)
+  }
+
+  function goToPreviousImage() {
+    setGalleryIndex((current) => (current === null ? 0 : (current - 1 + galleryImages.length) % galleryImages.length))
+  }
+
+  function goToNextImage() {
+    setGalleryIndex((current) => (current === null ? 0 : (current + 1) % galleryImages.length))
+  }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
@@ -125,6 +219,8 @@ export default function MyRequestsPage() {
         )
       ).slice(0, 25)
     )
+    setExpandedItemIds([])
+    setUpdateOrderId('')
   }
 
   async function submitOrderUpdate(orderId: string) {
@@ -271,6 +367,29 @@ export default function MyRequestsPage() {
             white-space: nowrap;
           }
 
+          .customerDetailGrid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(240px, 0.7fr);
+            gap: 10px;
+            margin-top: 10px;
+          }
+
+          .customerDetailBox {
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 10px;
+          }
+
+          .customerDetailLabel {
+            color: #64748b;
+            font-size: 11px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 5px;
+          }
+
           @media (max-width: 760px) {
             .customerPage {
               padding: 10px 10px 8px !important;
@@ -349,6 +468,11 @@ export default function MyRequestsPage() {
               font-size: 12px !important;
               background: transparent !important;
               box-shadow: none !important;
+            }
+
+            .customerDetailGrid {
+              grid-template-columns: 1fr;
+              gap: 8px;
             }
 
             .customerFooter {
@@ -490,9 +614,15 @@ export default function MyRequestsPage() {
           {items.map((item) => {
             const statusColor = getStatusColor(item)
             const requesterName = getRequesterName(item.popis, '')
+            const itemKey = `${item.item_type}-${item.id}`
+            const expanded = expandedItemIds.includes(itemKey)
+            const attachmentUrls = getAttachmentUrls(item.popis)
+            const imageUrls = attachmentUrls.filter(isImageUrl)
+            const cleanDescription = getCustomerDescription(item.popis)
+            const canUpdate = item.item_type === 'zakazka' && item.stav !== 'hotova'
             return (
               <article
-                key={`${item.item_type}-${item.id}`}
+                key={itemKey}
                 className="customerRequestCard"
                 style={{
                   border: `2px solid ${statusColor.border}`,
@@ -531,28 +661,90 @@ export default function MyRequestsPage() {
                     </div>
                   </div>
 
-                  {item.item_type === 'zakazka' && updateOrderId !== item.id && (
-                    <div className="customerRequestActions">
+                  <div className="customerRequestActions" style={{ gap: 6, flexWrap: 'wrap' }}>
+                    <button
+                      className="customerEditButton"
+                      type="button"
+                      onClick={() => toggleItemDetail(itemKey)}
+                      style={{ border: '1px solid #cbd5e1', background: '#fff', color: '#334155' }}
+                    >
+                      {expanded ? 'Skryť detail' : 'Detail'}
+                    </button>
+
+                    {canUpdate && updateOrderId !== item.id && (
                       <button
                         className="customerEditButton"
                         type="button"
                         onClick={() => setUpdateOrderId(item.id)}
                         style={{ border: `1px solid ${statusColor.border}`, background: statusColor.background, color: statusColor.color }}
                       >
-                        Upraviť
+                        Doplniť
                       </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
 
-                {item.public_message && (
-                  <div style={{ marginTop: 9, borderRadius: 10, border: '1px solid #bbf7d0', background: '#f0fdf4', color: '#166534', padding: 9, fontSize: 13, lineHeight: 1.35, whiteSpace: 'pre-wrap', fontWeight: 800 }}>
-                    <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>Správa od ITspot</div>
-                    {item.public_message}
+                <div style={{ marginTop: 9, borderRadius: 10, border: `1px solid ${statusColor.border}`, background: statusColor.background, color: statusColor.color, padding: 9, fontSize: 13, lineHeight: 1.35, fontWeight: 800 }}>
+                  {getCustomerStatusText(item)}
+                </div>
+
+                {expanded && (
+                  <div className="customerDetailGrid">
+                    <div className="customerDetailBox">
+                      <div className="customerDetailLabel">Vaša požiadavka</div>
+                      <div style={{ color: '#0f172a', fontSize: 13, lineHeight: 1.42, whiteSpace: 'pre-wrap', fontWeight: 700 }}>
+                        {cleanDescription || 'Bez popisu.'}
+                      </div>
+                    </div>
+
+                    <div className="customerDetailBox">
+                      <div className="customerDetailLabel">Prílohy</div>
+                      {attachmentUrls.length === 0 ? (
+                        <div style={{ color: '#64748b', fontSize: 13, fontWeight: 700 }}>Bez príloh.</div>
+                      ) : (
+                        <div style={{ display: 'grid', gap: 8 }}>
+                          {imageUrls.length > 0 && (
+                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                              {imageUrls.map((url) => (
+                                <button
+                                  key={`customer-image-${itemKey}-${url}`}
+                                  type="button"
+                                  onClick={() => openGallery(url)}
+                                  style={{ border: 'none', background: 'transparent', padding: 0, cursor: 'pointer' }}
+                                  aria-label="Otvoriť fotku v galérii"
+                                >
+                                  <img
+                                    src={url}
+                                    alt="Príloha"
+                                    style={{ width: 82, height: 62, objectFit: 'cover', borderRadius: 9, border: '1px solid #cbd5e1', display: 'block' }}
+                                  />
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                            {attachmentUrls.map((url, index) => (
+                              <a key={`customer-file-${itemKey}-${url}`} href={url} target="_blank" rel="noreferrer" style={{ color: '#1d4ed8', fontSize: 13, fontWeight: 900 }}>
+                                Príloha {index + 1}
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {item.public_message && (
+                      <div className="customerDetailBox" style={{ borderColor: '#bbf7d0', background: '#f0fdf4' }}>
+                        <div className="customerDetailLabel" style={{ color: '#166534' }}>Aktuálny stav od ITspot</div>
+                        <div style={{ color: '#166534', fontSize: 13, lineHeight: 1.42, whiteSpace: 'pre-wrap', fontWeight: 800 }}>
+                          {item.public_message}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
-                {item.item_type === 'zakazka' && (
+                {canUpdate && (
                   <div style={{ marginTop: 8 }}>
                     {updateOrderId === item.id ? (
                       <div style={{ display: 'grid', gap: 8, borderTop: '1px solid #e2e8f0', paddingTop: 10 }}>
@@ -637,6 +829,136 @@ export default function MyRequestsPage() {
           <div>Technická podpora: info@itspot.sk, +421 908 806 691</div>
         </div>
       </div>
+
+      {galleryOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Galéria príloh"
+          onClick={() => setGalleryIndex(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1300,
+            background: 'rgba(2, 6, 23, 0.9)',
+            display: 'grid',
+            gridTemplateRows: 'auto minmax(0, 1fr) auto',
+            gap: 12,
+            padding: 14,
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, color: '#fff' }}>
+            <div style={{ fontWeight: 900 }}>
+              Fotka {activeGalleryIndex + 1} / {galleryImages.length}
+            </div>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                setGalleryIndex(null)
+              }}
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: 12,
+                border: '1px solid rgba(255,255,255,0.28)',
+                background: 'rgba(255,255,255,0.12)',
+                color: '#fff',
+                fontSize: 24,
+                lineHeight: 1,
+                cursor: 'pointer',
+              }}
+              aria-label="Zavrieť galériu"
+            >
+              ×
+            </button>
+          </div>
+
+          <div onClick={(event) => event.stopPropagation()} style={{ position: 'relative', minHeight: 0, display: 'grid', placeItems: 'center' }}>
+            {galleryImages.length > 1 && (
+              <button
+                type="button"
+                onClick={goToPreviousImage}
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  width: 42,
+                  height: 54,
+                  borderRadius: 14,
+                  border: '1px solid rgba(255,255,255,0.24)',
+                  background: 'rgba(15,23,42,0.68)',
+                  color: '#fff',
+                  fontSize: 30,
+                  cursor: 'pointer',
+                }}
+                aria-label="Predošlá fotka"
+              >
+                ‹
+              </button>
+            )}
+
+            <img
+              src={activeGalleryImage}
+              alt="Príloha"
+              style={{
+                maxWidth: 'calc(100vw - 92px)',
+                maxHeight: 'calc(100vh - 150px)',
+                objectFit: 'contain',
+                borderRadius: 14,
+                boxShadow: '0 24px 80px rgba(0,0,0,0.48)',
+                background: '#fff',
+              }}
+            />
+
+            {galleryImages.length > 1 && (
+              <button
+                type="button"
+                onClick={goToNextImage}
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  width: 42,
+                  height: 54,
+                  borderRadius: 14,
+                  border: '1px solid rgba(255,255,255,0.24)',
+                  background: 'rgba(15,23,42,0.68)',
+                  color: '#fff',
+                  fontSize: 30,
+                  cursor: 'pointer',
+                }}
+                aria-label="Ďalšia fotka"
+              >
+                ›
+              </button>
+            )}
+          </div>
+
+          <div onClick={(event) => event.stopPropagation()} style={{ display: 'flex', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
+            {galleryImages.map((url, index) => (
+              <button
+                key={`customer-gallery-thumb-${url}`}
+                type="button"
+                onClick={() => setGalleryIndex(index)}
+                style={{
+                  border: index === activeGalleryIndex ? '2px solid #84cc16' : '2px solid rgba(255,255,255,0.22)',
+                  background: 'transparent',
+                  padding: 0,
+                  borderRadius: 10,
+                  cursor: 'pointer',
+                  opacity: index === activeGalleryIndex ? 1 : 0.66,
+                }}
+                aria-label={`Zobraziť fotku ${index + 1}`}
+              >
+                <img src={url} alt="" style={{ width: 54, height: 40, objectFit: 'cover', borderRadius: 8, display: 'block' }} />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </main>
   )
 }
