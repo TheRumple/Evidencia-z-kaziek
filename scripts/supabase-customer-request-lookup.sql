@@ -107,7 +107,7 @@ begin
     from public.customer_contacts cc
     where cc.portal_code = new.portal_code
   ) then
-    raise exception 'PIN už existuje. Zadajte iný 4-miestny PIN.';
+    raise exception 'PIN uz existuje. Zadajte iny 4-miestny PIN.';
   end if;
 
   return new;

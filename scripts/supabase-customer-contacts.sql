@@ -147,7 +147,7 @@ begin
     from public.customers c
     where c.portal_code = new.portal_code
   ) then
-    raise exception 'PIN už existuje. Zadajte iný 4-miestny PIN.';
+    raise exception 'PIN uz existuje. Zadajte iny 4-miestny PIN.';
   end if;
 
   new.name := trim(new.name);
@@ -164,13 +164,12 @@ before insert or update of portal_code, name, email, phone on public.customer_co
 for each row
 execute function public.set_customer_contact_portal_code();
 
-insert into public.customer_contacts (user_id, name, email, phone, portal_code)
+insert into public.customer_contacts (user_id, name, email, phone)
 select
   c.user_id,
   coalesce(nullif(trim(c.kontakt), ''), c.nazov),
   nullif(trim(coalesce(c.email, '')), ''),
-  nullif(trim(coalesce(c.telefon, '')), ''),
-  c.portal_code
+  nullif(trim(coalesce(c.telefon, '')), '')
 from public.customers c
 where c.portal_code is not null
   and c.user_id is not null
@@ -178,7 +177,7 @@ where c.portal_code is not null
     select 1
     from public.customer_contacts cc
     where cc.user_id = c.user_id
-      and cc.portal_code = c.portal_code
+      and lower(trim(cc.name)) = lower(trim(coalesce(nullif(trim(c.kontakt), ''), c.nazov)))
   );
 
 insert into public.customer_contact_customers (contact_id, customer_id, role)
@@ -186,7 +185,7 @@ select cc.id, c.id, 'owner'
 from public.customers c
 join public.customer_contacts cc
   on cc.user_id = c.user_id
-  and cc.portal_code = c.portal_code
+  and lower(trim(cc.name)) = lower(trim(coalesce(nullif(trim(c.kontakt), ''), c.nazov)))
 where c.portal_code is not null
   and c.user_id is not null
 on conflict (contact_id, customer_id) do nothing;
