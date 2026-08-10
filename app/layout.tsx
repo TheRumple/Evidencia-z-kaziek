@@ -1,10 +1,17 @@
 import type { Metadata } from "next";
 import type { Viewport } from "next";
+import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "ITspot evidencia",
   description: "Evidencia zákaziek, požiadaviek a výkazov práce",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "ITspot",
+    statusBarStyle: "black-translucent",
+  },
   icons: {
     icon: "/app-icon.png",
     apple: "/app-icon.png",
@@ -23,7 +30,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="sk">
-      <body>{children}</body>
+      <body>
+        {children}
+        <PwaInstallPrompt />
+      </body>
     </html>
   );
 }
