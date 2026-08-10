@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
 import type { CustomerUpdate, Order, WorkLog } from '@/lib/dashboard-types'
 import {
@@ -90,22 +91,64 @@ export function OrderCard({
 }: OrderCardProps) {
   const overdue = isOverdue(order)
   const orderAttachmentUrls = getTextAttachmentUrls(order.popis)
+  const orderImageUrls = orderAttachmentUrls.filter(isImageUrl)
   const cleanOrderDescription = stripAttachmentUrls(order.popis || '')
+  const allGalleryImages = useMemo(() => {
+    const updateImages = customerUpdates.flatMap((update) => getAttachmentUrls(update).filter(isImageUrl))
+    return Array.from(new Set([...orderImageUrls, ...updateImages]))
+  }, [customerUpdates, orderImageUrls])
+  const [galleryIndex, setGalleryIndex] = useState<number | null>(null)
+  const galleryOpen = galleryIndex !== null && allGalleryImages.length > 0
+  const activeGalleryIndex = galleryIndex ?? 0
+  const activeGalleryImage = allGalleryImages[activeGalleryIndex] || ''
+
+  useEffect(() => {
+    if (!galleryOpen) return
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setGalleryIndex(null)
+      }
+      if (event.key === 'ArrowRight') {
+        setGalleryIndex((current) => (current === null ? 0 : (current + 1) % allGalleryImages.length))
+      }
+      if (event.key === 'ArrowLeft') {
+        setGalleryIndex((current) => (current === null ? 0 : (current - 1 + allGalleryImages.length) % allGalleryImages.length))
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [allGalleryImages.length, galleryOpen])
+
+  function openGallery(url: string) {
+    const index = allGalleryImages.indexOf(url)
+    setGalleryIndex(index >= 0 ? index : 0)
+  }
+
+  function goToPreviousImage() {
+    setGalleryIndex((current) => (current === null ? 0 : (current - 1 + allGalleryImages.length) % allGalleryImages.length))
+  }
+
+  function goToNextImage() {
+    setGalleryIndex((current) => (current === null ? 0 : (current + 1) % allGalleryImages.length))
+  }
 
   return (
-    <div
-      className={`orderCard ${expanded ? 'orderCardExpanded' : ''} ${overdue ? 'orderCardOverdue' : ''}`}
-      style={{
-        borderRadius: 14,
-        border: overdue ? '1px solid #fecdd3' : '1px solid #e2e8f0',
-        background: overdue
-          ? 'linear-gradient(135deg, #fff7f7 0%, #ffffff 76%)'
-          : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-        overflow: 'hidden',
-        boxShadow: expanded ? '0 18px 34px rgba(15, 23, 42, 0.12)' : '0 7px 18px rgba(15, 23, 42, 0.06)',
-        ...getStatusCardBorder(order.stav),
-      }}
-    >
+    <>
+      <div
+        className={`orderCard ${expanded ? 'orderCardExpanded' : ''} ${overdue ? 'orderCardOverdue' : ''}`}
+        style={{
+          borderRadius: 14,
+          border: overdue ? '1px solid #fecdd3' : '1px solid #e2e8f0',
+          background: overdue
+            ? 'linear-gradient(135deg, #fff7f7 0%, #ffffff 76%)'
+            : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+          overflow: 'hidden',
+          boxShadow: expanded ? '0 18px 34px rgba(15, 23, 42, 0.12)' : '0 7px 18px rgba(15, 23, 42, 0.06)',
+          ...getStatusCardBorder(order.stav),
+        }}
+      >
       <div
         role="button"
         tabIndex={0}
@@ -288,14 +331,20 @@ export function OrderCard({
                         ))}
                       </div>
                       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                        {orderAttachmentUrls.filter(isImageUrl).map((url) => (
-                          <a key={`order-preview-${url}`} href={url} target="_blank" rel="noreferrer">
+                        {orderImageUrls.map((url) => (
+                          <button
+                            key={`order-preview-${url}`}
+                            type="button"
+                            onClick={() => openGallery(url)}
+                            style={{ border: 'none', background: 'transparent', padding: 0, cursor: 'pointer' }}
+                            aria-label="Otvoriť prílohu v galérii"
+                          >
                             <img
                               src={url}
                               alt="Príloha od zákazníka"
                               style={{ width: 88, height: 66, objectFit: 'cover', borderRadius: 8, border: '1px solid #bfdbfe', display: 'block' }}
                             />
-                          </a>
+                          </button>
                         ))}
                       </div>
                     </div>
@@ -389,13 +438,19 @@ export function OrderCard({
                           </div>
                           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                             {attachmentUrls.filter(isImageUrl).map((url) => (
-                              <a key={`preview-${url}`} href={url} target="_blank" rel="noreferrer">
+                              <button
+                                key={`preview-${url}`}
+                                type="button"
+                                onClick={() => openGallery(url)}
+                                style={{ border: 'none', background: 'transparent', padding: 0, cursor: 'pointer' }}
+                                aria-label="Otvoriť prílohu v galérii"
+                              >
                                 <img
                                   src={url}
                                   alt="Príloha od zákazníka"
                                   style={{ width: 88, height: 66, objectFit: 'cover', borderRadius: 8, border: '1px solid #bfdbfe', display: 'block' }}
                                 />
-                              </a>
+                              </button>
                             ))}
                           </div>
                         </div>
@@ -445,6 +500,149 @@ export function OrderCard({
           </div>
         </div>
       )}
-    </div>
+      </div>
+
+      {galleryOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Galéria príloh"
+          onClick={() => setGalleryIndex(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1300,
+            background: 'rgba(2, 6, 23, 0.88)',
+            display: 'grid',
+            gridTemplateRows: 'auto minmax(0, 1fr) auto',
+            gap: 12,
+            padding: 14,
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, color: '#fff' }}>
+            <div style={{ fontWeight: 900 }}>
+              Príloha {activeGalleryIndex + 1} / {allGalleryImages.length}
+            </div>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                setGalleryIndex(null)
+              }}
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: 12,
+                border: '1px solid rgba(255,255,255,0.28)',
+                background: 'rgba(255,255,255,0.12)',
+                color: '#fff',
+                fontSize: 24,
+                lineHeight: 1,
+                cursor: 'pointer',
+              }}
+              aria-label="Zavrieť galériu"
+            >
+              ×
+            </button>
+          </div>
+
+          <div
+            onClick={(event) => event.stopPropagation()}
+            style={{ position: 'relative', minHeight: 0, display: 'grid', placeItems: 'center' }}
+          >
+            {allGalleryImages.length > 1 && (
+              <button
+                type="button"
+                onClick={goToPreviousImage}
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  width: 44,
+                  height: 54,
+                  borderRadius: 14,
+                  border: '1px solid rgba(255,255,255,0.24)',
+                  background: 'rgba(15,23,42,0.68)',
+                  color: '#fff',
+                  fontSize: 30,
+                  cursor: 'pointer',
+                }}
+                aria-label="Predošlá príloha"
+              >
+                ‹
+              </button>
+            )}
+
+            <img
+              src={activeGalleryImage}
+              alt="Príloha od zákazníka"
+              style={{
+                maxWidth: 'calc(100vw - 100px)',
+                maxHeight: 'calc(100vh - 150px)',
+                width: 'auto',
+                height: 'auto',
+                objectFit: 'contain',
+                borderRadius: 14,
+                boxShadow: '0 24px 80px rgba(0,0,0,0.48)',
+                background: '#fff',
+              }}
+            />
+
+            {allGalleryImages.length > 1 && (
+              <button
+                type="button"
+                onClick={goToNextImage}
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  width: 44,
+                  height: 54,
+                  borderRadius: 14,
+                  border: '1px solid rgba(255,255,255,0.24)',
+                  background: 'rgba(15,23,42,0.68)',
+                  color: '#fff',
+                  fontSize: 30,
+                  cursor: 'pointer',
+                }}
+                aria-label="Ďalšia príloha"
+              >
+                ›
+              </button>
+            )}
+          </div>
+
+          <div
+            onClick={(event) => event.stopPropagation()}
+            style={{ display: 'flex', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}
+          >
+            {allGalleryImages.map((url, index) => (
+              <button
+                key={`gallery-thumb-${url}`}
+                type="button"
+                onClick={() => setGalleryIndex(index)}
+                style={{
+                  border: index === activeGalleryIndex ? '2px solid #84cc16' : '2px solid rgba(255,255,255,0.22)',
+                  background: 'transparent',
+                  padding: 0,
+                  borderRadius: 10,
+                  cursor: 'pointer',
+                  opacity: index === activeGalleryIndex ? 1 : 0.66,
+                }}
+                aria-label={`Zobraziť prílohu ${index + 1}`}
+              >
+                <img
+                  src={url}
+                  alt=""
+                  style={{ width: 54, height: 40, objectFit: 'cover', borderRadius: 8, display: 'block' }}
+                />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
   )
 }
