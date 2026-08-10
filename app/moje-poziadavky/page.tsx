@@ -44,26 +44,6 @@ function getStatusLabel(item: CustomerLookupItem) {
   }
 }
 
-function getCustomerStatusText(item: CustomerLookupItem) {
-  if (item.item_type === 'poziadavka') return 'Požiadavku sme prijali a čaká na spracovanie.'
-
-  switch (item.stav) {
-    case 'nova':
-      return 'Požiadavka je zaradená medzi zákazky.'
-    case 'rozpracovana':
-      return 'Na zákazke sa aktuálne pracuje.'
-    case 'obhliadka':
-      return 'Je potrebná obhliadka alebo dohodnutie termínu.'
-    case 'caka':
-    case 'cakame':
-      return 'Čaká sa na materiál alebo potrebné podklady.'
-    case 'hotova':
-      return 'Práca je dokončená.'
-    default:
-      return 'Zákazka je evidovaná.'
-  }
-}
-
 function getStatusColor(item: CustomerLookupItem) {
   if (item.item_type === 'poziadavka') return { background: '#fef3c7', color: '#92400e', border: '#fcd34d', accent: '#f59e0b', glow: 'rgba(245, 158, 11, 0.2)' }
   if (item.stav === 'nova') return { background: '#dbeafe', color: '#1e40af', border: '#93c5fd', accent: '#2563eb', glow: 'rgba(37, 99, 235, 0.2)' }
@@ -164,9 +144,7 @@ export default function MyRequestsPage() {
   }, [items])
 
   function toggleItemDetail(itemKey: string) {
-    setExpandedItemIds((current) =>
-      current.includes(itemKey) ? current.filter((id) => id !== itemKey) : [...current, itemKey]
-    )
+    setExpandedItemIds((current) => (current.includes(itemKey) ? [] : [itemKey]))
   }
 
   function openGallery(url: string) {
@@ -682,10 +660,6 @@ export default function MyRequestsPage() {
                       </button>
                     )}
                   </div>
-                </div>
-
-                <div style={{ marginTop: 9, borderRadius: 10, border: `1px solid ${statusColor.border}`, background: statusColor.background, color: statusColor.color, padding: 9, fontSize: 13, lineHeight: 1.35, fontWeight: 800 }}>
-                  {getCustomerStatusText(item)}
                 </div>
 
                 {expanded && (

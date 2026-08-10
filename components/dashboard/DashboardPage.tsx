@@ -2008,9 +2008,7 @@ export default function DashboardPage() {
       setSeenCustomerUpdateIds((current) => Array.from(new Set([...current, ...updateIdsForOrder])))
     }
 
-    setExpandedOrderIds((curr) =>
-      curr.includes(orderId) ? curr.filter((id) => id !== orderId) : [...curr, orderId]
-    )
+    setExpandedOrderIds((curr) => (curr.includes(orderId) ? [] : [orderId]))
   }
 
   function isOverdue(order: Order) {
