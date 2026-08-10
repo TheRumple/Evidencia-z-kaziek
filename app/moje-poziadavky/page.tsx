@@ -602,6 +602,20 @@ export default function MyRequestsPage() {
               <article
                 key={itemKey}
                 className="customerRequestCard"
+                role="button"
+                tabIndex={0}
+                onClick={(event) => {
+                  const target = event.target as HTMLElement
+                  if (target.closest('button, a, input, textarea, select, label, .customerDetailGrid')) return
+                  toggleItemDetail(itemKey)
+                }}
+                onKeyDown={(event) => {
+                  if (event.key !== 'Enter' && event.key !== ' ') return
+                  const target = event.target as HTMLElement
+                  if (target.closest('button, a, input, textarea, select, label, .customerDetailGrid')) return
+                  event.preventDefault()
+                  toggleItemDetail(itemKey)
+                }}
                 style={{
                   border: `2px solid ${statusColor.border}`,
                   borderLeft: `7px solid ${statusColor.accent}`,
@@ -610,6 +624,7 @@ export default function MyRequestsPage() {
                   background: 'linear-gradient(135deg, rgba(255,255,255,0.99), rgba(248,250,252,0.96))',
                   color: '#0f172a',
                   boxShadow: `0 12px 24px rgba(0, 0, 0, 0.2), 0 0 0 3px ${statusColor.glow}`,
+                  cursor: 'pointer',
                 }}
               >
                 <div className="customerRequestTop">
@@ -640,15 +655,6 @@ export default function MyRequestsPage() {
                   </div>
 
                   <div className="customerRequestActions" style={{ gap: 6, flexWrap: 'wrap' }}>
-                    <button
-                      className="customerEditButton"
-                      type="button"
-                      onClick={() => toggleItemDetail(itemKey)}
-                      style={{ border: '1px solid #cbd5e1', background: '#fff', color: '#334155' }}
-                    >
-                      {expanded ? 'Skryť detail' : 'Detail'}
-                    </button>
-
                     {canUpdate && updateOrderId !== item.id && (
                       <button
                         className="customerEditButton"
