@@ -610,7 +610,6 @@ export default function MyRequestsPage() {
                 style={inputStyle}
                 value={customerName}
                 onChange={(event) => setCustomerName(event.target.value)}
-                placeholder="napr. fero@firma.sk"
               />
             </div>
 
@@ -627,7 +626,6 @@ export default function MyRequestsPage() {
                 style={inputStyle}
                 value={portalCode}
                 onChange={(event) => setPortalCode(event.target.value.replace(/\D/g, '').slice(0, 4))}
-                placeholder="1234"
               />
             </div>
 
