@@ -9,6 +9,25 @@ export type Customer = {
   created_at?: string
 }
 
+export type CustomerContact = {
+  id: string
+  user_id: string
+  name: string
+  email: string | null
+  phone: string | null
+  portal_code: string | null
+  created_at?: string
+  customers?: CustomerContactCustomer[]
+}
+
+export type CustomerContactCustomer = {
+  id: string
+  contact_id: string
+  customer_id: string
+  role: 'owner' | 'user'
+  created_at?: string
+}
+
 export type Order = {
   id: string
   user_id: string

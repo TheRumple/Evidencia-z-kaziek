@@ -12,7 +12,7 @@ import { CalendarView } from '@/components/dashboard/CalendarView'
 import { CustomersView } from '@/components/dashboard/CustomersView'
 import { OrdersView } from '@/components/dashboard/OrdersView'
 import { DashboardModals } from '@/components/dashboard/DashboardModals'
-import type { CalendarPlan, Customer, CustomerUpdate, Employee, Notice, Order, OrderSubtask, WorkLog } from '@/lib/dashboard-types'
+import type { CalendarPlan, Customer, CustomerContact, CustomerContactCustomer, CustomerUpdate, Employee, Notice, Order, OrderSubtask, WorkLog } from '@/lib/dashboard-types'
 import {
   AKTIVNE_STATUSY,
   STATUSY,
@@ -69,6 +69,7 @@ export default function DashboardPage() {
   const [notice, setNotice] = useState<Notice>(null)
 
   const [customers, setCustomers] = useState<Customer[]>([])
+  const [customerContacts, setCustomerContacts] = useState<CustomerContact[]>([])
   const [orders, setOrders] = useState<Order[]>([])
   const [employees, setEmployees] = useState<Employee[]>([])
   const [workLogs, setWorkLogs] = useState<WorkLog[]>([])
@@ -111,6 +112,14 @@ export default function DashboardPage() {
   const [editCustomerTelefon, setEditCustomerTelefon] = useState('')
   const [editCustomerEmail, setEditCustomerEmail] = useState('')
   const [editCustomerPortalCode, setEditCustomerPortalCode] = useState('')
+
+  const [contactCustomerId, setContactCustomerId] = useState('')
+  const [contactName, setContactName] = useState('')
+  const [contactEmail, setContactEmail] = useState('')
+  const [contactPhone, setContactPhone] = useState('')
+  const [contactPortalCode, setContactPortalCode] = useState('')
+  const [contactRole, setContactRole] = useState<'owner' | 'user'>('user')
+  const [savingContact, setSavingContact] = useState(false)
 
   const [editOrderId, setEditOrderId] = useState('')
   const [editOrderNazov, setEditOrderNazov] = useState('')
@@ -300,6 +309,34 @@ export default function DashboardPage() {
     setCustomers((data || []) as Customer[])
   }
 
+  async function loadCustomerContacts(currentUserId: string) {
+    const { data, error } = await supabase
+      .from('customer_contacts')
+      .select(`
+        *,
+        customers:customer_contact_customers (
+          id,
+          contact_id,
+          customer_id,
+          role,
+          created_at
+        )
+      `)
+      .eq('user_id', currentUserId)
+      .order('name', { ascending: true })
+
+    if (error) {
+      if (error.code === '42P01') {
+        setCustomerContacts([])
+        return
+      }
+      setNotice({ type: 'error', text: `Kontakty zákazníkov: ${error.message}` })
+      return
+    }
+
+    setCustomerContacts((data || []) as CustomerContact[])
+  }
+
   async function loadOrders(currentUserId: string) {
     const { data, error } = await supabase
       .from('orders')
@@ -367,6 +404,7 @@ export default function DashboardPage() {
     try {
       await Promise.all([
         loadCustomers(currentUserId),
+        loadCustomerContacts(currentUserId),
         loadOrders(currentUserId),
         loadWorkLogs(currentUserId),
         loadCustomerUpdates(currentUserId),
@@ -718,6 +756,99 @@ export default function DashboardPage() {
 
     setNotice({ type: 'success', text: 'Zákazník bol vytvorený.' })
     closeAddCustomerModal()
+  }
+
+  function resetContactForm(customerIdValue = '') {
+    setContactCustomerId(customerIdValue)
+    setContactName('')
+    setContactEmail('')
+    setContactPhone('')
+    setContactPortalCode('')
+    setContactRole('user')
+  }
+
+  async function addCustomerContact(targetCustomerId = contactCustomerId) {
+    if (!userId || !targetCustomerId) {
+      setNotice({ type: 'error', text: 'Vyber zákazníka pre kontakt.' })
+      return
+    }
+
+    if (!contactName.trim()) {
+      setNotice({ type: 'error', text: 'Zadaj meno kontaktu.' })
+      return
+    }
+
+    const cleanPortalCode = contactPortalCode.replace(/\D/g, '')
+    if (cleanPortalCode && cleanPortalCode.length !== 4) {
+      setNotice({ type: 'error', text: 'PIN kontaktu musí mať presne 4 číslice.' })
+      return
+    }
+
+    setSavingContact(true)
+
+    const { data: contact, error: contactError } = await supabase
+      .from('customer_contacts')
+      .insert([
+        {
+          user_id: userId,
+          name: contactName.trim(),
+          email: contactEmail.trim() || null,
+          phone: contactPhone.trim() || null,
+          portal_code: cleanPortalCode || null,
+        },
+      ])
+      .select()
+      .single()
+
+    if (contactError || !contact) {
+      setSavingContact(false)
+      setNotice({ type: 'error', text: contactError?.message || 'Nepodarilo sa vytvoriť kontakt.' })
+      return
+    }
+
+    const { error: linkError } = await supabase
+      .from('customer_contact_customers')
+      .insert([
+        {
+          contact_id: contact.id,
+          customer_id: targetCustomerId,
+          role: contactRole,
+        },
+      ])
+
+    setSavingContact(false)
+
+    if (linkError) {
+      await supabase.from('customer_contacts').delete().eq('id', contact.id).eq('user_id', userId)
+      setNotice({ type: 'error', text: linkError.message })
+      return
+    }
+
+    await loadCustomerContacts(userId)
+    resetContactForm(targetCustomerId)
+    setNotice({ type: 'success', text: 'Kontakt bol pridaný k zákazníkovi.' })
+  }
+
+  async function deleteCustomerContact(contactId: string) {
+    if (!userId) return
+    if (!window.confirm('Naozaj chceš zmazať tento kontakt?')) return
+
+    const previousContacts = customerContacts
+    setCustomerContacts((current) => current.filter((contact) => contact.id !== contactId))
+
+    const { error } = await supabase
+      .from('customer_contacts')
+      .delete()
+      .eq('id', contactId)
+      .eq('user_id', userId)
+
+    if (error) {
+      setCustomerContacts(previousContacts)
+      setNotice({ type: 'error', text: error.message })
+      return
+    }
+
+    setNotice({ type: 'success', text: 'Kontakt bol zmazaný.' })
   }
 
   async function addOrder() {
@@ -2291,10 +2422,27 @@ export default function DashboardPage() {
         {activeTab === 'zakaznici' && (
           <CustomersView
             customers={customers}
+            customerContacts={customerContacts}
+            contactCustomerId={contactCustomerId}
+            contactEmail={contactEmail}
+            contactName={contactName}
+            contactPhone={contactPhone}
+            contactPortalCode={contactPortalCode}
+            contactRole={contactRole}
             boxStyle={boxStyle}
             buttonStyle={buttonStyle}
             dangerButtonStyle={dangerButtonStyle}
+            addCustomerContact={addCustomerContact}
             deleteCustomer={deleteCustomer}
+            deleteCustomerContact={deleteCustomerContact}
+            resetContactForm={resetContactForm}
+            savingContact={savingContact}
+            setContactCustomerId={setContactCustomerId}
+            setContactEmail={setContactEmail}
+            setContactName={setContactName}
+            setContactPhone={setContactPhone}
+            setContactPortalCode={setContactPortalCode}
+            setContactRole={setContactRole}
             startEditCustomer={startEditCustomer}
           />
         )}

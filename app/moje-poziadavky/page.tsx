@@ -566,7 +566,7 @@ export default function MyRequestsPage() {
             <div>
               <h1 style={{ margin: 0, fontSize: 27, fontWeight: 900, lineHeight: 1.04 }}>Moje požiadavky</h1>
               <div className="customerHeroSubtitle" style={{ marginTop: 5, color: 'rgba(226,232,240,0.74)', fontSize: 14, fontWeight: 800, lineHeight: 1.32 }}>
-                Zadajte názov firmy alebo meno a zákaznícky PIN. S.r.o. písať nemusíte.
+                Zadajte meno, email alebo firmu a zákaznícky PIN. S.r.o. písať nemusíte.
               </div>
             </div>
           </div>
@@ -586,14 +586,14 @@ export default function MyRequestsPage() {
           <div className="customerLookupGrid">
             <div>
               <label style={labelStyle} htmlFor="customer-name">
-                Firma alebo meno *
+                Meno, email alebo firma *
               </label>
               <input
                 id="customer-name"
                 style={inputStyle}
                 value={customerName}
                 onChange={(event) => setCustomerName(event.target.value)}
-                placeholder="Napr. názov firmy bez s.r.o. alebo meno"
+                placeholder="Napr. meno, email alebo firma bez s.r.o."
               />
             </div>
 
