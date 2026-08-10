@@ -173,6 +173,7 @@ select
   c.portal_code
 from public.customers c
 where c.portal_code is not null
+  and c.user_id is not null
   and not exists (
     select 1
     from public.customer_contacts cc
@@ -187,6 +188,7 @@ join public.customer_contacts cc
   on cc.user_id = c.user_id
   and cc.portal_code = c.portal_code
 where c.portal_code is not null
+  and c.user_id is not null
 on conflict (contact_id, customer_id) do nothing;
 
 create or replace function public.portal_text_matches_contact(
