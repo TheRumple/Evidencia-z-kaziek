@@ -52,6 +52,9 @@ function composeOrderDescription(requester: string, description: string) {
 function getPortalCodeErrorMessage(error: { code?: string; message?: string } | null | undefined) {
   if (!error) return ''
   const message = error.message || ''
+  if (error.code === '23505' && /email/i.test(message)) {
+    return 'Kontakt s týmto emailom už existuje.'
+  }
   if (error.code === '23505' || /portal_code|duplicate key|already exists|heslo už existuje|pin už existuje/i.test(message)) {
     return 'PIN už existuje. Zadaj iný 4-miestny PIN.'
   }
@@ -120,8 +123,6 @@ export default function DashboardPage() {
   const [editCustomerKontakt, setEditCustomerKontakt] = useState('')
   const [editCustomerTelefon, setEditCustomerTelefon] = useState('')
   const [editCustomerEmail, setEditCustomerEmail] = useState('')
-  const [editCustomerPortalCode, setEditCustomerPortalCode] = useState('')
-
   const [contactCustomerIds, setContactCustomerIds] = useState<string[]>([])
   const [contactName, setContactName] = useState('')
   const [contactEmail, setContactEmail] = useState('')
@@ -571,7 +572,6 @@ export default function DashboardPage() {
     setEditCustomerKontakt('')
     setEditCustomerTelefon('')
     setEditCustomerEmail('')
-    setEditCustomerPortalCode('')
   }
 
   function resetEditOrderForm() {
@@ -785,6 +785,11 @@ export default function DashboardPage() {
 
     if (!contactName.trim()) {
       setNotice({ type: 'error', text: 'Zadaj meno kontaktu.' })
+      return
+    }
+
+    if (!contactEmail.trim() || !contactEmail.includes('@')) {
+      setNotice({ type: 'error', text: 'Zadaj platný email kontaktu. Pod týmto emailom sa bude prihlasovať.' })
       return
     }
 
@@ -1066,19 +1071,12 @@ export default function DashboardPage() {
     setEditCustomerKontakt(c.kontakt || '')
     setEditCustomerTelefon(c.telefon || '')
     setEditCustomerEmail(c.email || '')
-    setEditCustomerPortalCode(c.portal_code || '')
     setOpenEditCustomer(true)
   }
 
   async function saveCustomerEdit() {
     if (!editCustomerId || !editCustomerNazov.trim() || !userId) {
       setNotice({ type: 'error', text: 'Zadaj názov zákazníka.' })
-      return
-    }
-
-    const cleanPortalCode = editCustomerPortalCode.replace(/\D/g, '')
-    if (cleanPortalCode && cleanPortalCode.length !== 4) {
-      setNotice({ type: 'error', text: 'PIN portálu musí mať presne 4 číslice.' })
       return
     }
 
@@ -1089,7 +1087,6 @@ export default function DashboardPage() {
       kontakt: editCustomerKontakt.trim() || null,
       telefon: editCustomerTelefon.trim() || null,
       email: editCustomerEmail.trim() || null,
-      portal_code: cleanPortalCode || null,
     }
 
     const previousCustomers = customers
@@ -2494,7 +2491,6 @@ export default function DashboardPage() {
             editCustomerEmail={editCustomerEmail}
             editCustomerKontakt={editCustomerKontakt}
             editCustomerNazov={editCustomerNazov}
-            editCustomerPortalCode={editCustomerPortalCode}
             editCustomerTelefon={editCustomerTelefon}
             editEmployeeCanDelete={editEmployeeCanDelete}
             editEmployeeEmail={editEmployeeEmail}
@@ -2560,7 +2556,6 @@ export default function DashboardPage() {
             setEditCustomerEmail={setEditCustomerEmail}
             setEditCustomerKontakt={setEditCustomerKontakt}
             setEditCustomerNazov={setEditCustomerNazov}
-            setEditCustomerPortalCode={setEditCustomerPortalCode}
             setEditCustomerTelefon={setEditCustomerTelefon}
             setEditEmployeeCanDelete={setEditEmployeeCanDelete}
             setEditEmployeeEmail={setEditEmployeeEmail}

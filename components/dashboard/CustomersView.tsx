@@ -116,8 +116,8 @@ export function CustomersView({
             background: '#f0fdf4',
           }}
         >
-          <input value={contactName} onChange={(event) => setContactName(event.target.value)} placeholder="Meno kontaktu" style={contactInputStyle} />
-          <input value={contactEmail} onChange={(event) => setContactEmail(event.target.value)} placeholder="Email" style={contactInputStyle} />
+          <input value={contactName} onChange={(event) => setContactName(event.target.value)} placeholder="Meno kontaktu *" style={contactInputStyle} />
+          <input value={contactEmail} onChange={(event) => setContactEmail(event.target.value)} placeholder="Prihlasovací email *" style={contactInputStyle} />
           <input value={contactPhone} onChange={(event) => setContactPhone(event.target.value)} placeholder="Telefón" style={contactInputStyle} />
           <input
             value={contactPortalCode}
@@ -223,7 +223,6 @@ export function CustomersView({
                   <th style={{ padding: '12px 10px' }}>Kontakt</th>
                   <th style={{ padding: '12px 10px' }}>Telefón</th>
                   <th style={{ padding: '12px 10px' }}>Email</th>
-                  <th style={{ padding: '12px 10px' }}>PIN portálu</th>
                   <th style={{ padding: '12px 10px' }}>Akcie</th>
                 </tr>
               </thead>
@@ -234,7 +233,6 @@ export function CustomersView({
                     <td style={{ padding: '12px 10px' }}>{customer.kontakt || '-'}</td>
                     <td style={{ padding: '12px 10px' }}>{customer.telefon || '-'}</td>
                     <td style={{ padding: '12px 10px' }}>{customer.email || '-'}</td>
-                    <td style={{ padding: '12px 10px', fontWeight: 900 }}>{customer.portal_code || '-'}</td>
                     <td style={{ padding: '12px 10px' }}>
                       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                         <button type="button" style={buttonStyle} onClick={() => startEditCustomer(customer)}>
@@ -253,7 +251,7 @@ export function CustomersView({
 
                 {customers.length === 0 && (
                   <tr>
-                    <td colSpan={6} style={{ padding: 24, textAlign: 'center', color: '#64748b' }}>
+                    <td colSpan={5} style={{ padding: 24, textAlign: 'center', color: '#64748b' }}>
                       Zatiaľ nemáš žiadnych zákazníkov
                     </td>
                   </tr>
@@ -274,7 +272,6 @@ export function CustomersView({
                 <div><strong>Kontakt:</strong> {customer.kontakt || '-'}</div>
                 <div><strong>Telefón:</strong> {customer.telefon || '-'}</div>
                 <div><strong>Email:</strong> {customer.email || '-'}</div>
-                <div><strong>PIN portálu:</strong> {customer.portal_code || '-'}</div>
               </div>
 
               <div className="mobileActionRow" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 10 }}>

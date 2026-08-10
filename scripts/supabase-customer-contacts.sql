@@ -3,13 +3,13 @@
 -- - customer_contacts = real people with their own PIN
 -- - customer_contact_customers = which companies they can access and whether they are owner/user
 -- Owner sees all company requests/orders. User sees only requests/orders where they are the requester.
--- Existing customer.portal_code still works as a fallback during the transition.
+-- Company PIN is disabled. Portal login is email + PIN only.
 
 create table if not exists public.customer_contacts (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
   name text not null,
-  email text,
+  email text not null,
   phone text,
   portal_code text,
   created_at timestamptz not null default now()
@@ -26,6 +26,18 @@ create table if not exists public.customer_contact_customers (
 
 alter table public.customer_contacts enable row level security;
 alter table public.customer_contact_customers enable row level security;
+
+-- Reset generated portal contacts. You will add real people manually.
+delete from public.customer_contact_customers;
+delete from public.customer_contacts;
+
+alter table public.customer_contacts
+  alter column email set not null;
+
+-- Disable old company-level PIN access.
+drop trigger if exists trg_set_customer_portal_code on public.customers;
+drop index if exists public.customers_portal_code_unique;
+update public.customers set portal_code = null where portal_code is not null;
 
 drop policy if exists "Users can read own customer contacts" on public.customer_contacts;
 create policy "Users can read own customer contacts"
@@ -101,6 +113,9 @@ create unique index if not exists customer_contacts_portal_code_unique
 on public.customer_contacts (portal_code)
 where portal_code is not null;
 
+create unique index if not exists customer_contacts_user_email_unique
+on public.customer_contacts (user_id, (lower(email)));
+
 create index if not exists customer_contact_customers_customer_idx
 on public.customer_contact_customers (customer_id);
 
@@ -119,11 +134,6 @@ begin
         from public.customer_contacts cc
         where cc.portal_code = next_code
           and cc.id is distinct from new.id
-      )
-      and not exists (
-        select 1
-        from public.customers c
-        where c.portal_code = next_code
       );
     end loop;
 
@@ -141,18 +151,17 @@ begin
     from public.customer_contacts cc
     where cc.portal_code = new.portal_code
       and cc.id is distinct from new.id
-  )
-  or exists (
-    select 1
-    from public.customers c
-    where c.portal_code = new.portal_code
   ) then
     raise exception 'PIN uz existuje. Zadajte iny 4-miestny PIN.';
   end if;
 
   new.name := trim(new.name);
-  new.email := nullif(trim(coalesce(new.email, '')), '');
+  new.email := lower(trim(coalesce(new.email, '')));
   new.phone := nullif(trim(coalesce(new.phone, '')), '');
+
+  if new.email = '' or position('@' in new.email) = 0 then
+    raise exception 'Kontakt musi mat platny email.';
+  end if;
 
   return new;
 end;
@@ -164,47 +173,16 @@ before insert or update of portal_code, name, email, phone on public.customer_co
 for each row
 execute function public.set_customer_contact_portal_code();
 
-insert into public.customer_contacts (user_id, name, email, phone)
-select
-  c.user_id,
-  coalesce(nullif(trim(c.kontakt), ''), c.nazov),
-  nullif(trim(coalesce(c.email, '')), ''),
-  nullif(trim(coalesce(c.telefon, '')), '')
-from public.customers c
-where c.portal_code is not null
-  and c.user_id is not null
-  and not exists (
-    select 1
-    from public.customer_contacts cc
-    where cc.user_id = c.user_id
-      and lower(trim(cc.name)) = lower(trim(coalesce(nullif(trim(c.kontakt), ''), c.nazov)))
-  );
-
-insert into public.customer_contact_customers (contact_id, customer_id, role)
-select cc.id, c.id, 'owner'
-from public.customers c
-join public.customer_contacts cc
-  on cc.user_id = c.user_id
-  and lower(trim(cc.name)) = lower(trim(coalesce(nullif(trim(c.kontakt), ''), c.nazov)))
-where c.portal_code is not null
-  and c.user_id is not null
-on conflict (contact_id, customer_id) do nothing;
-
 create or replace function public.portal_text_matches_contact(
   p_text text,
-  p_contact_name text,
-  p_contact_email text,
-  p_contact_phone text
+  p_contact_email text
 )
 returns boolean
 language sql
 immutable
 as $$
-  select
-    lower(coalesce(p_text, '')) like '%žiadateľ: ' || lower(trim(coalesce(p_contact_name, ''))) || '%'
-    or lower(coalesce(p_text, '')) like '%meno: ' || lower(trim(coalesce(p_contact_name, ''))) || '%'
-    or (coalesce(p_contact_email, '') <> '' and lower(coalesce(p_text, '')) like '%' || lower(trim(p_contact_email)) || '%')
-    or (coalesce(p_contact_phone, '') <> '' and regexp_replace(coalesce(p_text, ''), '[^0-9]', '', 'g') like '%' || regexp_replace(p_contact_phone, '[^0-9]', '', 'g') || '%');
+  select coalesce(p_contact_email, '') <> ''
+    and lower(coalesce(p_text, '')) like '%' || lower(trim(p_contact_email)) || '%';
 $$;
 
 drop function if exists public.lookup_customer_requests(text, text);
@@ -230,8 +208,7 @@ set search_path = public
 as $$
   with lookup_input as (
     select
-      lower(trim(coalesce(p_customer_name, ''))) as lookup_name,
-      public.normalize_customer_lookup_name(p_customer_name) as normalized_lookup_name,
+      lower(trim(coalesce(p_customer_name, ''))) as login_email,
       regexp_replace(coalesce(p_portal_code, ''), '[^0-9]', '', 'g') as portal_code
   ),
   contact_access as (
@@ -239,53 +216,17 @@ as $$
       cc.id as contact_id,
       c.id as customer_id,
       c.nazov as customer_name,
-      c.portal_code as legacy_portal_code,
       ccc.role,
       cc.name as contact_name,
-      cc.email as contact_email,
-      cc.phone as contact_phone
+      cc.email as contact_email
     from public.customer_contacts cc
     join public.customer_contact_customers ccc on ccc.contact_id = cc.id
     join public.customers c on c.id = ccc.customer_id
     cross join lookup_input i
-    where i.lookup_name <> ''
+    where i.login_email <> ''
       and length(i.portal_code) = 4
       and cc.portal_code = i.portal_code
-      and (
-        lower(trim(cc.name)) = i.lookup_name
-        or lower(trim(coalesce(cc.email, ''))) = i.lookup_name
-        or regexp_replace(coalesce(cc.phone, ''), '[^0-9]', '', 'g') = regexp_replace(i.lookup_name, '[^0-9]', '', 'g')
-        or lower(trim(c.nazov)) = i.lookup_name
-        or public.normalize_customer_lookup_name(c.nazov) = i.normalized_lookup_name
-      )
-  ),
-  legacy_access as (
-    select
-      null::uuid as contact_id,
-      c.id as customer_id,
-      c.nazov as customer_name,
-      c.portal_code as legacy_portal_code,
-      'owner'::text as role,
-      c.kontakt as contact_name,
-      c.email as contact_email,
-      c.telefon as contact_phone
-    from public.customers c
-    cross join lookup_input i
-    where i.lookup_name <> ''
-      and length(i.portal_code) = 4
-      and c.portal_code = i.portal_code
-      and (
-        lower(trim(c.nazov)) = i.lookup_name
-        or lower(trim(coalesce(c.kontakt, ''))) = i.lookup_name
-        or public.normalize_customer_lookup_name(c.nazov) = i.normalized_lookup_name
-        or public.normalize_customer_lookup_name(c.kontakt) = i.normalized_lookup_name
-      )
-  ),
-  access as (
-    select * from contact_access
-    union all
-    select * from legacy_access
-    where not exists (select 1 from contact_access)
+      and lower(trim(cc.email)) = i.login_email
   ),
   pending_requests as (
     select distinct on (cr.id)
@@ -299,13 +240,13 @@ as $$
       a.customer_name,
       null::text as public_message
     from public.customer_requests cr
-    join access a on (
+    join contact_access a on (
       cr.customer_id = a.customer_id
       or lower(cr.popis) like '%firma: ' || lower(a.customer_name) || '%'
       or lower(cr.nazov) like '%' || lower(a.customer_name) || '%'
     )
     where a.role = 'owner'
-      or public.portal_text_matches_contact(cr.popis, a.contact_name, a.contact_email, a.contact_phone)
+      or public.portal_text_matches_contact(cr.popis, a.contact_email)
     order by cr.id, cr.created_at desc nulls last
   ),
   customer_orders as (
@@ -320,11 +261,11 @@ as $$
       a.customer_name,
       o.public_message
     from public.orders o
-    join access a on a.customer_id = o.customer_id
+    join contact_access a on a.customer_id = o.customer_id
     where o.stav in ('nova', 'rozpracovana', 'obhliadka', 'caka', 'cakame', 'hotova')
       and (
         a.role = 'owner'
-        or public.portal_text_matches_contact(coalesce(o.popis, '') || E'\n' || coalesce(o.praca, ''), a.contact_name, a.contact_email, a.contact_phone)
+        or public.portal_text_matches_contact(coalesce(o.popis, '') || E'\n' || coalesce(o.praca, ''), a.contact_email)
       )
     order by o.id, coalesce(o.created_at, o.prijatie_zakazky::timestamptz) desc nulls last
   )
@@ -369,24 +310,16 @@ begin
   from public.orders o
   where o.id = p_order_id
     and o.stav in ('nova', 'rozpracovana', 'obhliadka', 'caka', 'cakame', 'hotova')
-    and (
-      exists (
-        select 1
-        from public.customers c
-        where c.id = o.customer_id
-          and c.portal_code = clean_code
-      )
-      or exists (
-        select 1
-        from public.customer_contacts cc
-        join public.customer_contact_customers ccc on ccc.contact_id = cc.id
-        where cc.portal_code = clean_code
-          and ccc.customer_id = o.customer_id
-          and (
-            ccc.role = 'owner'
-            or public.portal_text_matches_contact(coalesce(o.popis, '') || E'\n' || coalesce(o.praca, ''), cc.name, cc.email, cc.phone)
-          )
-      )
+    and exists (
+      select 1
+      from public.customer_contacts cc
+      join public.customer_contact_customers ccc on ccc.contact_id = cc.id
+      where cc.portal_code = clean_code
+        and ccc.customer_id = o.customer_id
+        and (
+          ccc.role = 'owner'
+          or public.portal_text_matches_contact(coalesce(o.popis, '') || E'\n' || coalesce(o.praca, ''), cc.email)
+        )
     )
   limit 1;
 

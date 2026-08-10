@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 
-const SAVED_CUSTOMER_ACCESS_KEY = 'itspot_customer_access'
+const SAVED_CUSTOMER_ACCESS_KEY = 'itspot_customer_contact_access'
 
 type CustomerLookupItem = {
   item_type: 'poziadavka' | 'zakazka'
@@ -134,8 +134,8 @@ export default function MyRequestsPage() {
       const savedAccess = window.localStorage.getItem(SAVED_CUSTOMER_ACCESS_KEY)
       if (!savedAccess) return
 
-      const parsed = JSON.parse(savedAccess) as { customerName?: string; portalCode?: string }
-      const savedName = parsed.customerName?.trim() || ''
+      const parsed = JSON.parse(savedAccess) as { customerName?: string; email?: string; portalCode?: string }
+      const savedName = (parsed.email || parsed.customerName || '').trim()
       const savedCode = (parsed.portalCode || '').replace(/\D/g, '').slice(0, 4)
       if (!savedName || savedCode.length !== 4) return
 
@@ -213,8 +213,8 @@ export default function MyRequestsPage() {
 
     const cleanCustomerName = name.trim()
     const cleanPortalCode = code.replace(/\D/g, '').slice(0, 4)
-    if (!cleanCustomerName || cleanPortalCode.length !== 4) {
-      setMessage('Zadajte názov firmy alebo meno a 4-miestny PIN zákazníka.')
+    if (!cleanCustomerName || !cleanCustomerName.includes('@') || cleanPortalCode.length !== 4) {
+      setMessage('Zadajte prihlasovací email a 4-miestny PIN.')
       setMessageType('error')
       return
     }
@@ -237,7 +237,7 @@ export default function MyRequestsPage() {
     if (rememberAccess || isAutomatic) {
       window.localStorage.setItem(
         SAVED_CUSTOMER_ACCESS_KEY,
-        JSON.stringify({ customerName: cleanCustomerName, portalCode: cleanPortalCode, savedAt: new Date().toISOString() })
+        JSON.stringify({ email: cleanCustomerName, portalCode: cleanPortalCode, savedAt: new Date().toISOString() })
       )
     } else {
       window.localStorage.removeItem(SAVED_CUSTOMER_ACCESS_KEY)
@@ -581,7 +581,7 @@ export default function MyRequestsPage() {
             <div>
               <h1 style={{ margin: 0, fontSize: 27, fontWeight: 900, lineHeight: 1.04 }}>Moje požiadavky</h1>
               <div className="customerHeroSubtitle" style={{ marginTop: 5, color: 'rgba(226,232,240,0.74)', fontSize: 14, fontWeight: 800, lineHeight: 1.32 }}>
-                Zadajte meno, email alebo firmu a zákaznícky PIN. S.r.o. písať nemusíte.
+                Zadajte email a zákaznícky PIN, ktorý ste dostali od ITspot.
               </div>
             </div>
           </div>
@@ -601,14 +601,16 @@ export default function MyRequestsPage() {
           <div className="customerLookupGrid">
             <div>
               <label style={labelStyle} htmlFor="customer-name">
-                Meno, email alebo firma *
+                Email *
               </label>
               <input
                 id="customer-name"
+                type="email"
+                autoComplete="email"
                 style={inputStyle}
                 value={customerName}
                 onChange={(event) => setCustomerName(event.target.value)}
-                placeholder="Napr. meno, email alebo firma bez s.r.o."
+                placeholder="napr. fero@firma.sk"
               />
             </div>
 

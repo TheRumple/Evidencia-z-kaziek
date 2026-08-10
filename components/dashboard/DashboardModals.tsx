@@ -30,7 +30,6 @@ export function DashboardModals(props: DashboardModalsProps) {
     editCustomerEmail,
     editCustomerKontakt,
     editCustomerNazov,
-    editCustomerPortalCode,
     editCustomerTelefon,
     editEmployeeCanDelete,
     editEmployeeEmail,
@@ -96,7 +95,6 @@ export function DashboardModals(props: DashboardModalsProps) {
     setEditCustomerEmail,
     setEditCustomerKontakt,
     setEditCustomerNazov,
-    setEditCustomerPortalCode,
     setEditCustomerTelefon,
     setEditEmployeeCanDelete,
     setEditEmployeeEmail,
@@ -476,21 +474,6 @@ export function DashboardModals(props: DashboardModalsProps) {
                   placeholder="Email"
                 />
               </div>
-              <div>
-                <label style={labelStyle} htmlFor="edit-customer-portal-code">
-                  PIN portálu
-                </label>
-                <input
-                  id="edit-customer-portal-code"
-                  inputMode="numeric"
-                  maxLength={4}
-                  style={inputStyle}
-                  value={editCustomerPortalCode}
-                  onChange={(e) => setEditCustomerPortalCode(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                  placeholder="4 číslice"
-                />
-              </div>
-
               <div style={{ display: 'flex', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
                 <button type="submit" style={primaryButtonStyle} disabled={savingEditCustomer}>
                   {savingEditCustomer ? 'Ukladám...' : 'Uložiť zmeny'}

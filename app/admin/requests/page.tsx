@@ -172,9 +172,12 @@ export default function AdminRequestsPage() {
       console.log('Pokus o zápis do orders so priradeným user_id:', adminUserId)
 
       const requestPersonName = getRequestName(targetRequest)
-      const orderDescription = requestPersonName && !/^Žiadateľ:/im.test(finalPopis)
-        ? [`Žiadateľ: ${requestPersonName}`, finalPopis.trim()].join('\n')
-        : finalPopis.trim()
+      const requestEmail = getRequestEmail(targetRequest)
+      const orderHeader = [
+        requestPersonName && !/^Žiadateľ:/im.test(finalPopis) ? `Žiadateľ: ${requestPersonName}` : '',
+        requestEmail && !/^Email:/im.test(finalPopis) ? `Email: ${requestEmail}` : '',
+      ].filter(Boolean)
+      const orderDescription = [...orderHeader, finalPopis.trim()].filter(Boolean).join('\n')
 
       // 1. Vytvoríme ostrú zákazku v tabuľke 'orders'
       const { error: insertError } = await supabase
