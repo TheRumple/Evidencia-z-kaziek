@@ -37,9 +37,13 @@ type OrderCardProps = {
   deleteCustomerUpdate: (updateId: string) => void
 }
 
+function getTextAttachmentUrls(text: string | null | undefined) {
+  return Array.from(new Set((text || '').match(/https?:\/\/[^\s)]+/g) || []))
+}
+
 function getAttachmentUrls(update: CustomerUpdate) {
   const fromColumn = Array.isArray(update.attachment_urls) ? update.attachment_urls : []
-  const fromMessage = (update.message || '').match(/https?:\/\/[^\s)]+/g) || []
+  const fromMessage = getTextAttachmentUrls(update.message)
   return Array.from(new Set([...fromColumn, ...fromMessage]))
 }
 
@@ -85,6 +89,8 @@ export function OrderCard({
   deleteCustomerUpdate,
 }: OrderCardProps) {
   const overdue = isOverdue(order)
+  const orderAttachmentUrls = getTextAttachmentUrls(order.popis)
+  const cleanOrderDescription = stripAttachmentUrls(order.popis || '')
 
   return (
     <div
@@ -263,8 +269,38 @@ export function OrderCard({
                   <strong>Kilometre spolu:</strong> {getOrderKilometres(order.id).toFixed(0)} km
                 </div>
                 <div>
-                  <strong>Poznámky k zákazke:</strong> {order.popis || '-'}
+                  <strong>Poznámky k zákazke:</strong>
+                  {cleanOrderDescription ? (
+                    <div style={{ marginTop: 4, whiteSpace: 'pre-wrap' }}>{cleanOrderDescription}</div>
+                  ) : (
+                    <span> -</span>
+                  )}
                 </div>
+                {orderAttachmentUrls.length > 0 && (
+                  <div style={{ border: '1px solid #bfdbfe', background: '#eff6ff', borderRadius: 10, padding: 10 }}>
+                    <strong>Prílohy od zákazníka:</strong>
+                    <div style={{ display: 'grid', gap: 8, marginTop: 8 }}>
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        {orderAttachmentUrls.map((url, index) => (
+                          <a key={url} href={url} target="_blank" rel="noreferrer" style={{ color: '#1d4ed8', fontWeight: 900, fontSize: 13 }}>
+                            Príloha {index + 1}
+                          </a>
+                        ))}
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        {orderAttachmentUrls.filter(isImageUrl).map((url) => (
+                          <a key={`order-preview-${url}`} href={url} target="_blank" rel="noreferrer">
+                            <img
+                              src={url}
+                              alt="Príloha od zákazníka"
+                              style={{ width: 88, height: 66, objectFit: 'cover', borderRadius: 8, border: '1px solid #bfdbfe', display: 'block' }}
+                            />
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
                 {order.public_message && (
                   <div style={{ border: '1px solid #bbf7d0', background: '#f0fdf4', borderRadius: 10, padding: 10 }}>
                     <strong>Správa pre zákazníka:</strong>
