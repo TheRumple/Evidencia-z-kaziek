@@ -122,7 +122,7 @@ export default function DashboardPage() {
   const [editCustomerEmail, setEditCustomerEmail] = useState('')
   const [editCustomerPortalCode, setEditCustomerPortalCode] = useState('')
 
-  const [contactCustomerId, setContactCustomerId] = useState('')
+  const [contactCustomerIds, setContactCustomerIds] = useState<string[]>([])
   const [contactName, setContactName] = useState('')
   const [contactEmail, setContactEmail] = useState('')
   const [contactPhone, setContactPhone] = useState('')
@@ -768,7 +768,7 @@ export default function DashboardPage() {
   }
 
   function resetContactForm(customerIdValue = '') {
-    setContactCustomerId(customerIdValue)
+    setContactCustomerIds(customerIdValue ? [customerIdValue] : [])
     setContactName('')
     setContactEmail('')
     setContactPhone('')
@@ -776,9 +776,10 @@ export default function DashboardPage() {
     setContactRole('user')
   }
 
-  async function addCustomerContact(targetCustomerId = contactCustomerId) {
-    if (!userId || !targetCustomerId) {
-      setNotice({ type: 'error', text: 'Vyber zákazníka pre kontakt.' })
+  async function addCustomerContact(targetCustomerIds = contactCustomerIds) {
+    const uniqueCustomerIds = Array.from(new Set(targetCustomerIds.filter(Boolean)))
+    if (!userId || uniqueCustomerIds.length === 0) {
+      setNotice({ type: 'error', text: 'Vyber aspoň jednu firmu pre kontakt.' })
       return
     }
 
@@ -817,13 +818,11 @@ export default function DashboardPage() {
 
     const { error: linkError } = await supabase
       .from('customer_contact_customers')
-      .insert([
-        {
-          contact_id: contact.id,
-          customer_id: targetCustomerId,
-          role: contactRole,
-        },
-      ])
+      .insert(uniqueCustomerIds.map((customerIdValue) => ({
+        contact_id: contact.id,
+        customer_id: customerIdValue,
+        role: contactRole,
+      })))
 
     setSavingContact(false)
 
@@ -834,7 +833,7 @@ export default function DashboardPage() {
     }
 
     await loadCustomerContacts(userId)
-    resetContactForm(targetCustomerId)
+    resetContactForm()
     setNotice({ type: 'success', text: 'Kontakt bol pridaný k zákazníkovi.' })
   }
 
@@ -2432,7 +2431,7 @@ export default function DashboardPage() {
           <CustomersView
             customers={customers}
             customerContacts={customerContacts}
-            contactCustomerId={contactCustomerId}
+            contactCustomerIds={contactCustomerIds}
             contactEmail={contactEmail}
             contactName={contactName}
             contactPhone={contactPhone}
@@ -2446,7 +2445,7 @@ export default function DashboardPage() {
             deleteCustomerContact={deleteCustomerContact}
             resetContactForm={resetContactForm}
             savingContact={savingContact}
-            setContactCustomerId={setContactCustomerId}
+            setContactCustomerIds={setContactCustomerIds}
             setContactEmail={setContactEmail}
             setContactName={setContactName}
             setContactPhone={setContactPhone}
