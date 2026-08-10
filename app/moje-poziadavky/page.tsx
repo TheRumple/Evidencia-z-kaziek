@@ -355,10 +355,20 @@ export default function MyRequestsPage() {
         padding: '16px 14px',
       }}
     >
-      <div style={{ maxWidth: 1040, margin: '0 auto' }}>
+      <div style={{ width: '100%', maxWidth: 1040, margin: '0 auto', overflowX: 'hidden' }}>
         <style jsx global>{`
+          .customerPage,
+          .customerPage * {
+            box-sizing: border-box;
+          }
+
           .customerHeroInner {
             text-align: center;
+          }
+
+          .customerHeroSubtitle {
+            max-width: 100%;
+            overflow-wrap: anywhere;
           }
 
           .customerLookupGrid {
@@ -428,7 +438,8 @@ export default function MyRequestsPage() {
             }
 
             .customerHero img {
-              width: 380px !important;
+              width: min(320px, 100%) !important;
+              max-width: 100% !important;
               height: 112px !important;
               margin: -8px auto -10px !important;
             }
@@ -447,6 +458,7 @@ export default function MyRequestsPage() {
               padding: 10px !important;
               border-radius: 14px !important;
               box-shadow: 0 12px 28px rgba(0, 0, 0, 0.24) !important;
+              overflow: hidden;
             }
 
             .customerLookupGrid {
@@ -497,12 +509,24 @@ export default function MyRequestsPage() {
             }
 
             .customerFooter {
+              display: grid !important;
+              grid-template-columns: 1fr !important;
+              justify-content: stretch !important;
+              align-items: stretch !important;
               margin-top: 8px !important;
               gap: 8px !important;
             }
 
             .customerFooter a {
+              display: flex !important;
+              width: 100% !important;
+              justify-content: center !important;
               padding: 7px 10px !important;
+            }
+
+            .customerFooter div {
+              text-align: center;
+              overflow-wrap: anywhere;
             }
           }
 
