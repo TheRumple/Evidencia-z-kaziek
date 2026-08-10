@@ -96,6 +96,20 @@ begin
     raise exception 'portal_code must contain exactly 4 digits';
   end if;
 
+  if exists (
+    select 1
+    from public.customers c
+    where c.portal_code = new.portal_code
+      and c.id is distinct from new.id
+  )
+  or exists (
+    select 1
+    from public.customer_contacts cc
+    where cc.portal_code = new.portal_code
+  ) then
+    raise exception 'PIN už existuje. Zadajte iný 4-miestny PIN.';
+  end if;
+
   return new;
 end;
 $$;

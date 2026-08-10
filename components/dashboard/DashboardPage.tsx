@@ -49,6 +49,15 @@ function composeOrderDescription(requester: string, description: string) {
     .join('\n')
 }
 
+function getPortalCodeErrorMessage(error: { code?: string; message?: string } | null | undefined) {
+  if (!error) return ''
+  const message = error.message || ''
+  if (error.code === '23505' || /portal_code|duplicate key|already exists|heslo už existuje|pin už existuje/i.test(message)) {
+    return 'PIN už existuje. Zadaj iný 4-miestny PIN.'
+  }
+  return message
+}
+
 export default function DashboardPage() {
   const router = useRouter()
 
@@ -802,7 +811,7 @@ export default function DashboardPage() {
 
     if (contactError || !contact) {
       setSavingContact(false)
-      setNotice({ type: 'error', text: contactError?.message || 'Nepodarilo sa vytvoriť kontakt.' })
+      setNotice({ type: 'error', text: getPortalCodeErrorMessage(contactError) || 'Nepodarilo sa vytvoriť kontakt.' })
       return
     }
 
@@ -1097,7 +1106,7 @@ export default function DashboardPage() {
 
     if (error) {
       setCustomers(previousCustomers)
-      setNotice({ type: 'error', text: error.message })
+      setNotice({ type: 'error', text: getPortalCodeErrorMessage(error) || error.message })
       return
     }
 
