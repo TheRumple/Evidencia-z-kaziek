@@ -293,6 +293,10 @@ export default function DashboardPage() {
     try {
       await Promise.all([
         loadCustomers(currentUserId),
+        loadCustomerContacts(currentUserId),
+      ])
+
+      await Promise.allSettled([
         loadOrders(currentUserId),
         loadEmployees(currentUserId),
         loadWorkLogs(currentUserId),
@@ -428,7 +432,7 @@ export default function DashboardPage() {
 
   async function refreshLiveData(currentUserId: string) {
     try {
-      await Promise.all([
+      await Promise.allSettled([
         loadCustomers(currentUserId),
         loadCustomerContacts(currentUserId),
         loadOrders(currentUserId),
