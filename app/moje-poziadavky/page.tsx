@@ -191,14 +191,6 @@ export default function MyRequestsPage() {
     setMessageType('success')
   }
 
-  function getPinRequestHref() {
-    const subject = encodeURIComponent('Žiadosť o zákaznícky PIN')
-    const body = encodeURIComponent(
-      `Dobrý deň,\n\nprosím o zaslanie zákazníckeho PIN kódu pre zobrazenie mojich požiadaviek.\n\nFirma alebo meno: ${customerName.trim() || ''}\nEmail: \nTelefón: \n\nĎakujem.`
-    )
-    return `mailto:info@itspot.sk?subject=${subject}&body=${body}`
-  }
-
   async function loadCustomerRequests(name: string, code: string, isAutomatic = false) {
     setMessage('')
     setMessageType('error')
@@ -647,19 +639,6 @@ export default function MyRequestsPage() {
             </label>
 
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <a
-                href={getPinRequestHref()}
-                style={{
-                  color: '#bef264',
-                  border: '1px solid rgba(132, 204, 22, 0.42)',
-                  borderRadius: 10,
-                  padding: '7px 10px',
-                  textDecoration: 'none',
-                  fontWeight: 900,
-                }}
-              >
-                Požiadať o PIN
-              </a>
               {rememberAccess && (
                 <button
                   type="button"
