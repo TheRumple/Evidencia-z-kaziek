@@ -4,6 +4,8 @@ import { FormEvent, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 
+const SAVED_CUSTOMER_ACCESS_KEY = 'itspot_customer_access'
+
 type CustomerLookupItem = {
   item_type: 'poziadavka' | 'zakazka'
   id: string
@@ -110,6 +112,7 @@ function isImageUrl(url: string) {
 export default function MyRequestsPage() {
   const [customerName, setCustomerName] = useState('')
   const [portalCode, setPortalCode] = useState('')
+  const [rememberAccess, setRememberAccess] = useState(false)
   const [loading, setLoading] = useState(false)
   const [searched, setSearched] = useState(false)
   const [message, setMessage] = useState('')
@@ -125,6 +128,25 @@ export default function MyRequestsPage() {
   const galleryOpen = galleryIndex !== null && galleryImages.length > 0
   const activeGalleryIndex = galleryIndex ?? 0
   const activeGalleryImage = galleryImages[activeGalleryIndex] || ''
+
+  useEffect(() => {
+    try {
+      const savedAccess = window.localStorage.getItem(SAVED_CUSTOMER_ACCESS_KEY)
+      if (!savedAccess) return
+
+      const parsed = JSON.parse(savedAccess) as { customerName?: string; portalCode?: string }
+      const savedName = parsed.customerName?.trim() || ''
+      const savedCode = (parsed.portalCode || '').replace(/\D/g, '').slice(0, 4)
+      if (!savedName || savedCode.length !== 4) return
+
+      setCustomerName(savedName)
+      setPortalCode(savedCode)
+      setRememberAccess(true)
+      void loadCustomerRequests(savedName, savedCode, true)
+    } catch {
+      window.localStorage.removeItem(SAVED_CUSTOMER_ACCESS_KEY)
+    }
+  }, [])
 
   useEffect(() => {
     if (!galleryOpen) return
@@ -162,14 +184,29 @@ export default function MyRequestsPage() {
     setGalleryIndex((current) => (current === null ? 0 : (current + 1) % galleryImages.length))
   }
 
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault()
+  function clearSavedAccess() {
+    window.localStorage.removeItem(SAVED_CUSTOMER_ACCESS_KEY)
+    setRememberAccess(false)
+    setMessage('Uložené prístupové údaje boli odstránené z tohto zariadenia.')
+    setMessageType('success')
+  }
+
+  function getPinRequestHref() {
+    const subject = encodeURIComponent('Žiadosť o zákaznícky PIN')
+    const body = encodeURIComponent(
+      `Dobrý deň,\n\nprosím o zaslanie zákazníckeho PIN kódu pre zobrazenie mojich požiadaviek.\n\nFirma alebo meno: ${customerName.trim() || ''}\nEmail: \nTelefón: \n\nĎakujem.`
+    )
+    return `mailto:info@itspot.sk?subject=${subject}&body=${body}`
+  }
+
+  async function loadCustomerRequests(name: string, code: string, isAutomatic = false) {
     setMessage('')
     setMessageType('error')
     setSearched(false)
 
-    const cleanPortalCode = portalCode.replace(/\D/g, '')
-    if (!customerName.trim() || cleanPortalCode.length !== 4) {
+    const cleanCustomerName = name.trim()
+    const cleanPortalCode = code.replace(/\D/g, '').slice(0, 4)
+    if (!cleanCustomerName || cleanPortalCode.length !== 4) {
       setMessage('Zadajte názov firmy alebo meno a 4-miestny PIN zákazníka.')
       setMessageType('error')
       return
@@ -177,7 +214,7 @@ export default function MyRequestsPage() {
 
     setLoading(true)
     const { data, error } = await supabase.rpc('lookup_customer_requests', {
-      p_customer_name: customerName.trim(),
+      p_customer_name: cleanCustomerName,
       p_portal_code: cleanPortalCode,
     })
     setLoading(false)
@@ -190,6 +227,15 @@ export default function MyRequestsPage() {
       return
     }
 
+    if (rememberAccess || isAutomatic) {
+      window.localStorage.setItem(
+        SAVED_CUSTOMER_ACCESS_KEY,
+        JSON.stringify({ customerName: cleanCustomerName, portalCode: cleanPortalCode, savedAt: new Date().toISOString() })
+      )
+    } else {
+      window.localStorage.removeItem(SAVED_CUSTOMER_ACCESS_KEY)
+    }
+
     setItems(
       sortCustomerItems(
         ((data || []) as CustomerLookupItem[]).filter(
@@ -199,6 +245,11 @@ export default function MyRequestsPage() {
     )
     setExpandedItemIds([])
     setUpdateOrderId('')
+  }
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault()
+    await loadCustomerRequests(customerName, portalCode)
   }
 
   async function submitOrderUpdate(orderId: string) {
@@ -536,7 +587,9 @@ export default function MyRequestsPage() {
               </label>
               <input
                 id="portal-code"
+                type="password"
                 inputMode="numeric"
+                autoComplete="current-password"
                 maxLength={4}
                 style={inputStyle}
                 value={portalCode}
@@ -563,6 +616,68 @@ export default function MyRequestsPage() {
             >
               {loading ? 'Hľadám...' : 'Zobraziť'}
             </button>
+          </div>
+
+          <div
+            className="customerAccessActions"
+            style={{
+              marginTop: 12,
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: 10,
+              flexWrap: 'wrap',
+              color: '#cbd5e1',
+              fontSize: 13,
+              fontWeight: 800,
+            }}
+          >
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={rememberAccess}
+                onChange={(event) => {
+                  const checked = event.target.checked
+                  setRememberAccess(checked)
+                  if (!checked) window.localStorage.removeItem(SAVED_CUSTOMER_ACCESS_KEY)
+                }}
+                style={{ width: 16, height: 16, accentColor: '#84cc16' }}
+              />
+              Zapamätať údaje na tomto zariadení
+            </label>
+
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <a
+                href={getPinRequestHref()}
+                style={{
+                  color: '#bef264',
+                  border: '1px solid rgba(132, 204, 22, 0.42)',
+                  borderRadius: 10,
+                  padding: '7px 10px',
+                  textDecoration: 'none',
+                  fontWeight: 900,
+                }}
+              >
+                Požiadať o PIN
+              </a>
+              {rememberAccess && (
+                <button
+                  type="button"
+                  onClick={clearSavedAccess}
+                  style={{
+                    color: '#cbd5e1',
+                    border: '1px solid rgba(255,255,255,0.16)',
+                    background: 'transparent',
+                    borderRadius: 10,
+                    padding: '7px 10px',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Zabudnúť údaje
+                </button>
+              )}
+            </div>
           </div>
 
           {message && (
