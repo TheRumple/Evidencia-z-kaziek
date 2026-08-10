@@ -4,7 +4,7 @@ import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ITspot evidencia",
+  title: "ITspot",
   description: "Evidencia zákaziek, požiadaviek a výkazov práce",
   manifest: "/manifest.webmanifest",
   appleWebApp: {

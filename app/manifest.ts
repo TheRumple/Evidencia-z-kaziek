@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'ITspot evidencia',
+    name: 'ITspot',
     short_name: 'ITspot',
     description: 'Zákaznícky portál ITspot pre požiadavky a servis.',
     start_url: '/moje-poziadavky',
