@@ -108,6 +108,7 @@ export default function DashboardPage() {
   const [newCustomerTelefon, setNewCustomerTelefon] = useState('')
   const [newCustomerEmail, setNewCustomerEmail] = useState('')
   const [orderRequester, setOrderRequester] = useState('')
+  const [orderRequesterEmail, setOrderRequesterEmail] = useState('')
   const [orderPopis, setOrderPopis] = useState('')
   const [orderPublicMessage, setOrderPublicMessage] = useState('')
   const [orderTermin, setOrderTermin] = useState(getTodayDate())
@@ -135,6 +136,7 @@ export default function DashboardPage() {
   const [editOrderNazov, setEditOrderNazov] = useState('')
   const [editOrderCustomerId, setEditOrderCustomerId] = useState('')
   const [editOrderRequester, setEditOrderRequester] = useState('')
+  const [editOrderRequesterEmail, setEditOrderRequesterEmail] = useState('')
   const [editOrderPopis, setEditOrderPopis] = useState('')
   const [editOrderPublicMessage, setEditOrderPublicMessage] = useState('')
   const [editOrderTermin, setEditOrderTermin] = useState('')
@@ -560,6 +562,7 @@ export default function DashboardPage() {
     setNewCustomerTelefon('')
     setNewCustomerEmail('')
     setOrderRequester('')
+    setOrderRequesterEmail('')
     setOrderPopis('')
     setOrderPublicMessage('')
     setOrderTermin(getTodayDate())
@@ -579,6 +582,7 @@ export default function DashboardPage() {
     setEditOrderNazov('')
     setEditOrderCustomerId('')
     setEditOrderRequester('')
+    setEditOrderRequesterEmail('')
     setEditOrderPopis('')
     setEditOrderPublicMessage('')
     setEditOrderTermin('')
@@ -925,6 +929,7 @@ export default function DashboardPage() {
           stav: 'nova',
           praca: null,
           popis: composeOrderDescription(orderRequester, orderPopis) || null,
+          requester_email: orderRequesterEmail.trim().toLowerCase() || null,
           public_message: orderPublicMessage.trim() || null,
           termin: orderTermin || null,
           prijatie_zakazky: orderPrijatieZakazky || null,
@@ -1116,6 +1121,7 @@ export default function DashboardPage() {
     setEditOrderNazov(o.nazov || '')
     setEditOrderCustomerId(o.customer_id || '')
     setEditOrderRequester(getRequesterFromDescription(o.popis))
+    setEditOrderRequesterEmail(o.requester_email || o.popis?.match(/^Email:\s*(.+)$/im)?.[1]?.trim() || '')
     setEditOrderPopis(stripRequesterFromDescription(o.popis))
     setEditOrderPublicMessage(o.public_message || '')
     setEditOrderTermin(o.termin || '')
@@ -1135,6 +1141,7 @@ export default function DashboardPage() {
       nazov: editOrderNazov.trim(),
       customer_id: editOrderCustomerId,
       popis: composeOrderDescription(editOrderRequester, editOrderPopis) || null,
+      requester_email: editOrderRequesterEmail.trim().toLowerCase() || null,
       public_message: editOrderPublicMessage.trim() || null,
       termin: editOrderTermin || null,
       prijatie_zakazky: editOrderPrijatieZakazky || null,
@@ -2502,6 +2509,7 @@ export default function DashboardPage() {
             editOrderPublicMessage={editOrderPublicMessage}
             editOrderPrijatieZakazky={editOrderPrijatieZakazky}
             editOrderRequester={editOrderRequester}
+            editOrderRequesterEmail={editOrderRequesterEmail}
             editOrderTermin={editOrderTermin}
             editingWorkLogId={editingWorkLogId}
             email={email}
@@ -2537,6 +2545,7 @@ export default function DashboardPage() {
             orderPublicMessage={orderPublicMessage}
             orderPrijatieZakazky={orderPrijatieZakazky}
             orderRequester={orderRequester}
+            orderRequesterEmail={orderRequesterEmail}
             orderTermin={orderTermin}
             primaryButtonStyle={primaryButtonStyle}
             resetWorkLogForm={resetWorkLogForm}
@@ -2567,6 +2576,7 @@ export default function DashboardPage() {
             setEditOrderPublicMessage={setEditOrderPublicMessage}
             setEditOrderPrijatieZakazky={setEditOrderPrijatieZakazky}
             setEditOrderRequester={setEditOrderRequester}
+            setEditOrderRequesterEmail={setEditOrderRequesterEmail}
             setEditOrderTermin={setEditOrderTermin}
             setEmail={setEmail}
             setEmployeeCanDelete={setEmployeeCanDelete}
@@ -2584,6 +2594,7 @@ export default function DashboardPage() {
             setOrderPublicMessage={setOrderPublicMessage}
             setOrderPrijatieZakazky={setOrderPrijatieZakazky}
             setOrderRequester={setOrderRequester}
+            setOrderRequesterEmail={setOrderRequesterEmail}
             setOrderTermin={setOrderTermin}
             setTelefon={setTelefon}
             setWorkLogDate={setWorkLogDate}

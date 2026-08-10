@@ -36,6 +36,7 @@ export type Order = {
   stav: string
   praca: string | null
   popis: string | null
+  requester_email?: string | null
   public_message?: string | null
   termin: string | null
   prijatie_zakazky: string | null

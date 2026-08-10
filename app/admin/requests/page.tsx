@@ -175,7 +175,6 @@ export default function AdminRequestsPage() {
       const requestEmail = getRequestEmail(targetRequest)
       const orderHeader = [
         requestPersonName && !/^Žiadateľ:/im.test(finalPopis) ? `Žiadateľ: ${requestPersonName}` : '',
-        requestEmail && !/^Email:/im.test(finalPopis) ? `Email: ${requestEmail}` : '',
       ].filter(Boolean)
       const orderDescription = [...orderHeader, finalPopis.trim()].filter(Boolean).join('\n')
 
@@ -188,6 +187,7 @@ export default function AdminRequestsPage() {
             user_id: adminUserId, // 🌟 Automaticky priradíme tvoje ID, aby si ju hneď videl
             nazov: finalNazov.trim(),
             popis: orderDescription,
+            requester_email: requestEmail ? requestEmail.trim().toLowerCase() : null,
             termin: finalTermin ? finalTermin : null,
             stav: 'nova', // Interne zapíšeme 'nova', čo zodpovedá tvojmu filtru v hlavnej appke
             prijatie_zakazky: dnesnyDatum

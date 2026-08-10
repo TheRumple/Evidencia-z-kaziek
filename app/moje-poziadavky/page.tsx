@@ -16,6 +16,7 @@ type CustomerLookupItem = {
   created_at: string | null
   customer_name: string | null
   public_message?: string | null
+  requester_email?: string | null
 }
 
 function formatDate(date: string | null | undefined) {
@@ -100,7 +101,7 @@ function getCustomerDescription(text: string | null | undefined) {
   const cleaned = stripAttachmentUrls(text)
   return cleaned
     .split('\n')
-    .filter((line) => !/^Žiadateľ:/i.test(line.trim()))
+    .filter((line) => !/^(Žiadateľ|Email):/i.test(line.trim()))
     .join('\n')
     .trim()
 }

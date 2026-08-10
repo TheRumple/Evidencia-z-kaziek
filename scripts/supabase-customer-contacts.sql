@@ -27,6 +27,14 @@ create table if not exists public.customer_contact_customers (
 alter table public.customer_contacts enable row level security;
 alter table public.customer_contact_customers enable row level security;
 
+alter table public.orders
+  add column if not exists requester_email text;
+
+update public.orders
+set requester_email = lower(trim((regexp_match(popis, '(?im)^Email:\s*([^[:space:]]+@[^[:space:]]+)'))[1]))
+where requester_email is null
+  and popis ~* '^Email:';
+
 -- Reset generated portal contacts. You will add real people manually.
 delete from public.customer_contact_customers;
 delete from public.customer_contacts;
@@ -200,7 +208,8 @@ returns table (
   termin date,
   created_at timestamptz,
   customer_name text,
-  public_message text
+  public_message text,
+  requester_email text
 )
 language sql
 security definer
@@ -238,7 +247,8 @@ as $$
       cr.termin,
       cr.created_at,
       a.customer_name,
-      null::text as public_message
+      null::text as public_message,
+      lower((regexp_match(cr.popis, '(?im)^Email:\s*([^[:space:]]+@[^[:space:]]+)'))[1]) as requester_email
     from public.customer_requests cr
     join contact_access a on (
       cr.customer_id = a.customer_id
@@ -259,12 +269,14 @@ as $$
       o.termin,
       coalesce(o.created_at, o.prijatie_zakazky::timestamptz) as created_at,
       a.customer_name,
-      o.public_message
+      o.public_message,
+      o.requester_email
     from public.orders o
     join contact_access a on a.customer_id = o.customer_id
     where o.stav in ('nova', 'rozpracovana', 'obhliadka', 'caka', 'cakame', 'hotova')
       and (
         a.role = 'owner'
+        or lower(coalesce(o.requester_email, '')) = lower(a.contact_email)
         or public.portal_text_matches_contact(coalesce(o.popis, '') || E'\n' || coalesce(o.praca, ''), a.contact_email)
       )
     order by o.id, coalesce(o.created_at, o.prijatie_zakazky::timestamptz) desc nulls last
@@ -318,6 +330,7 @@ begin
         and ccc.customer_id = o.customer_id
         and (
           ccc.role = 'owner'
+          or lower(coalesce(o.requester_email, '')) = lower(cc.email)
           or public.portal_text_matches_contact(coalesce(o.popis, '') || E'\n' || coalesce(o.praca, ''), cc.email)
         )
     )

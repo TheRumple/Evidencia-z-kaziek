@@ -41,6 +41,7 @@ export function DashboardModals(props: DashboardModalsProps) {
     editOrderPublicMessage,
     editOrderPrijatieZakazky,
     editOrderRequester,
+    editOrderRequesterEmail,
     editOrderTermin,
     editingWorkLogId,
     email,
@@ -76,6 +77,7 @@ export function DashboardModals(props: DashboardModalsProps) {
     orderPublicMessage,
     orderPrijatieZakazky,
     orderRequester,
+    orderRequesterEmail,
     orderTermin,
     primaryButtonStyle,
     resetWorkLogForm,
@@ -106,6 +108,7 @@ export function DashboardModals(props: DashboardModalsProps) {
     setEditOrderPublicMessage,
     setEditOrderPrijatieZakazky,
     setEditOrderRequester,
+    setEditOrderRequesterEmail,
     setEditOrderTermin,
     setEmail,
     setEmployeeCanDelete,
@@ -123,6 +126,7 @@ export function DashboardModals(props: DashboardModalsProps) {
     setOrderPublicMessage,
     setOrderPrijatieZakazky,
     setOrderRequester,
+    setOrderRequesterEmail,
     setOrderTermin,
     setTelefon,
     setWorkLogDate,
@@ -371,6 +375,19 @@ export function DashboardModals(props: DashboardModalsProps) {
               </div>
 
               <div style={{ gridColumn: '1 / -1' }}>
+                <label style={labelStyle} htmlFor="order-requester-email">
+                  Email žiadateľa
+                </label>
+                <input
+                  id="order-requester-email"
+                  type="email"
+                  style={inputStyle}
+                  value={orderRequesterEmail}
+                  onChange={(e) => setOrderRequesterEmail(e.target.value)}
+                />
+              </div>
+
+              <div style={{ gridColumn: '1 / -1' }}>
                 <label style={labelStyle} htmlFor="order-description">
                   Popis
                 </label>
@@ -562,6 +579,19 @@ export function DashboardModals(props: DashboardModalsProps) {
                   placeholder="Meno osoby, ktorá zákazku objednala"
                   value={editOrderRequester}
                   onChange={(e) => setEditOrderRequester(e.target.value)}
+                />
+              </div>
+
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label style={labelStyle} htmlFor="edit-order-requester-email">
+                  Email žiadateľa
+                </label>
+                <input
+                  id="edit-order-requester-email"
+                  type="email"
+                  style={inputStyle}
+                  value={editOrderRequesterEmail}
+                  onChange={(e) => setEditOrderRequesterEmail(e.target.value)}
                 />
               </div>
 
