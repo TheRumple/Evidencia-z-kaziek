@@ -2318,7 +2318,7 @@ export default function DashboardPage() {
             style={{
               ...boxStyle,
               marginBottom: 12,
-              padding: 16,
+              padding: '10px 14px',
               background: 'linear-gradient(135deg, #0b1120 0%, #1f2937 74%, #365314 100%)',
               color: '#fff',
               border: 'none',
@@ -2326,10 +2326,10 @@ export default function DashboardPage() {
           >
             <div className="headerCompact">
               <div>
-                <h1 style={{ margin: 0, fontSize: 26, fontWeight: 900 }}>
+                <h1 style={{ margin: 0, fontSize: 22, fontWeight: 900 }}>
                   {selectedCustomer ? selectedCustomer.nazov : 'Servisné zákazky'}
                 </h1>
-                <div style={{ marginTop: 6, color: 'rgba(255,255,255,0.78)', fontSize: 14 }}>
+                <div style={{ marginTop: 3, color: 'rgba(255,255,255,0.78)', fontSize: 12, fontWeight: 700 }}>
                   {selectedCustomer
                     ? 'Zákazky, poznámky a výkazy vybraného zákazníka.'
                     : 'Zoznam zákaziek, výkazy a poznámky.'}
@@ -2347,9 +2347,10 @@ export default function DashboardPage() {
                     background: pendingRequestsCount > 0 ? '#ffedd5' : 'rgba(255,255,255,0.08)',
                     border: pendingRequestsCount > 0 ? '1px solid #fdba74' : '1px solid rgba(255,255,255,0.22)',
                     color: pendingRequestsCount > 0 ? '#9a3412' : '#fff',
-                    padding: '9px 13px',
-                    borderRadius: 12,
+                    padding: '7px 11px',
+                    borderRadius: 10,
                     fontWeight: 900,
+                    fontSize: 13,
                   }}
                 >
                   Žiadosti z portálu
@@ -2368,7 +2369,7 @@ export default function DashboardPage() {
 
                 <button
                   type="button"
-                  style={{ ...primaryButtonStyle, minWidth: 150 }}
+                  style={{ ...primaryButtonStyle, minWidth: 138, padding: '8px 12px', borderRadius: 10 }}
                   onClick={() => {
                     resetAddOrderForm()
                     setOpenAddOrder(true)
