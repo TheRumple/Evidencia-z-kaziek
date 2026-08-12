@@ -82,35 +82,30 @@ export function OrdersView({
   unseenCustomerUpdatesByOrder,
 }: OrdersViewProps) {
   return (
-    <>
-      <div className="ordersControlPanel" style={{ ...boxStyle, marginBottom: 12, padding: 16 }}>
+    <div className="ordersWorkspace">
+      <aside className="ordersControlPanel" style={{ ...boxStyle }}>
         <div className="ordersControlHeader">
           <div>
             <div className="ordersEyebrow">Pracovný zoznam</div>
             <h2>Aktívne zákazky</h2>
-            <p>Rýchlo nájdi zákazku, pozri stav a otvor výkaz alebo poznámku.</p>
           </div>
-          <div className="ordersVisibleBadge">{filteredOrders.length} zobrazených</div>
+          <div className="ordersVisibleBadge">{filteredOrders.length}</div>
         </div>
 
         <div className="filtersGrid filtersGridOrders">
-          <div>
-            <label style={labelStyle} htmlFor="search-orders">
-              Hľadať
-            </label>
+          <label className="ordersFilterField" style={labelStyle} htmlFor="search-orders">
+            Hľadať
             <input
               id="search-orders"
               style={inputStyle}
-              placeholder="Názov zákazky, zákazník, popis, zamestnanec..."
+              placeholder="Názov, zákazník, popis..."
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />
-          </div>
+          </label>
 
-          <div>
-            <label style={labelStyle} htmlFor="customer-filter">
-              Zákazník
-            </label>
+          <label className="ordersFilterField" style={labelStyle} htmlFor="customer-filter">
+            Zákazník
             <select id="customer-filter" style={inputStyle} value={selectedCustomerId} onChange={(event) => setSelectedCustomerId(event.target.value)}>
               <option value="vsetci">Všetci zákazníci</option>
               {customers.map((customer) => (
@@ -119,12 +114,10 @@ export function OrdersView({
                 </option>
               ))}
             </select>
-          </div>
+          </label>
 
-          <div>
-            <label style={labelStyle} htmlFor="status-filter">
-              Filter
-            </label>
+          <label className="ordersFilterField" style={labelStyle} htmlFor="status-filter">
+            Stav
             <select id="status-filter" style={inputStyle} value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
               <option value="vsetky">Všetky stavy</option>
               {STATUSY.filter((status) => AKTIVNE_STATUSY.includes(status.value)).map((status) => (
@@ -133,12 +126,10 @@ export function OrdersView({
                 </option>
               ))}
             </select>
-          </div>
+          </label>
 
-          <div>
-            <label style={labelStyle} htmlFor="sort-by">
-              Radenie
-            </label>
+          <label className="ordersFilterField" style={labelStyle} htmlFor="sort-by">
+            Radenie
             <select id="sort-by" style={inputStyle} value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
               <option value="newest">Najnovšie</option>
               <option value="oldest">Najstaršie</option>
@@ -150,63 +141,70 @@ export function OrdersView({
               <option value="accepted">Prijatie - od najstarších</option>
               <option value="accepted_desc">Prijatie - od najnovších</option>
             </select>
-          </div>
+          </label>
         </div>
-      </div>
+      </aside>
 
-      <div className="ordersBoard" style={boxStyle}>
-        {filteredOrders.length === 0 && (
+      <main className="ordersBoard" style={boxStyle}>
+        <div className="ordersTableHead" aria-hidden="true">
+          <span>Zákazka</span>
+          <span>Zákazník</span>
+          <span>Stav</span>
+          <span>Termín</span>
+        </div>
+
+        {filteredOrders.length === 0 ? (
           <div className="ordersEmptyState">
             <strong>Žiadne zákazky na zobrazenie.</strong>
             <span>Skús upraviť filter alebo vytvoriť novú zákazku.</span>
           </div>
-        )}
-
-        <div className="ordersSectionStack">
-          {groupedOrders.map((section) => (
-            <section className={`ordersSection ordersSection-${section.key}`} key={section.key}>
-              <div className="ordersSectionHeader">
-                <div>
-                  <h3>{section.title}</h3>
-                  <p>{section.description}</p>
+        ) : (
+          <div className="ordersSectionStack">
+            {groupedOrders.map((section) => (
+              <section className={`ordersSection ordersSection-${section.key}`} key={section.key}>
+                <div className="ordersSectionHeader">
+                  <div>
+                    <h3>{section.title}</h3>
+                    <p>{section.description}</p>
+                  </div>
+                  <div className="ordersSectionCount">{section.items.length}</div>
                 </div>
-                <div className="ordersSectionCount">{section.items.length}</div>
-              </div>
 
-              <div className="ordersCardsStack">
-                {section.items.map((order) => (
-                  <OrderCard
-                    key={order.id}
-                    order={order}
-                    expanded={expandedOrderIds.includes(order.id)}
-                    isPinned={isPinnedOrder(order.id)}
-                    orderLogs={workLogsByOrder[order.id] || []}
-                    customerUpdates={customerUpdatesByOrder[order.id] || []}
-                    unseenCustomerUpdatesCount={unseenCustomerUpdatesByOrder[order.id] || 0}
-                    boxStyle={boxStyle}
-                    buttonStyle={buttonStyle}
-                    dangerButtonStyle={dangerButtonStyle}
-                    greenButtonStyle={greenButtonStyle}
-                    inputStyle={inputStyle}
-                    labelStyle={labelStyle}
-                    deleteOrder={deleteOrder}
-                    deleteCustomerUpdate={deleteCustomerUpdate}
-                    exportOrderWorkLogs={exportOrderWorkLogs}
-                    getCustomerName={getCustomerName}
-                    getOrderKilometres={getOrderKilometres}
-                    isOverdue={isOverdue}
-                    openWorkLogModal={openWorkLogModal}
-                    startEditOrder={startEditOrder}
-                    toggleExpandedOrder={toggleExpandedOrder}
-                    togglePinnedOrder={togglePinnedOrder}
-                    updateOrderStatus={updateOrderStatus}
-                  />
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
-      </div>
-    </>
+                <div className="ordersCardsStack">
+                  {section.items.map((order) => (
+                    <OrderCard
+                      key={order.id}
+                      order={order}
+                      expanded={expandedOrderIds.includes(order.id)}
+                      isPinned={isPinnedOrder(order.id)}
+                      orderLogs={workLogsByOrder[order.id] || []}
+                      customerUpdates={customerUpdatesByOrder[order.id] || []}
+                      unseenCustomerUpdatesCount={unseenCustomerUpdatesByOrder[order.id] || 0}
+                      boxStyle={boxStyle}
+                      buttonStyle={buttonStyle}
+                      dangerButtonStyle={dangerButtonStyle}
+                      greenButtonStyle={greenButtonStyle}
+                      inputStyle={inputStyle}
+                      labelStyle={labelStyle}
+                      deleteOrder={deleteOrder}
+                      deleteCustomerUpdate={deleteCustomerUpdate}
+                      exportOrderWorkLogs={exportOrderWorkLogs}
+                      getCustomerName={getCustomerName}
+                      getOrderKilometres={getOrderKilometres}
+                      isOverdue={isOverdue}
+                      openWorkLogModal={openWorkLogModal}
+                      startEditOrder={startEditOrder}
+                      toggleExpandedOrder={toggleExpandedOrder}
+                      togglePinnedOrder={togglePinnedOrder}
+                      updateOrderStatus={updateOrderStatus}
+                    />
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+        )}
+      </main>
+    </div>
   )
 }

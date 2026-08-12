@@ -170,7 +170,15 @@ export function DashboardStyles() {
         }
 
         .filtersGridOrders {
-          grid-template-columns: 2fr 1.2fr 1fr 1.2fr;
+          grid-template-columns: 1fr;
+          gap: 10px;
+        }
+
+        .ordersWorkspace {
+          display: grid;
+          grid-template-columns: 292px minmax(0, 1fr);
+          gap: 12px;
+          align-items: start;
         }
 
         .ordersControlPanel {
@@ -178,21 +186,24 @@ export function DashboardStyles() {
           border: 1px solid rgba(148, 163, 184, 0.24) !important;
           color: #fff;
           box-shadow: 0 20px 46px rgba(15, 23, 42, 0.18) !important;
+          padding: 14px !important;
+          position: sticky;
+          top: 12px;
         }
 
         .ordersControlHeader {
           display: flex;
           justify-content: space-between;
-          align-items: flex-end;
+          align-items: center;
           gap: 16px;
-          margin-bottom: 14px;
+          margin-bottom: 12px;
           flex-wrap: wrap;
         }
 
         .ordersControlHeader h2 {
           margin: 0;
           color: #fff;
-          font-size: 24px;
+          font-size: 20px;
           line-height: 1.08;
           font-weight: 900;
         }
@@ -219,9 +230,14 @@ export function DashboardStyles() {
           color: #ecfccb;
           border-radius: 999px;
           padding: 7px 11px;
-          font-size: 12px;
+          font-size: 15px;
           font-weight: 900;
           white-space: nowrap;
+        }
+
+        .ordersFilterField {
+          display: grid;
+          gap: 6px;
         }
 
         .ordersControlPanel label {
@@ -234,7 +250,7 @@ export function DashboardStyles() {
           background: rgba(15, 23, 42, 0.62) !important;
           border-color: rgba(148, 163, 184, 0.42) !important;
           color: #fff !important;
-          min-height: 42px;
+          min-height: 40px;
         }
 
         .ordersControlPanel input::placeholder {
@@ -247,13 +263,28 @@ export function DashboardStyles() {
           background: rgba(255, 255, 255, 0.98) !important;
         }
 
+        .ordersTableHead {
+          display: grid;
+          grid-template-columns: minmax(260px, 1fr) 190px 150px 120px;
+          gap: 10px;
+          align-items: center;
+          padding: 10px 16px;
+          background: #f8fafc;
+          border-bottom: 1px solid #e2e8f0;
+          color: #64748b;
+          font-size: 11px;
+          font-weight: 900;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
         .ordersSectionStack {
           display: grid;
           gap: 0;
         }
 
         .ordersSection {
-          padding: 14px;
+          padding: 0;
           border-top: 1px solid #e2e8f0;
         }
 
@@ -266,54 +297,53 @@ export function DashboardStyles() {
           justify-content: space-between;
           gap: 12px;
           align-items: center;
-          margin-bottom: 10px;
-          border: 1px solid #e2e8f0;
-          background: linear-gradient(135deg, #f8fafc 0%, #eef6ff 100%);
-          border-radius: 14px;
-          padding: 10px 12px;
+          margin: 0;
+          border: none;
+          background: #111827;
+          border-radius: 0;
+          padding: 7px 12px 7px 16px;
+          color: #fff;
         }
 
         .ordersSectionHeader h3 {
           margin: 0;
-          font-size: 15px;
+          font-size: 13px;
           line-height: 1.1;
           font-weight: 900;
-          color: #0f172a;
+          color: #fff;
         }
 
         .ordersSectionHeader p {
-          margin: 3px 0 0;
-          color: #64748b;
-          font-size: 12px;
+          margin: 2px 0 0;
+          color: rgba(226, 232, 240, 0.7);
+          font-size: 11px;
           font-weight: 700;
         }
 
         .ordersSectionCount {
-          min-width: 32px;
-          height: 32px;
+          min-width: 24px;
+          height: 24px;
           border-radius: 999px;
-          background: #0f172a;
-          color: #fff;
+          background: rgba(255, 255, 255, 0.14);
+          color: #f8fafc;
           display: inline-flex;
           align-items: center;
           justify-content: center;
           font-weight: 900;
-          box-shadow: 0 8px 18px rgba(15, 23, 42, 0.16);
+          font-size: 12px;
         }
 
         .ordersSection-overdue .ordersSectionHeader {
-          background: linear-gradient(135deg, #fff1f2 0%, #fff7ed 100%);
-          border-color: #fecdd3;
+          background: #7f1d1d;
         }
 
         .ordersSection-pripnute .ordersSectionHeader {
-          background: linear-gradient(135deg, #ecfccb 0%, #f7fee7 100%);
-          border-color: #bef264;
+          background: #365314;
         }
 
         .ordersCardsStack {
           display: grid;
-          gap: 10px;
+          gap: 0;
         }
 
         .ordersEmptyState {
@@ -334,12 +364,19 @@ export function DashboardStyles() {
         }
 
         .orderCard {
-          transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+          border-radius: 0 !important;
+          border-left-width: 4px !important;
+          border-right: none !important;
+          border-top: none !important;
+          border-bottom: 1px solid #e2e8f0 !important;
+          box-shadow: none !important;
+          transition: background 0.18s ease, border-color 0.18s ease;
         }
 
         .orderCard:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 16px 32px rgba(15, 23, 42, 0.12) !important;
+          transform: none;
+          background: #f8fafc !important;
+          box-shadow: none !important;
         }
 
         .orderCardTitle {
@@ -357,6 +394,20 @@ export function DashboardStyles() {
           font-weight: 800;
         }
 
+        .orderCardCustomerInline {
+          display: none;
+        }
+
+        .orderRowCustomerCell {
+          min-width: 0;
+          color: #334155;
+          font-size: 13px;
+          font-weight: 850;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
         .modalGrid {
           display: grid;
           grid-template-columns: 1fr 1fr;
@@ -371,10 +422,10 @@ export function DashboardStyles() {
 
         .orderRowSummary {
           display: grid;
-          grid-template-columns: minmax(260px, 1fr) auto;
+          grid-template-columns: minmax(260px, 1fr) 190px 280px;
           align-items: center;
-          gap: 12px;
-          padding: 12px 14px;
+          gap: 10px;
+          padding: 8px 12px;
         }
 
         .orderRowMeta {
@@ -387,9 +438,9 @@ export function DashboardStyles() {
 
         .orderMetaChip {
           min-width: 74px;
-          min-height: 38px;
-          padding: 7px 9px;
-          border-radius: 12px;
+          min-height: 32px;
+          padding: 5px 8px;
+          border-radius: 9px;
           border: 1px solid #e2e8f0;
           background: #fff;
           display: inline-flex;
@@ -401,7 +452,7 @@ export function DashboardStyles() {
         }
 
         .orderMetaLabel {
-          font-size: 11px;
+          font-size: 10px;
           line-height: 1;
           color: #64748b;
           font-weight: 800;
@@ -572,6 +623,18 @@ export function DashboardStyles() {
           .summaryGrid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
+
+          .ordersWorkspace {
+            grid-template-columns: 1fr;
+          }
+
+          .ordersControlPanel {
+            position: static;
+          }
+
+          .filtersGridOrders {
+            grid-template-columns: 2fr 1.2fr 1fr 1.2fr;
+          }
         }
 
         @media (max-width: 900px) {
@@ -598,6 +661,14 @@ export function DashboardStyles() {
           .orderRowSummary {
             grid-template-columns: 1fr;
             align-items: stretch;
+          }
+
+          .orderRowCustomerCell {
+            display: none;
+          }
+
+          .orderCardCustomerInline {
+            display: block;
           }
 
           .orderRowMeta {
@@ -784,6 +855,10 @@ export function DashboardStyles() {
             overflow: hidden;
           }
 
+          .ordersTableHead {
+            display: none;
+          }
+
           .ordersControlHeader h2 {
             font-size: 18px;
           }
@@ -810,6 +885,19 @@ export function DashboardStyles() {
             align-items: flex-start;
             padding: 8px 9px;
             border-radius: 11px;
+            margin-bottom: 8px;
+          }
+
+          .orderCard {
+            border-radius: 12px !important;
+            border-right: 1px solid #e2e8f0 !important;
+            border-top: 1px solid #e2e8f0 !important;
+            border-bottom: 1px solid #e2e8f0 !important;
+            box-shadow: 0 7px 18px rgba(15, 23, 42, 0.06) !important;
+          }
+
+          .ordersCardsStack {
+            gap: 8px;
           }
 
           .orderRowSummary {

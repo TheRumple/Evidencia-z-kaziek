@@ -245,9 +245,11 @@ export function OrderCard({
                   </span>
                 )}
               </div>
-              <div className="orderCardCustomer">{getCustomerName(order.customer_id)}</div>
+              <div className="orderCardCustomer orderCardCustomerInline">{getCustomerName(order.customer_id)}</div>
             </div>
           </div>
+
+          <div className="orderRowCustomerCell">{getCustomerName(order.customer_id)}</div>
 
           <div className="orderRowMeta">
             <div className="orderMetaChip" style={getStatusBadgeStyle(order.stav)}>
