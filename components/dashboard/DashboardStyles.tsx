@@ -170,13 +170,14 @@ export function DashboardStyles() {
         }
 
         .filtersGridOrders {
-          grid-template-columns: 1fr;
-          gap: 10px;
+          grid-template-columns: minmax(260px, 1.8fr) minmax(180px, 1fr) minmax(150px, 0.8fr) minmax(180px, 1fr);
+          gap: 8px;
+          align-items: end;
         }
 
         .ordersWorkspace {
           display: grid;
-          grid-template-columns: 248px minmax(0, 1fr);
+          grid-template-columns: 1fr;
           gap: 10px;
           align-items: start;
         }
@@ -186,9 +187,7 @@ export function DashboardStyles() {
           border: 1px solid rgba(148, 163, 184, 0.24) !important;
           color: #fff;
           box-shadow: 0 14px 34px rgba(15, 23, 42, 0.16) !important;
-          padding: 12px !important;
-          position: sticky;
-          top: 10px;
+          padding: 10px 12px !important;
         }
 
         .ordersControlHeader {
@@ -196,14 +195,14 @@ export function DashboardStyles() {
           justify-content: space-between;
           align-items: center;
           gap: 10px;
-          margin-bottom: 10px;
+          margin-bottom: 8px;
           flex-wrap: wrap;
         }
 
         .ordersControlHeader h2 {
           margin: 0;
           color: #fff;
-          font-size: 18px;
+          font-size: 17px;
           line-height: 1.08;
           font-weight: 900;
         }
@@ -221,7 +220,7 @@ export function DashboardStyles() {
           font-weight: 900;
           text-transform: uppercase;
           letter-spacing: 0.08em;
-          margin-bottom: 4px;
+          margin-bottom: 3px;
         }
 
         .ordersVisibleBadge {
@@ -229,7 +228,7 @@ export function DashboardStyles() {
           background: rgba(132, 204, 22, 0.14);
           color: #ecfccb;
           border-radius: 999px;
-          padding: 5px 9px;
+          padding: 4px 9px;
           font-size: 13px;
           font-weight: 900;
           white-space: nowrap;
@@ -253,7 +252,7 @@ export function DashboardStyles() {
           min-height: 34px;
           border-radius: 10px !important;
           padding: 6px 10px !important;
-          font-size: 13px !important;
+          font-size: 12px !important;
         }
 
         .ordersControlPanel input::placeholder {
@@ -454,6 +453,11 @@ export function DashboardStyles() {
           box-shadow: 0 4px 10px rgba(15, 23, 42, 0.04);
         }
 
+        .orderMetaChip strong {
+          white-space: nowrap;
+          line-height: 1.05;
+        }
+
         .orderMetaLabel {
           font-size: 9px;
           line-height: 1;
@@ -631,12 +635,8 @@ export function DashboardStyles() {
             grid-template-columns: 1fr;
           }
 
-          .ordersControlPanel {
-            position: static;
-          }
-
           .filtersGridOrders {
-            grid-template-columns: 2fr 1.2fr 1fr 1.2fr;
+            grid-template-columns: 1fr 1fr;
           }
         }
 

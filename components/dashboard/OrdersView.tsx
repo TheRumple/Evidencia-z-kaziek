@@ -83,7 +83,7 @@ export function OrdersView({
 }: OrdersViewProps) {
   return (
     <div className="ordersWorkspace">
-      <aside className="ordersControlPanel" style={{ ...boxStyle }}>
+      <section className="ordersControlPanel" style={{ ...boxStyle }}>
         <div className="ordersControlHeader">
           <div>
             <div className="ordersEyebrow">Pracovný zoznam</div>
@@ -143,7 +143,7 @@ export function OrdersView({
             </select>
           </label>
         </div>
-      </aside>
+      </section>
 
       <main className="ordersBoard" style={boxStyle}>
         <div className="ordersTableHead" aria-hidden="true">

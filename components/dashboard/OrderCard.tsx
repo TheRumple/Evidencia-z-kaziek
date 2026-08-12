@@ -64,6 +64,11 @@ function isImageUrl(url: string) {
   return /\.(jpe?g|png|webp)(\?|#|$)/i.test(url) || /customer-request-files\/(ziadosti|doplnene)\//i.test(url)
 }
 
+function getCompactStatusLabel(status: string) {
+  if (status === 'caka') return 'Čaká'
+  return getStatusLabel(status)
+}
+
 export function OrderCard({
   order,
   expanded,
@@ -256,7 +261,7 @@ export function OrderCard({
               <span className="orderMetaLabel" style={{ color: 'inherit', opacity: 0.82 }}>
                 Stav
               </span>
-              <strong>{getStatusLabel(order.stav)}</strong>
+              <strong>{getCompactStatusLabel(order.stav)}</strong>
             </div>
 
             <div className="orderMetaChip">
