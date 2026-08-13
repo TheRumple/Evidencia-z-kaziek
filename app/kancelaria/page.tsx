@@ -198,7 +198,7 @@ export default function OfficeDashboardPage() {
           height: calc(100vh - 28px);
           margin: 0 auto;
           display: grid;
-          grid-template-rows: 62px 238px minmax(0, 1fr) 18px;
+          grid-template-rows: 62px 226px auto 18px;
           gap: 8px;
         }
 
@@ -446,19 +446,24 @@ export default function OfficeDashboardPage() {
         .statusGrid {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 10px;
+          grid-auto-rows: 86px;
+          gap: 8px;
+          align-content: start;
         }
 
         .statCard {
-          min-height: 92px;
-          border-radius: 16px;
-          padding: 11px 13px;
+          min-height: 0;
+          height: 86px;
+          border-radius: 14px;
+          padding: 10px 14px;
           border: 1px solid rgba(148, 163, 184, 0.24);
           background:
             linear-gradient(160deg, rgba(255, 255, 255, 0.105), rgba(255, 255, 255, 0.035)),
             rgba(255, 255, 255, 0.06);
           display: grid;
-          align-content: space-between;
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 10px;
+          align-items: center;
           position: relative;
           overflow: hidden;
         }
@@ -474,24 +479,30 @@ export default function OfficeDashboardPage() {
         .statCard::after {
           content: '';
           position: absolute;
-          right: -34px;
-          top: -34px;
-          width: 104px;
-          height: 104px;
+          right: -26px;
+          top: -30px;
+          width: 86px;
+          height: 86px;
           border-radius: 999px;
           background: var(--accentGlow, rgba(148, 163, 184, 0.12));
         }
 
         .statLabel {
           color: rgba(226, 232, 240, 0.76);
-          font-size: 12px;
+          font-size: 13px;
           font-weight: 900;
+          line-height: 1.12;
+          min-width: 0;
         }
 
         .statValue {
-          font-size: clamp(30px, 3.6vw, 48px);
+          position: relative;
+          z-index: 1;
+          font-size: clamp(46px, 4vw, 68px);
           line-height: 0.95;
           font-weight: 900;
+          text-align: right;
+          min-width: 70px;
         }
 
         .highlightCard {
