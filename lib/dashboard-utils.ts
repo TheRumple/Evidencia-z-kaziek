@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react'
 export const STATUSY = [
   { value: 'nova', label: 'Nová' },
   { value: 'rozpracovana', label: 'Rozpracovaná' },
+  { value: 'cenova_ponuka', label: 'Cenová ponuka' },
   { value: 'obhliadka', label: 'Obhliadka' },
   { value: 'caka', label: 'Čaká na materiál' },
   { value: 'hotova', label: 'Dokončená' },
@@ -10,7 +11,7 @@ export const STATUSY = [
   { value: 'stornovana', label: 'Stornovaná' },
 ]
 
-export const AKTIVNE_STATUSY = ['nova', 'rozpracovana', 'obhliadka', 'caka', 'hotova']
+export const AKTIVNE_STATUSY = ['nova', 'rozpracovana', 'cenova_ponuka', 'obhliadka', 'caka', 'hotova']
 
 export function getTodayDate() {
   const now = new Date()
@@ -36,6 +37,7 @@ export function getStatusBadgeStyle(stav: string): CSSProperties {
   const map: Record<string, CSSProperties> = {
     nova: { background: '#dbeafe', color: '#1e40af', border: '1px solid #93c5fd' },
     rozpracovana: { background: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d' },
+    cenova_ponuka: { background: '#e0f2fe', color: '#075985', border: '1px solid #7dd3fc' },
     obhliadka: { background: '#ede9fe', color: '#5b21b6', border: '1px solid #c4b5fd' },
     caka: { background: '#ffedd5', color: '#9a3412', border: '1px solid #fdba74' },
     hotova: { background: '#cffafe', color: '#155e75', border: '1px solid #67e8f9' },
@@ -49,6 +51,7 @@ export function getStatusCardBorder(stav: string): CSSProperties {
   const map: Record<string, CSSProperties> = {
     nova: { borderLeft: '6px solid #60a5fa' },
     rozpracovana: { borderLeft: '6px solid #fbbf24' },
+    cenova_ponuka: { borderLeft: '6px solid #38bdf8' },
     obhliadka: { borderLeft: '6px solid #8b5cf6' },
     caka: { borderLeft: '6px solid #fb923c' },
     hotova: { borderLeft: '6px solid #22d3ee' },

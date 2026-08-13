@@ -343,6 +343,10 @@ export function DashboardStyles() {
           background: #365314;
         }
 
+        .ordersSection-cenova_ponuka .ordersSectionHeader {
+          background: #075985;
+        }
+
         .ordersCardsStack {
           display: grid;
           gap: 0;

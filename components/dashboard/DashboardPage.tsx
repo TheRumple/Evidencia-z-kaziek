@@ -2047,6 +2047,12 @@ export default function DashboardPage() {
         items: rest.filter((o) => o.stav === 'rozpracovana' && !isOverdue(o)),
       },
       {
+        key: 'cenova_ponuka',
+        title: 'Cenová ponuka',
+        description: 'Zákazky, kde sa pripravuje alebo čaká cenová ponuka.',
+        items: rest.filter((o) => o.stav === 'cenova_ponuka' && !isOverdue(o)),
+      },
+      {
         key: 'obhliadka',
         title: 'Obhliadka',
         description: 'Zákazky, kde je potrebná obhliadka u zákazníka.',

@@ -36,6 +36,8 @@ function getStatusLabel(item: CustomerLookupItem) {
       return 'Nová zákazka'
     case 'rozpracovana':
       return 'Rozpracovaná'
+    case 'cenova_ponuka':
+      return 'Pripravujeme cenovú ponuku'
     case 'obhliadka':
       return 'Potrebná obhliadka'
     case 'caka':
@@ -52,6 +54,7 @@ function getStatusColor(item: CustomerLookupItem) {
   if (item.item_type === 'poziadavka') return { background: '#fef3c7', color: '#92400e', border: '#fcd34d', accent: '#f59e0b', glow: 'rgba(245, 158, 11, 0.2)' }
   if (item.stav === 'nova') return { background: '#dbeafe', color: '#1e40af', border: '#93c5fd', accent: '#2563eb', glow: 'rgba(37, 99, 235, 0.2)' }
   if (item.stav === 'rozpracovana') return { background: '#dcfce7', color: '#166534', border: '#86efac', accent: '#16a34a', glow: 'rgba(22, 163, 74, 0.24)' }
+  if (item.stav === 'cenova_ponuka') return { background: '#e0f2fe', color: '#075985', border: '#7dd3fc', accent: '#0ea5e9', glow: 'rgba(14, 165, 233, 0.2)' }
   if (item.stav === 'obhliadka') return { background: '#ede9fe', color: '#5b21b6', border: '#c4b5fd', accent: '#8b5cf6', glow: 'rgba(139, 92, 246, 0.24)' }
   if (item.stav === 'caka' || item.stav === 'cakame') return { background: '#ffedd5', color: '#9a3412', border: '#fdba74', accent: '#f97316', glow: 'rgba(249, 115, 22, 0.28)' }
   if (item.stav === 'hotova') return { background: '#cffafe', color: '#155e75', border: '#67e8f9', accent: '#06b6d4', glow: 'rgba(6, 182, 212, 0.18)' }
@@ -61,8 +64,9 @@ function getStatusColor(item: CustomerLookupItem) {
 function getStatusPriority(item: CustomerLookupItem) {
   if (item.stav === 'caka' || item.stav === 'cakame') return 1
   if (item.stav === 'rozpracovana') return 2
-  if (item.stav === 'obhliadka') return 3
-  if (item.stav === 'nova') return 4
+  if (item.stav === 'cenova_ponuka') return 3
+  if (item.stav === 'obhliadka') return 4
+  if (item.stav === 'nova') return 5
   if (item.item_type === 'poziadavka') return 5
   if (item.stav === 'hotova') return 6
   return 7
@@ -253,7 +257,7 @@ export default function MyRequestsPage() {
     setItems(
       sortCustomerItems(
         ((data || []) as CustomerLookupItem[]).filter(
-          (item) => item.item_type === 'poziadavka' || ['nova', 'rozpracovana', 'obhliadka', 'caka', 'cakame', 'hotova'].includes(item.stav || '')
+          (item) => item.item_type === 'poziadavka' || ['nova', 'rozpracovana', 'cenova_ponuka', 'obhliadka', 'caka', 'cakame', 'hotova'].includes(item.stav || '')
         )
       ).slice(0, 25)
     )

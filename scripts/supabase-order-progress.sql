@@ -102,7 +102,7 @@ as $$
       coalesce(o.progress_percent, 0)::integer as progress_percent
     from public.orders o
     join contact_access a on a.customer_id = o.customer_id
-    where o.stav in ('nova', 'rozpracovana', 'obhliadka', 'caka', 'cakame', 'hotova')
+    where o.stav in ('nova', 'rozpracovana', 'cenova_ponuka', 'obhliadka', 'caka', 'cakame', 'hotova')
       and (
         a.role = 'owner'
         or lower(coalesce(o.requester_email, '')) = lower(a.contact_email)
