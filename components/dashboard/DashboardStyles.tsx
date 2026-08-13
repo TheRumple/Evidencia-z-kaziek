@@ -307,6 +307,20 @@ export function DashboardStyles() {
           color: #fff;
         }
 
+        .ordersSectionHeader::before {
+          content: '';
+          align-self: stretch;
+          width: 4px;
+          border-radius: 999px;
+          background: rgba(255, 255, 255, 0.68);
+          box-shadow: 0 0 18px rgba(255, 255, 255, 0.2);
+        }
+
+        .ordersSectionHeader > div:first-child {
+          flex: 1;
+          min-width: 0;
+        }
+
         .ordersSectionHeader h3 {
           margin: 0;
           font-size: 12px;
@@ -336,15 +350,36 @@ export function DashboardStyles() {
         }
 
         .ordersSection-overdue .ordersSectionHeader {
-          background: #7f1d1d;
+          background: linear-gradient(135deg, #991b1b 0%, #7f1d1d 100%);
         }
 
+        .ordersSection-pinned .ordersSectionHeader,
         .ordersSection-pripnute .ordersSectionHeader {
-          background: #365314;
+          background: linear-gradient(135deg, #4d7c0f 0%, #365314 100%);
+        }
+
+        .ordersSection-rozpracovana .ordersSectionHeader {
+          background: linear-gradient(135deg, #d97706 0%, #92400e 100%);
         }
 
         .ordersSection-cenova_ponuka .ordersSectionHeader {
-          background: #075985;
+          background: linear-gradient(135deg, #0e7490 0%, #075985 100%);
+        }
+
+        .ordersSection-obhliadka .ordersSectionHeader {
+          background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+        }
+
+        .ordersSection-caka .ordersSectionHeader {
+          background: linear-gradient(135deg, #ea580c 0%, #9a3412 100%);
+        }
+
+        .ordersSection-nova .ordersSectionHeader {
+          background: linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%);
+        }
+
+        .ordersSection-hotova .ordersSectionHeader {
+          background: linear-gradient(135deg, #16a34a 0%, #166534 100%);
         }
 
         .ordersCardsStack {
