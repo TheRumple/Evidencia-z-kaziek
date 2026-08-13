@@ -198,7 +198,7 @@ export default function OfficeDashboardPage() {
           height: calc(100vh - 28px);
           margin: 0 auto;
           display: grid;
-          grid-template-rows: 62px 226px auto 18px;
+          grid-template-rows: 58px minmax(0, 1fr) 18px;
           gap: 8px;
         }
 
@@ -231,8 +231,16 @@ export default function OfficeDashboardPage() {
         .officeGrid {
           display: grid;
           grid-template-columns: minmax(0, 1.18fr) minmax(360px, 0.82fr);
+          grid-template-rows: minmax(220px, 1fr) minmax(174px, 0.62fr);
           gap: 8px;
           align-items: stretch;
+          min-height: 0;
+        }
+
+        .officeSideStack {
+          display: grid;
+          grid-template-rows: 74px minmax(0, 1fr);
+          gap: 8px;
           min-height: 0;
         }
 
@@ -269,7 +277,7 @@ export default function OfficeDashboardPage() {
         }
 
         .clockValue {
-          font-size: clamp(74px, 7vw, 112px);
+          font-size: clamp(82px, 7.8vw, 128px);
           line-height: 0.92;
           font-weight: 900;
           letter-spacing: 0;
@@ -278,14 +286,14 @@ export default function OfficeDashboardPage() {
         .dateValue {
           margin-top: 6px;
           color: rgba(226, 232, 240, 0.82);
-          font-size: clamp(20px, 2vw, 30px);
+          font-size: clamp(21px, 2.1vw, 32px);
           font-weight: 900;
           text-transform: capitalize;
         }
 
         .requestBadge {
-          min-width: 330px;
-          height: 58px;
+          min-width: 0;
+          height: 74px;
           border-radius: 16px;
           border: 1px solid rgba(190, 242, 100, 0.35);
           background:
@@ -331,89 +339,8 @@ export default function OfficeDashboardPage() {
 
         .requestBadgeValue {
           color: #f8fafc;
-          font-size: 40px;
+          font-size: 46px;
           line-height: 0.95;
-          font-weight: 900;
-        }
-
-        .requestPanel {
-          min-height: 0;
-          padding: 16px;
-          display: grid;
-          grid-template-columns: minmax(0, 1fr) auto;
-          align-items: center;
-          align-content: center;
-          gap: 18px;
-          position: relative;
-          overflow: hidden;
-          background:
-            linear-gradient(135deg, rgba(132, 204, 22, 0.97), rgba(77, 124, 15, 0.92)),
-            #84cc16;
-          color: #0f172a;
-          border-color: rgba(236, 252, 203, 0.8);
-        }
-
-        .requestPanel.hasRequests {
-          background:
-            linear-gradient(135deg, rgba(239, 68, 68, 0.97), rgba(153, 27, 27, 0.94)),
-            #ef4444;
-          color: #fff;
-          border-color: rgba(254, 202, 202, 0.82);
-          box-shadow: 0 26px 70px rgba(153, 27, 27, 0.38);
-        }
-
-        .requestPanel.hasRequests .requestStatus {
-          background: rgba(255, 255, 255, 0.18);
-          color: #fff;
-        }
-
-        .requestPanel::before {
-          content: '';
-          position: absolute;
-          right: -80px;
-          top: -80px;
-          width: 150px;
-          height: 150px;
-          border-radius: 999px;
-          background: rgba(236, 252, 203, 0.22);
-        }
-
-        .requestPanel::after {
-          content: '';
-          position: absolute;
-          left: -54px;
-          bottom: -72px;
-          width: 170px;
-          height: 170px;
-          border-radius: 999px;
-          border: 34px solid rgba(15, 23, 42, 0.12);
-        }
-
-        .requestLabel {
-          position: relative;
-          z-index: 1;
-          font-size: 18px;
-          font-weight: 900;
-        }
-
-        .requestValue {
-          position: relative;
-          z-index: 1;
-          font-size: clamp(74px, 7.4vw, 108px);
-          line-height: 0.82;
-          font-weight: 900;
-          letter-spacing: 0;
-        }
-
-        .requestStatus {
-          position: relative;
-          z-index: 1;
-          width: fit-content;
-          border-radius: 999px;
-          padding: 8px 12px;
-          background: rgba(15, 23, 42, 0.13);
-          color: #111827;
-          font-size: 12px;
           font-weight: 900;
         }
 
@@ -426,14 +353,14 @@ export default function OfficeDashboardPage() {
         }
 
         .weatherTemp {
-          font-size: clamp(46px, 4.3vw, 66px);
+          font-size: clamp(58px, 5.1vw, 82px);
           font-weight: 900;
           line-height: 1;
         }
 
         .weatherLabel {
           color: #a3e635;
-          font-size: 17px;
+          font-size: 19px;
           font-weight: 900;
         }
 
@@ -445,15 +372,16 @@ export default function OfficeDashboardPage() {
 
         .statusGrid {
           display: grid;
+          grid-column: 1 / -1;
           grid-template-columns: repeat(4, minmax(0, 1fr));
-          grid-auto-rows: 86px;
+          grid-template-rows: repeat(2, minmax(82px, 1fr));
           gap: 8px;
-          align-content: start;
+          min-height: 0;
         }
 
         .statCard {
           min-height: 0;
-          height: 86px;
+          height: auto;
           border-radius: 14px;
           padding: 10px 14px;
           border: 1px solid rgba(148, 163, 184, 0.24);
@@ -498,7 +426,7 @@ export default function OfficeDashboardPage() {
         .statValue {
           position: relative;
           z-index: 1;
-          font-size: clamp(46px, 4vw, 68px);
+          font-size: clamp(48px, 4.2vw, 72px);
           line-height: 0.95;
           font-weight: 900;
           text-align: right;
@@ -553,16 +481,6 @@ export default function OfficeDashboardPage() {
             <span className="officeLogoPower">o</span>
             <span>t</span>
           </div>
-
-          <div className={`requestBadge ${pendingRequestsCount > 0 ? 'hasRequests' : ''}`}>
-            <div>
-              <div className="requestBadgeLabel">Nové žiadosti z portálu</div>
-              <div className="requestBadgeText">
-                {pendingRequestsCount > 0 ? 'Čaká na spracovanie' : 'Bez novej žiadosti'}
-              </div>
-            </div>
-            <div className="requestBadgeValue">{pendingRequestsCount}</div>
-          </div>
         </header>
 
         <section className="officeGrid">
@@ -573,7 +491,17 @@ export default function OfficeDashboardPage() {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gap: 10 }}>
+          <div className="officeSideStack">
+            <div className={`requestBadge ${pendingRequestsCount > 0 ? 'hasRequests' : ''}`}>
+              <div>
+                <div className="requestBadgeLabel">Nové žiadosti z portálu</div>
+                <div className="requestBadgeText">
+                  {pendingRequestsCount > 0 ? 'Čaká na spracovanie' : 'Bez novej žiadosti'}
+                </div>
+              </div>
+              <div className="requestBadgeValue">{pendingRequestsCount}</div>
+            </div>
+
             <div className="glassPanel weatherPanel">
               <div>
                 <div style={{ color: 'rgba(226,232,240,0.72)', fontWeight: 900, marginBottom: 8 }}>Počasie Nová Baňa</div>
@@ -590,9 +518,8 @@ export default function OfficeDashboardPage() {
               </div>
             </div>
           </div>
-        </section>
 
-        <section className="statusGrid">
+          <section className="statusGrid">
           <div className="statCard" style={{ '--accent': '#a3e635', '--accentGlow': 'rgba(163, 230, 53, 0.16)' } as CSSProperties}>
             <div className="statLabel">Zákazky</div>
             <div className="statValue">{stats.open}</div>
@@ -636,6 +563,7 @@ export default function OfficeDashboardPage() {
             <div className="statLabel">Zrealizované zákazky</div>
             <div className="statValue">{stats.invoiced}</div>
           </div>
+          </section>
         </section>
 
         <footer className="footerBar">
