@@ -267,14 +267,14 @@ export function DashboardStyles() {
 
         .ordersTableHead {
           display: grid;
-          grid-template-columns: minmax(240px, 1fr) 150px 180px 150px 120px;
-          gap: 10px;
+          grid-template-columns: minmax(260px, 1fr) 132px 170px 128px 102px;
+          gap: 8px;
           align-items: center;
-          padding: 7px 14px;
+          padding: 6px 12px;
           background: #f8fafc;
           border-bottom: 1px solid #e2e8f0;
           color: #64748b;
-          font-size: 11px;
+          font-size: 10px;
           font-weight: 900;
           text-transform: uppercase;
           letter-spacing: 0.05em;
@@ -297,13 +297,13 @@ export function DashboardStyles() {
         .ordersSectionHeader {
           display: flex;
           justify-content: space-between;
-          gap: 12px;
+          gap: 9px;
           align-items: center;
           margin: 0;
           border: none;
           background: #111827;
           border-radius: 0;
-          padding: 5px 10px 5px 14px;
+          padding: 4px 9px 4px 12px;
           color: #fff;
         }
 
@@ -323,7 +323,7 @@ export function DashboardStyles() {
 
         .ordersSectionHeader h3 {
           margin: 0;
-          font-size: 12px;
+          font-size: 11px;
           line-height: 1.1;
           font-weight: 900;
           color: #fff;
@@ -332,13 +332,13 @@ export function DashboardStyles() {
         .ordersSectionHeader p {
           margin: 2px 0 0;
           color: rgba(226, 232, 240, 0.7);
-          font-size: 10px;
+          font-size: 9px;
           font-weight: 700;
         }
 
         .ordersSectionCount {
-          min-width: 22px;
-          height: 22px;
+          min-width: 20px;
+          height: 20px;
           border-radius: 999px;
           background: rgba(255, 255, 255, 0.14);
           color: #f8fafc;
@@ -346,7 +346,7 @@ export function DashboardStyles() {
           align-items: center;
           justify-content: center;
           font-weight: 900;
-          font-size: 11px;
+          font-size: 10px;
         }
 
         .ordersSection-overdue .ordersSectionHeader {
@@ -416,22 +416,27 @@ export function DashboardStyles() {
 
         .orderCard:hover {
           transform: none;
-          background: #f8fafc !important;
+          background: #f1f5f9 !important;
           box-shadow: none !important;
+        }
+
+        .orderCardExpanded {
+          background: #fff !important;
+          box-shadow: 0 10px 24px rgba(15, 23, 42, 0.1) !important;
         }
 
         .orderCardTitle {
           font-weight: 900;
-          font-size: 14px;
-          line-height: 1.14;
+          font-size: 13px;
+          line-height: 1.12;
           color: #0f172a;
           overflow-wrap: anywhere;
         }
 
         .orderCardCustomer {
-          margin-top: 4px;
+          margin-top: 2px;
           color: #475569;
-          font-size: 12px;
+          font-size: 11px;
           font-weight: 800;
         }
 
@@ -442,7 +447,7 @@ export function DashboardStyles() {
         .orderRowCustomerCell {
           min-width: 0;
           color: #334155;
-          font-size: 12px;
+          font-size: 11px;
           font-weight: 850;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -451,14 +456,14 @@ export function DashboardStyles() {
 
         .orderProgressCell {
           display: grid;
-          grid-template-columns: 22px minmax(64px, 1fr) 34px 22px;
-          gap: 5px;
+          grid-template-columns: 20px minmax(58px, 1fr) 31px 20px;
+          gap: 4px;
           align-items: center;
           min-width: 0;
         }
 
         .orderProgressMini {
-          height: 8px;
+          height: 7px;
           border-radius: 999px;
           background: #e2e8f0;
           overflow: hidden;
@@ -474,7 +479,7 @@ export function DashboardStyles() {
 
         .orderProgressValue {
           color: #334155;
-          font-size: 11px;
+          font-size: 10px;
           font-weight: 900;
           text-align: right;
           white-space: nowrap;
@@ -483,19 +488,19 @@ export function DashboardStyles() {
         .orderProgressEmpty {
           grid-column: 1 / -1;
           color: #94a3b8;
-          font-size: 12px;
+          font-size: 10px;
           font-weight: 900;
           text-align: center;
         }
 
         .orderProgressButton {
-          width: 22px;
-          height: 22px;
-          border-radius: 7px;
+          width: 20px;
+          height: 20px;
+          border-radius: 6px;
           border: 1px solid #cbd5e1;
           background: #fff;
           color: #0f172a;
-          font-size: 13px;
+          font-size: 12px;
           font-weight: 900;
           line-height: 1;
           cursor: pointer;
@@ -521,25 +526,26 @@ export function DashboardStyles() {
 
         .orderRowSummary {
           display: grid;
-          grid-template-columns: minmax(240px, 1fr) 150px 180px 238px;
+          grid-template-columns: minmax(260px, 1fr) 132px 170px 238px;
           align-items: center;
-          gap: 8px;
-          padding: 5px 10px;
+          gap: 7px;
+          padding: 4px 9px;
+          min-height: 44px;
         }
 
         .orderRowMeta {
           display: flex;
           align-items: center;
-          gap: 6px;
+          gap: 5px;
           justify-content: flex-end;
           flex-wrap: wrap;
         }
 
         .orderMetaChip {
-          min-width: 66px;
-          min-height: 28px;
-          padding: 4px 7px;
-          border-radius: 8px;
+          min-width: 58px;
+          min-height: 25px;
+          padding: 3px 6px;
+          border-radius: 7px;
           border: 1px solid #e2e8f0;
           background: #fff;
           display: inline-flex;
@@ -552,11 +558,12 @@ export function DashboardStyles() {
 
         .orderMetaChip strong {
           white-space: nowrap;
-          line-height: 1.05;
+          line-height: 1;
+          font-size: 12px;
         }
 
         .orderMetaLabel {
-          font-size: 9px;
+          font-size: 8px;
           line-height: 1;
           color: #64748b;
           font-weight: 800;
