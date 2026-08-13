@@ -578,7 +578,7 @@ export default function MyRequestsPage() {
             }
 
             .customerRequestCard {
-              padding: 12px !important;
+              padding: 9px 10px !important;
               border-radius: 12px !important;
             }
 
@@ -595,6 +595,11 @@ export default function MyRequestsPage() {
 
             .customerProgressCell {
               grid-template-columns: minmax(80px, 1fr) 38px;
+            }
+
+            .customerRequestCard:not(.customerRequestCardExpanded) .customerRequesterMeta,
+            .customerRequestCard:not(.customerRequestCardExpanded) .customerRequestActions {
+              display: none !important;
             }
 
             .customerRequestActions {
@@ -849,7 +854,7 @@ export default function MyRequestsPage() {
                 return (
                   <article
                     key={itemKey}
-                    className="customerRequestCard"
+                    className={`customerRequestCard ${expanded ? 'customerRequestCardExpanded' : ''}`}
                     role="button"
                     tabIndex={0}
                     onClick={(event) => {
@@ -908,7 +913,7 @@ export default function MyRequestsPage() {
 
                   <div className="customerDueCell">
                     {item.termin && <span>Termín: {formatDate(item.termin)}</span>}
-                    {requesterName && <span>Žiadateľ: {requesterName}</span>}
+                    {requesterName && <span className="customerRequesterMeta">Žiadateľ: {requesterName}</span>}
                   </div>
 
                   <div className="customerRequestActions" style={{ gap: 6, flexWrap: 'wrap' }}>
