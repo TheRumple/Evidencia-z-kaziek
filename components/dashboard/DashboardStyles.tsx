@@ -445,6 +445,14 @@ export function DashboardStyles() {
           white-space: nowrap;
         }
 
+        .orderProgressEmpty {
+          grid-column: 1 / -1;
+          color: #94a3b8;
+          font-size: 12px;
+          font-weight: 900;
+          text-align: center;
+        }
+
         .orderProgressButton {
           width: 22px;
           height: 22px;

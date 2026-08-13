@@ -981,12 +981,13 @@ export default function DashboardPage() {
   async function updateOrderStatus(orderId: string, stav: string) {
     if (!userId) return
 
+    const progressChange = stav === 'hotova' ? { progress_percent: 100 } : {}
     const previous = orders
-    setOrders((curr) => curr.map((o) => (o.id === orderId ? { ...o, stav } : o)))
+    setOrders((curr) => curr.map((o) => (o.id === orderId ? { ...o, stav, ...progressChange } : o)))
 
     const { error } = await supabase
       .from('orders')
-      .update({ stav })
+      .update({ stav, ...progressChange })
       .eq('id', orderId)
       .eq('user_id', userId)
 

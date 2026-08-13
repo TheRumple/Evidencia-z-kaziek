@@ -103,6 +103,9 @@ export function OrderCard({
 }: OrderCardProps) {
   const overdue = isOverdue(order)
   const progressPercent = normalizeProgress(order.progress_percent)
+  const progressVisible = order.stav === 'rozpracovana' || order.stav === 'hotova'
+  const progressEditable = order.stav === 'rozpracovana'
+  const displayedProgress = order.stav === 'hotova' ? 100 : progressPercent
   const orderAttachmentUrls = getTextAttachmentUrls(order.popis)
   const orderImageUrls = orderAttachmentUrls.filter(isImageUrl)
   const cleanOrderDescription = stripAttachmentUrls(order.popis || '')
@@ -265,28 +268,34 @@ export function OrderCard({
           <div className="orderRowCustomerCell">{getCustomerName(order.customer_id)}</div>
 
           <div className="orderProgressCell" onClick={(event) => event.stopPropagation()}>
-            <button
-              type="button"
-              className="orderProgressButton"
-              onClick={() => updateOrderProgress(order.id, progressPercent - 10)}
-              disabled={progressPercent <= 0}
-              aria-label="Znížiť postup zákazky"
-            >
-              -
-            </button>
-            <div className="orderProgressMini" title={`Dokončené na ${progressPercent} %`}>
-              <span style={{ width: `${progressPercent}%` }} />
-            </div>
-            <strong className="orderProgressValue">{progressPercent}%</strong>
-            <button
-              type="button"
-              className="orderProgressButton"
-              onClick={() => updateOrderProgress(order.id, progressPercent + 10)}
-              disabled={progressPercent >= 100}
-              aria-label="Zvýšiť postup zákazky"
-            >
-              +
-            </button>
+            {progressVisible ? (
+              <>
+                <button
+                  type="button"
+                  className="orderProgressButton"
+                  onClick={() => updateOrderProgress(order.id, displayedProgress - 10)}
+                  disabled={!progressEditable || displayedProgress <= 0}
+                  aria-label="Znížiť postup zákazky"
+                >
+                  -
+                </button>
+                <div className="orderProgressMini" title={`Dokončené na ${displayedProgress} %`}>
+                  <span style={{ width: `${displayedProgress}%` }} />
+                </div>
+                <strong className="orderProgressValue">{displayedProgress}%</strong>
+                <button
+                  type="button"
+                  className="orderProgressButton"
+                  onClick={() => updateOrderProgress(order.id, displayedProgress + 10)}
+                  disabled={!progressEditable || displayedProgress >= 100}
+                  aria-label="Zvýšiť postup zákazky"
+                >
+                  +
+                </button>
+              </>
+            ) : (
+              <span className="orderProgressEmpty">-</span>
+            )}
           </div>
 
           <div className="orderRowMeta">

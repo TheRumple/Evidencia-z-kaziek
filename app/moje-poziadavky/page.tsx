@@ -844,6 +844,8 @@ export default function MyRequestsPage() {
                 const imageUrls = attachmentUrls.filter(isImageUrl)
                 const cleanDescription = getCustomerDescription(item.popis)
                 const canUpdate = item.item_type === 'zakazka' && item.stav !== 'hotova'
+                const showProgress = item.item_type === 'zakazka' && (item.stav === 'rozpracovana' || item.stav === 'hotova')
+                const displayedProgress = item.stav === 'hotova' ? 100 : normalizeProgress(item.progress_percent)
                 return (
                   <article
                     key={itemKey}
@@ -893,12 +895,12 @@ export default function MyRequestsPage() {
                     {getStatusLabel(item)}
                   </span>
 
-                  {item.item_type === 'zakazka' ? (
-                    <div className="customerProgressCell" title={`Dokončené na ${normalizeProgress(item.progress_percent)} %`}>
+                  {showProgress ? (
+                    <div className="customerProgressCell" title={`Dokončené na ${displayedProgress} %`}>
                       <div className="customerProgressTrack">
-                        <span className="customerProgressFill" style={{ width: `${normalizeProgress(item.progress_percent)}%` }} />
+                        <span className="customerProgressFill" style={{ width: `${displayedProgress}%` }} />
                       </div>
-                      <strong className="customerProgressValue">{normalizeProgress(item.progress_percent)}%</strong>
+                      <strong className="customerProgressValue">{displayedProgress}%</strong>
                     </div>
                   ) : (
                     <div className="customerProgressCell" style={{ color: '#64748b', fontSize: 11, fontWeight: 900 }}>-</div>
