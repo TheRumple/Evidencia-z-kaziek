@@ -406,9 +406,9 @@ export default function MyRequestsPage() {
 
           .customerRequestTop {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) auto;
-            gap: 12px;
-            align-items: start;
+            grid-template-columns: minmax(220px, 1fr) minmax(150px, 0.55fr) minmax(120px, 0.45fr) minmax(160px, 0.65fr) auto;
+            gap: 10px;
+            align-items: center;
           }
 
           .customerRequestActions {
@@ -421,6 +421,76 @@ export default function MyRequestsPage() {
             padding: 7px 12px;
             font-weight: 900;
             cursor: pointer;
+            white-space: nowrap;
+          }
+
+          .customerRequestTitle {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 900;
+            line-height: 1.12;
+            overflow-wrap: anywhere;
+          }
+
+          .customerRequestMeta {
+            margin-top: 4px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            color: #64748b;
+            font-size: 11px;
+            font-weight: 800;
+          }
+
+          .customerStatusBadge {
+            justify-self: start;
+            border-radius: 999px;
+            padding: 4px 8px;
+            font-size: 10px;
+            font-weight: 900;
+            white-space: nowrap;
+          }
+
+          .customerProgressCell {
+            min-width: 0;
+            display: grid;
+            grid-template-columns: minmax(54px, 1fr) 34px;
+            gap: 7px;
+            align-items: center;
+          }
+
+          .customerProgressTrack {
+            height: 8px;
+            border-radius: 999px;
+            background: #e2e8f0;
+            overflow: hidden;
+            box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.12);
+          }
+
+          .customerProgressFill {
+            display: block;
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #84cc16, #16a34a);
+          }
+
+          .customerProgressValue {
+            color: #334155;
+            font-size: 11px;
+            font-weight: 900;
+            text-align: right;
+            white-space: nowrap;
+          }
+
+          .customerDueCell {
+            color: #475569;
+            font-size: 11px;
+            font-weight: 900;
+            display: grid;
+            gap: 2px;
+          }
+
+          .customerDueCell span {
             white-space: nowrap;
           }
 
@@ -513,8 +583,18 @@ export default function MyRequestsPage() {
             }
 
             .customerRequestTop {
-              grid-template-columns: 1fr;
+              grid-template-columns: minmax(0, 1fr) auto;
               gap: 7px;
+            }
+
+            .customerStatusBadge,
+            .customerProgressCell,
+            .customerDueCell {
+              grid-column: 1 / -1;
+            }
+
+            .customerProgressCell {
+              grid-template-columns: minmax(80px, 1fr) 38px;
             }
 
             .customerRequestActions {
@@ -784,60 +864,49 @@ export default function MyRequestsPage() {
                     }}
                     style={{
                       border: `2px solid ${statusColor.border}`,
-                      borderLeft: `7px solid ${statusColor.accent}`,
-                      borderRadius: 16,
-                      padding: '14px 16px',
+                      borderLeft: `6px solid ${statusColor.accent}`,
+                      borderRadius: 12,
+                      padding: '9px 11px',
                       background: 'linear-gradient(135deg, rgba(255,255,255,0.99), rgba(248,250,252,0.96))',
                       color: '#0f172a',
-                      boxShadow: `0 12px 24px rgba(0, 0, 0, 0.2), 0 0 0 3px ${statusColor.glow}`,
+                      boxShadow: `0 8px 18px rgba(0, 0, 0, 0.16), 0 0 0 2px ${statusColor.glow}`,
                       cursor: 'pointer',
                     }}
                   >
                 <div className="customerRequestTop">
                   <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-                      <h2 style={{ margin: 0, fontSize: 18, fontWeight: 900, lineHeight: 1.16 }}>{item.nazov || 'Požiadavka'}</h2>
-                      <span
-                        style={{
-                          border: `1px solid ${statusColor.border}`,
-                          background: statusColor.background,
-                          color: statusColor.color,
-                          borderRadius: 999,
-                          padding: '5px 10px',
-                          fontSize: 11,
-                          fontWeight: 900,
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {getStatusLabel(item)}
-                      </span>
-                    </div>
-
-                    <div style={{ marginTop: 7, display: 'flex', gap: 10, flexWrap: 'wrap', color: '#64748b', fontSize: 12, fontWeight: 800 }}>
+                    <h2 className="customerRequestTitle">{item.nazov || 'Požiadavka'}</h2>
+                    <div className="customerRequestMeta">
                       <span style={{ color: '#166534' }}>Firma: {item.customer_name || group.customerName}</span>
                       <span>Odoslané: {formatDate(item.created_at)}</span>
-                      {item.termin && <span>Termín: {formatDate(item.termin)}</span>}
-                      {requesterName && <span>Žiadateľ: {requesterName}</span>}
                     </div>
-                    {item.item_type === 'zakazka' && (
-                      <div style={{ marginTop: 10, display: 'grid', gap: 5 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, color: '#475569', fontSize: 12, fontWeight: 900 }}>
-                          <span>Dokončenie zákazky</span>
-                          <span>{normalizeProgress(item.progress_percent)}%</span>
-                        </div>
-                        <div style={{ height: 10, borderRadius: 999, background: '#e2e8f0', overflow: 'hidden', boxShadow: 'inset 0 1px 2px rgba(15, 23, 42, 0.12)' }}>
-                          <span
-                            style={{
-                              display: 'block',
-                              width: `${normalizeProgress(item.progress_percent)}%`,
-                              height: '100%',
-                              borderRadius: 999,
-                              background: 'linear-gradient(90deg, #84cc16, #16a34a)',
-                            }}
-                          />
-                        </div>
+                  </div>
+
+                  <span
+                    className="customerStatusBadge"
+                    style={{
+                      border: `1px solid ${statusColor.border}`,
+                      background: statusColor.background,
+                      color: statusColor.color,
+                    }}
+                  >
+                    {getStatusLabel(item)}
+                  </span>
+
+                  {item.item_type === 'zakazka' ? (
+                    <div className="customerProgressCell" title={`Dokončené na ${normalizeProgress(item.progress_percent)} %`}>
+                      <div className="customerProgressTrack">
+                        <span className="customerProgressFill" style={{ width: `${normalizeProgress(item.progress_percent)}%` }} />
                       </div>
-                    )}
+                      <strong className="customerProgressValue">{normalizeProgress(item.progress_percent)}%</strong>
+                    </div>
+                  ) : (
+                    <div className="customerProgressCell" style={{ color: '#64748b', fontSize: 11, fontWeight: 900 }}>-</div>
+                  )}
+
+                  <div className="customerDueCell">
+                    {item.termin && <span>Termín: {formatDate(item.termin)}</span>}
+                    {requesterName && <span>Žiadateľ: {requesterName}</span>}
                   </div>
 
                   <div className="customerRequestActions" style={{ gap: 6, flexWrap: 'wrap' }}>
