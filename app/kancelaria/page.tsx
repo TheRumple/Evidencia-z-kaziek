@@ -198,8 +198,8 @@ export default function OfficeDashboardPage() {
           height: calc(100vh - 28px);
           margin: 0 auto;
           display: grid;
-          grid-template-rows: 74px minmax(0, 1fr) 108px 22px;
-          gap: 10px;
+          grid-template-rows: 62px 238px minmax(0, 1fr) 18px;
+          gap: 8px;
         }
 
         .officeHeader {
@@ -217,7 +217,7 @@ export default function OfficeDashboardPage() {
           justify-content: center;
           gap: 0;
           color: #f8fafc;
-          font-size: clamp(46px, 4.4vw, 70px);
+          font-size: clamp(40px, 3.9vw, 58px);
           line-height: 0.9;
           font-weight: 900;
           letter-spacing: 0;
@@ -231,8 +231,9 @@ export default function OfficeDashboardPage() {
         .officeGrid {
           display: grid;
           grid-template-columns: minmax(0, 1.18fr) minmax(360px, 0.82fr);
-          gap: 10px;
+          gap: 8px;
           align-items: stretch;
+          min-height: 0;
         }
 
         .glassPanel {
@@ -246,10 +247,10 @@ export default function OfficeDashboardPage() {
         }
 
         .clockPanel {
-          padding: 26px;
+          padding: 20px 22px;
           display: grid;
           align-content: center;
-          gap: 12px;
+          gap: 6px;
           min-height: 0;
           position: relative;
           overflow: hidden;
@@ -260,32 +261,32 @@ export default function OfficeDashboardPage() {
           position: absolute;
           right: -90px;
           bottom: -120px;
-          width: 340px;
-          height: 340px;
+          width: 260px;
+          height: 260px;
           border-radius: 999px;
-          border: 42px solid rgba(132, 204, 22, 0.12);
+          border: 32px solid rgba(132, 204, 22, 0.12);
           box-shadow: 0 0 80px rgba(132, 204, 22, 0.12);
         }
 
         .clockValue {
-          font-size: clamp(92px, 9vw, 148px);
+          font-size: clamp(74px, 7vw, 112px);
           line-height: 0.92;
           font-weight: 900;
           letter-spacing: 0;
         }
 
         .dateValue {
-          margin-top: 12px;
+          margin-top: 6px;
           color: rgba(226, 232, 240, 0.82);
-          font-size: clamp(24px, 2.4vw, 38px);
+          font-size: clamp(20px, 2vw, 30px);
           font-weight: 900;
           text-transform: capitalize;
         }
 
         .requestBadge {
-          min-width: 360px;
-          height: 68px;
-          border-radius: 18px;
+          min-width: 330px;
+          height: 58px;
+          border-radius: 16px;
           border: 1px solid rgba(190, 242, 100, 0.35);
           background:
             linear-gradient(135deg, rgba(132, 204, 22, 0.22), rgba(255, 255, 255, 0.06)),
@@ -294,7 +295,7 @@ export default function OfficeDashboardPage() {
           grid-template-columns: minmax(0, 1fr) auto;
           gap: 12px;
           align-items: center;
-          padding: 10px 14px;
+          padding: 8px 12px;
           box-shadow: 0 16px 40px rgba(0, 0, 0, 0.24);
         }
 
@@ -309,7 +310,7 @@ export default function OfficeDashboardPage() {
 
         .requestBadgeLabel {
           color: rgba(226, 232, 240, 0.84);
-          font-size: 14px;
+          font-size: 13px;
           font-weight: 900;
         }
 
@@ -330,7 +331,7 @@ export default function OfficeDashboardPage() {
 
         .requestBadgeValue {
           color: #f8fafc;
-          font-size: 48px;
+          font-size: 40px;
           line-height: 0.95;
           font-weight: 900;
         }
@@ -417,22 +418,22 @@ export default function OfficeDashboardPage() {
         }
 
         .weatherPanel {
-          padding: 18px;
+          padding: 15px 16px;
           display: grid;
           align-content: center;
-          gap: 12px;
+          gap: 8px;
           border-color: rgba(132, 204, 22, 0.32);
         }
 
         .weatherTemp {
-          font-size: clamp(58px, 5.4vw, 88px);
+          font-size: clamp(46px, 4.3vw, 66px);
           font-weight: 900;
           line-height: 1;
         }
 
         .weatherLabel {
           color: #a3e635;
-          font-size: 20px;
+          font-size: 17px;
           font-weight: 900;
         }
 
@@ -449,9 +450,9 @@ export default function OfficeDashboardPage() {
         }
 
         .statCard {
-          min-height: 104px;
+          min-height: 92px;
           border-radius: 16px;
-          padding: 13px 14px;
+          padding: 11px 13px;
           border: 1px solid rgba(148, 163, 184, 0.24);
           background:
             linear-gradient(160deg, rgba(255, 255, 255, 0.105), rgba(255, 255, 255, 0.035)),
@@ -483,12 +484,12 @@ export default function OfficeDashboardPage() {
 
         .statLabel {
           color: rgba(226, 232, 240, 0.76);
-          font-size: 13px;
+          font-size: 12px;
           font-weight: 900;
         }
 
         .statValue {
-          font-size: clamp(34px, 4.2vw, 58px);
+          font-size: clamp(30px, 3.6vw, 48px);
           line-height: 0.95;
           font-weight: 900;
         }
