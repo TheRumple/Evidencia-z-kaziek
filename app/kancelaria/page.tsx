@@ -131,9 +131,14 @@ export default function OfficeDashboardPage() {
   }
 
   const stats = useMemo(() => {
+    const activeStatuses = ['nova', 'rozpracovana', 'cenova_ponuka', 'obhliadka', 'caka']
+    const openStatuses = [...activeStatuses, 'hotova']
+
     return {
-      active: orders.filter((order) => ['nova', 'rozpracovana', 'cenova_ponuka', 'obhliadka', 'caka'].includes(order.stav)).length,
+      open: orders.filter((order) => openStatuses.includes(order.stav)).length,
+      active: orders.filter((order) => activeStatuses.includes(order.stav)).length,
       inProgress: orders.filter((order) => order.stav === 'rozpracovana').length,
+      quotes: orders.filter((order) => order.stav === 'cenova_ponuka').length,
       inspections: orders.filter((order) => order.stav === 'obhliadka').length,
       waiting: orders.filter((order) => order.stav === 'caka').length,
       invoiced: orders.filter((order) => order.stav === 'odovzdana').length,
@@ -439,14 +444,14 @@ export default function OfficeDashboardPage() {
 
         .statusGrid {
           display: grid;
-          grid-template-columns: repeat(6, minmax(0, 1fr));
+          grid-template-columns: repeat(4, minmax(0, 1fr));
           gap: 10px;
         }
 
         .statCard {
-          min-height: 118px;
+          min-height: 104px;
           border-radius: 16px;
-          padding: 14px;
+          padding: 13px 14px;
           border: 1px solid rgba(148, 163, 184, 0.24);
           background:
             linear-gradient(160deg, rgba(255, 255, 255, 0.105), rgba(255, 255, 255, 0.035)),
@@ -577,12 +582,20 @@ export default function OfficeDashboardPage() {
 
         <section className="statusGrid">
           <div className="statCard" style={{ '--accent': '#a3e635', '--accentGlow': 'rgba(163, 230, 53, 0.16)' } as CSSProperties}>
+            <div className="statLabel">Zákazky</div>
+            <div className="statValue">{stats.open}</div>
+          </div>
+          <div className="statCard" style={{ '--accent': '#60a5fa', '--accentGlow': 'rgba(96, 165, 250, 0.17)' } as CSSProperties}>
             <div className="statLabel">Aktívne zákazky</div>
             <div className="statValue">{stats.active}</div>
           </div>
           <div className="statCard" style={{ '--accent': '#fbbf24', '--accentGlow': 'rgba(251, 191, 36, 0.17)' } as CSSProperties}>
             <div className="statLabel">Rozpracované</div>
             <div className="statValue">{stats.inProgress}</div>
+          </div>
+          <div className="statCard" style={{ '--accent': '#38bdf8', '--accentGlow': 'rgba(56, 189, 248, 0.18)' } as CSSProperties}>
+            <div className="statLabel">Cenové ponuky</div>
+            <div className="statValue">{stats.quotes}</div>
           </div>
           <div className="statCard" style={{ '--accent': '#8b5cf6', '--accentGlow': 'rgba(139, 92, 246, 0.18)' } as CSSProperties}>
             <div className="statLabel">Obhliadky</div>
