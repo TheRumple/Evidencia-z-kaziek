@@ -294,7 +294,7 @@ export function OrderCard({
                 </button>
               </>
             ) : (
-              <span className="orderProgressEmpty">-</span>
+              <span className="orderProgressEmpty" aria-hidden="true" />
             )}
           </div>
 

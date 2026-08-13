@@ -903,7 +903,7 @@ export default function MyRequestsPage() {
                       <strong className="customerProgressValue">{displayedProgress}%</strong>
                     </div>
                   ) : (
-                    <div className="customerProgressCell" style={{ color: '#64748b', fontSize: 11, fontWeight: 900 }}>-</div>
+                    <div className="customerProgressCell" aria-hidden="true" />
                   )}
 
                   <div className="customerDueCell">
