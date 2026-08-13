@@ -38,6 +38,7 @@ export type Order = {
   popis: string | null
   requester_email?: string | null
   public_message?: string | null
+  progress_percent?: number | null
   termin: string | null
   prijatie_zakazky: string | null
   hodiny?: number | null

@@ -17,6 +17,7 @@ type CustomerLookupItem = {
   customer_name: string | null
   public_message?: string | null
   requester_email?: string | null
+  progress_percent?: number | null
 }
 
 function formatDate(date: string | null | undefined) {
@@ -65,6 +66,11 @@ function getStatusPriority(item: CustomerLookupItem) {
   if (item.item_type === 'poziadavka') return 5
   if (item.stav === 'hotova') return 6
   return 7
+}
+
+function normalizeProgress(value: number | null | undefined) {
+  if (!Number.isFinite(Number(value))) return 0
+  return Math.max(0, Math.min(100, Math.round(Number(value) / 10) * 10))
 }
 
 function sortCustomerItems(itemsToSort: CustomerLookupItem[]) {
@@ -809,6 +815,25 @@ export default function MyRequestsPage() {
                       {item.termin && <span>Termín: {formatDate(item.termin)}</span>}
                       {requesterName && <span>Žiadateľ: {requesterName}</span>}
                     </div>
+                    {item.item_type === 'zakazka' && (
+                      <div style={{ marginTop: 10, display: 'grid', gap: 5 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, color: '#475569', fontSize: 12, fontWeight: 900 }}>
+                          <span>Dokončenie zákazky</span>
+                          <span>{normalizeProgress(item.progress_percent)}%</span>
+                        </div>
+                        <div style={{ height: 10, borderRadius: 999, background: '#e2e8f0', overflow: 'hidden', boxShadow: 'inset 0 1px 2px rgba(15, 23, 42, 0.12)' }}>
+                          <span
+                            style={{
+                              display: 'block',
+                              width: `${normalizeProgress(item.progress_percent)}%`,
+                              height: '100%',
+                              borderRadius: 999,
+                              background: 'linear-gradient(90deg, #84cc16, #16a34a)',
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="customerRequestActions" style={{ gap: 6, flexWrap: 'wrap' }}>

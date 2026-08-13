@@ -999,6 +999,26 @@ export default function DashboardPage() {
     setNotice({ type: 'success', text: 'Stav zákazky bol aktualizovaný.' })
   }
 
+  async function updateOrderProgress(orderId: string, progressPercent: number) {
+    if (!userId) return
+
+    const normalizedProgress = Math.max(0, Math.min(100, Math.round(progressPercent / 10) * 10))
+    const previous = orders
+    setOrders((curr) => curr.map((o) => (o.id === orderId ? { ...o, progress_percent: normalizedProgress } : o)))
+
+    const { error } = await supabase
+      .from('orders')
+      .update({ progress_percent: normalizedProgress })
+      .eq('id', orderId)
+      .eq('user_id', userId)
+
+    if (error) {
+      setOrders(previous)
+      setNotice({ type: 'error', text: error.message })
+      return
+    }
+  }
+
   async function deleteOrder(orderId: string) {
     if (!userId) return
     if (!window.confirm('Naozaj chceš zmazať túto zákazku?')) return
@@ -2444,6 +2464,7 @@ export default function DashboardPage() {
             toggleExpandedOrder={toggleExpandedOrder}
             togglePinnedOrder={togglePinnedOrder}
             updateOrderStatus={updateOrderStatus}
+            updateOrderProgress={updateOrderProgress}
             workLogsByOrder={workLogsByOrder}
             customerUpdatesByOrder={customerUpdatesByOrder}
             unseenCustomerUpdatesByOrder={unseenCustomerUpdatesByOrder}

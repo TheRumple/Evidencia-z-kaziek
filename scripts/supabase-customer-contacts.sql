@@ -30,6 +30,24 @@ alter table public.customer_contact_customers enable row level security;
 alter table public.orders
   add column if not exists requester_email text;
 
+alter table public.orders
+  add column if not exists progress_percent integer not null default 0;
+
+update public.orders
+set progress_percent = 0
+where progress_percent is null;
+
+alter table public.orders
+  alter column progress_percent set default 0,
+  alter column progress_percent set not null;
+
+alter table public.orders
+  drop constraint if exists orders_progress_percent_range;
+
+alter table public.orders
+  add constraint orders_progress_percent_range
+  check (progress_percent between 0 and 100 and progress_percent % 10 = 0);
+
 update public.orders
 set requester_email = lower(trim((regexp_match(popis, '(?im)^Email:\s*([^[:space:]]+@[^[:space:]]+)'))[1]))
 where requester_email is null
@@ -209,7 +227,8 @@ returns table (
   created_at timestamptz,
   customer_name text,
   public_message text,
-  requester_email text
+  requester_email text,
+  progress_percent integer
 )
 language sql
 security definer
@@ -248,7 +267,8 @@ as $$
       cr.created_at,
       a.customer_name,
       null::text as public_message,
-      lower((regexp_match(cr.popis, '(?im)^Email:\s*([^[:space:]]+@[^[:space:]]+)'))[1]) as requester_email
+      lower((regexp_match(cr.popis, '(?im)^Email:\s*([^[:space:]]+@[^[:space:]]+)'))[1]) as requester_email,
+      0::integer as progress_percent
     from public.customer_requests cr
     join contact_access a on (
       cr.customer_id = a.customer_id
@@ -270,7 +290,8 @@ as $$
       coalesce(o.created_at, o.prijatie_zakazky::timestamptz) as created_at,
       a.customer_name,
       o.public_message,
-      o.requester_email
+      o.requester_email,
+      coalesce(o.progress_percent, 0)::integer as progress_percent
     from public.orders o
     join contact_access a on a.customer_id = o.customer_id
     where o.stav in ('nova', 'rozpracovana', 'obhliadka', 'caka', 'cakame', 'hotova')

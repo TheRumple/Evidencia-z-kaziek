@@ -267,7 +267,7 @@ export function DashboardStyles() {
 
         .ordersTableHead {
           display: grid;
-          grid-template-columns: minmax(260px, 1fr) 190px 150px 120px;
+          grid-template-columns: minmax(240px, 1fr) 150px 180px 150px 120px;
           gap: 10px;
           align-items: center;
           padding: 7px 14px;
@@ -410,6 +410,56 @@ export function DashboardStyles() {
           white-space: nowrap;
         }
 
+        .orderProgressCell {
+          display: grid;
+          grid-template-columns: 22px minmax(64px, 1fr) 34px 22px;
+          gap: 5px;
+          align-items: center;
+          min-width: 0;
+        }
+
+        .orderProgressMini {
+          height: 8px;
+          border-radius: 999px;
+          background: #e2e8f0;
+          overflow: hidden;
+          box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.1);
+        }
+
+        .orderProgressMini span {
+          display: block;
+          height: 100%;
+          border-radius: inherit;
+          background: linear-gradient(90deg, #84cc16, #16a34a);
+        }
+
+        .orderProgressValue {
+          color: #334155;
+          font-size: 11px;
+          font-weight: 900;
+          text-align: right;
+          white-space: nowrap;
+        }
+
+        .orderProgressButton {
+          width: 22px;
+          height: 22px;
+          border-radius: 7px;
+          border: 1px solid #cbd5e1;
+          background: #fff;
+          color: #0f172a;
+          font-size: 13px;
+          font-weight: 900;
+          line-height: 1;
+          cursor: pointer;
+          padding: 0;
+        }
+
+        .orderProgressButton:disabled {
+          opacity: 0.35;
+          cursor: not-allowed;
+        }
+
         .modalGrid {
           display: grid;
           grid-template-columns: 1fr 1fr;
@@ -424,7 +474,7 @@ export function DashboardStyles() {
 
         .orderRowSummary {
           display: grid;
-          grid-template-columns: minmax(250px, 1fr) 180px 238px;
+          grid-template-columns: minmax(240px, 1fr) 150px 180px 238px;
           align-items: center;
           gap: 8px;
           padding: 5px 10px;

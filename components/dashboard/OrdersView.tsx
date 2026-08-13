@@ -41,6 +41,7 @@ type OrdersViewProps = {
   toggleExpandedOrder: (orderId: string) => void
   togglePinnedOrder: (orderId: string) => void
   updateOrderStatus: (orderId: string, status: string) => void
+  updateOrderProgress: (orderId: string, progressPercent: number) => void
   workLogsByOrder: Record<string, WorkLog[]>
   customerUpdatesByOrder: Record<string, CustomerUpdate[]>
   unseenCustomerUpdatesByOrder: Record<string, number>
@@ -77,6 +78,7 @@ export function OrdersView({
   toggleExpandedOrder,
   togglePinnedOrder,
   updateOrderStatus,
+  updateOrderProgress,
   workLogsByOrder,
   customerUpdatesByOrder,
   unseenCustomerUpdatesByOrder,
@@ -148,6 +150,7 @@ export function OrdersView({
       <main className="ordersBoard" style={boxStyle}>
         <div className="ordersTableHead" aria-hidden="true">
           <span>Zákazka</span>
+          <span>Postup</span>
           <span>Zákazník</span>
           <span>Stav</span>
           <span>Termín</span>
@@ -197,6 +200,7 @@ export function OrdersView({
                       toggleExpandedOrder={toggleExpandedOrder}
                       togglePinnedOrder={togglePinnedOrder}
                       updateOrderStatus={updateOrderStatus}
+                      updateOrderProgress={updateOrderProgress}
                     />
                   ))}
                 </div>

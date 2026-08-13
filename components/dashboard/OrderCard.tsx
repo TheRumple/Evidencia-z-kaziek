@@ -35,6 +35,7 @@ type OrderCardProps = {
   toggleExpandedOrder: (orderId: string) => void
   togglePinnedOrder: (orderId: string) => void
   updateOrderStatus: (orderId: string, status: string) => void
+  updateOrderProgress: (orderId: string, progressPercent: number) => void
   deleteCustomerUpdate: (updateId: string) => void
 }
 
@@ -69,6 +70,11 @@ function getCompactStatusLabel(status: string) {
   return getStatusLabel(status)
 }
 
+function normalizeProgress(value: number | null | undefined) {
+  if (!Number.isFinite(Number(value))) return 0
+  return Math.max(0, Math.min(100, Math.round(Number(value) / 10) * 10))
+}
+
 export function OrderCard({
   order,
   expanded,
@@ -92,9 +98,11 @@ export function OrderCard({
   toggleExpandedOrder,
   togglePinnedOrder,
   updateOrderStatus,
+  updateOrderProgress,
   deleteCustomerUpdate,
 }: OrderCardProps) {
   const overdue = isOverdue(order)
+  const progressPercent = normalizeProgress(order.progress_percent)
   const orderAttachmentUrls = getTextAttachmentUrls(order.popis)
   const orderImageUrls = orderAttachmentUrls.filter(isImageUrl)
   const cleanOrderDescription = stripAttachmentUrls(order.popis || '')
@@ -255,6 +263,31 @@ export function OrderCard({
           </div>
 
           <div className="orderRowCustomerCell">{getCustomerName(order.customer_id)}</div>
+
+          <div className="orderProgressCell" onClick={(event) => event.stopPropagation()}>
+            <button
+              type="button"
+              className="orderProgressButton"
+              onClick={() => updateOrderProgress(order.id, progressPercent - 10)}
+              disabled={progressPercent <= 0}
+              aria-label="Znížiť postup zákazky"
+            >
+              -
+            </button>
+            <div className="orderProgressMini" title={`Dokončené na ${progressPercent} %`}>
+              <span style={{ width: `${progressPercent}%` }} />
+            </div>
+            <strong className="orderProgressValue">{progressPercent}%</strong>
+            <button
+              type="button"
+              className="orderProgressButton"
+              onClick={() => updateOrderProgress(order.id, progressPercent + 10)}
+              disabled={progressPercent >= 100}
+              aria-label="Zvýšiť postup zákazky"
+            >
+              +
+            </button>
+          </div>
 
           <div className="orderRowMeta">
             <div className="orderMetaChip" style={getStatusBadgeStyle(order.stav)}>
