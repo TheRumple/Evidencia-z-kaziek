@@ -2,8 +2,115 @@
 
 import { Modal } from '@/components/dashboard/Modal'
 import type { Customer, Employee, WorkLog } from '@/lib/dashboard-types'
+import { useRef } from 'react'
+import type { PointerEvent } from 'react'
 
 type DashboardModalsProps = Record<string, any>
+
+function SignaturePad({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+}) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const drawingRef = useRef(false)
+
+  function getPoint(event: PointerEvent<HTMLCanvasElement>) {
+    const canvas = canvasRef.current
+    if (!canvas) return { x: 0, y: 0 }
+    const rect = canvas.getBoundingClientRect()
+    return {
+      x: ((event.clientX - rect.left) / rect.width) * canvas.width,
+      y: ((event.clientY - rect.top) / rect.height) * canvas.height,
+    }
+  }
+
+  function startDrawing(event: PointerEvent<HTMLCanvasElement>) {
+    const canvas = canvasRef.current
+    const ctx = canvas?.getContext('2d')
+    if (!canvas || !ctx) return
+    drawingRef.current = true
+    canvas.setPointerCapture(event.pointerId)
+    const point = getPoint(event)
+    ctx.beginPath()
+    ctx.moveTo(point.x, point.y)
+  }
+
+  function draw(event: PointerEvent<HTMLCanvasElement>) {
+    if (!drawingRef.current) return
+    const canvas = canvasRef.current
+    const ctx = canvas?.getContext('2d')
+    if (!canvas || !ctx) return
+    const point = getPoint(event)
+    ctx.lineTo(point.x, point.y)
+    ctx.strokeStyle = '#020617'
+    ctx.lineWidth = 3
+    ctx.lineCap = 'round'
+    ctx.lineJoin = 'round'
+    ctx.stroke()
+    onChange(canvas.toDataURL('image/png'))
+  }
+
+  function stopDrawing(event: PointerEvent<HTMLCanvasElement>) {
+    drawingRef.current = false
+    canvasRef.current?.releasePointerCapture(event.pointerId)
+  }
+
+  function clearSignature() {
+    const canvas = canvasRef.current
+    const ctx = canvas?.getContext('2d')
+    if (!canvas || !ctx) return
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    onChange('')
+  }
+
+  return (
+    <div style={{ display: 'grid', gap: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+        <div style={{ color: '#0f172a', fontWeight: 900 }}>{label}</div>
+        <button
+          type="button"
+          onClick={clearSignature}
+          disabled={!value}
+          style={{
+            border: '1px solid #cbd5e1',
+            background: '#fff',
+            borderRadius: 10,
+            color: '#334155',
+            cursor: value ? 'pointer' : 'default',
+            fontWeight: 900,
+            opacity: value ? 1 : 0.45,
+            padding: '7px 10px',
+          }}
+        >
+          Vymazať
+        </button>
+      </div>
+      <canvas
+        ref={canvasRef}
+        width={520}
+        height={150}
+        onPointerDown={startDrawing}
+        onPointerMove={draw}
+        onPointerUp={stopDrawing}
+        onPointerCancel={stopDrawing}
+        style={{
+          background: '#fff',
+          border: '1px dashed #94a3b8',
+          borderRadius: 14,
+          cursor: 'crosshair',
+          height: 130,
+          touchAction: 'none',
+          width: '100%',
+        }}
+      />
+    </div>
+  )
+}
 
 const INSPECTION_TEMPLATES = [
   {
@@ -158,6 +265,8 @@ export function DashboardModals(props: DashboardModalsProps) {
     deliveryProtocolReceivedBy,
     deliveryProtocolTested,
     deliveryProtocolBriefed,
+    deliveryProtocolDeliveredSignature,
+    deliveryProtocolReceivedSignature,
     editCustomerEmail,
     editCustomerKontakt,
     editCustomerNazov,
@@ -255,6 +364,8 @@ export function DashboardModals(props: DashboardModalsProps) {
     setDeliveryProtocolReceivedBy,
     setDeliveryProtocolTested,
     setDeliveryProtocolBriefed,
+    setDeliveryProtocolDeliveredSignature,
+    setDeliveryProtocolReceivedSignature,
     setKontakt,
     setNazov,
     setNewCustomerEmail,
@@ -1134,6 +1245,31 @@ export function DashboardModals(props: DashboardModalsProps) {
                 />
                 <span>Zákazník bol oboznámený so základnou obsluhou.</span>
               </label>
+            </div>
+
+            <div
+              style={{
+                border: '1px solid #e2e8f0',
+                background: '#f8fafc',
+                borderRadius: 14,
+                padding: 12,
+                display: 'grid',
+                gap: 12,
+              }}
+            >
+              <div style={{ fontWeight: 900 }}>Podpisy do PDF</div>
+              <div className="modalGrid">
+                <SignaturePad
+                  label="Podpis odovzdal"
+                  value={deliveryProtocolDeliveredSignature}
+                  onChange={setDeliveryProtocolDeliveredSignature}
+                />
+                <SignaturePad
+                  label="Podpis prevzal"
+                  value={deliveryProtocolReceivedSignature}
+                  onChange={setDeliveryProtocolReceivedSignature}
+                />
+              </div>
             </div>
 
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 4 }}>

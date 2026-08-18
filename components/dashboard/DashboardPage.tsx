@@ -193,6 +193,8 @@ export default function DashboardPage() {
   const [deliveryProtocolReceivedBy, setDeliveryProtocolReceivedBy] = useState('')
   const [deliveryProtocolTested, setDeliveryProtocolTested] = useState(true)
   const [deliveryProtocolBriefed, setDeliveryProtocolBriefed] = useState(true)
+  const [deliveryProtocolDeliveredSignature, setDeliveryProtocolDeliveredSignature] = useState('')
+  const [deliveryProtocolReceivedSignature, setDeliveryProtocolReceivedSignature] = useState('')
   const [deliveryProtocolItems, setDeliveryProtocolItems] = useState<DeliveryProtocolItem[]>(() => createDeliveryProtocolItems())
 
   const [openAddCustomer, setOpenAddCustomer] = useState(false)
@@ -710,6 +712,8 @@ export default function DashboardPage() {
     setDeliveryProtocolReceivedBy('')
     setDeliveryProtocolTested(true)
     setDeliveryProtocolBriefed(true)
+    setDeliveryProtocolDeliveredSignature('')
+    setDeliveryProtocolReceivedSignature('')
     setDeliveryProtocolItems(createDeliveryProtocolItems())
   }
 
@@ -1399,6 +1403,8 @@ export default function DashboardPage() {
     setDeliveryProtocolReceivedBy('')
     setDeliveryProtocolTested(true)
     setDeliveryProtocolBriefed(true)
+    setDeliveryProtocolDeliveredSignature('')
+    setDeliveryProtocolReceivedSignature('')
     setDeliveryProtocolItems(createDeliveryProtocolItems())
     setOpenDeliveryProtocol(true)
   }
@@ -1587,6 +1593,12 @@ export default function DashboardPage() {
       doc.setFont('helvetica', 'normal')
       doc.text(`Meno: ${deliveredBy}`, margin, signatureY + 10)
       doc.text(`Meno: ${receivedBy}`, 112, signatureY + 10)
+      if (deliveryProtocolDeliveredSignature) {
+        doc.addImage(deliveryProtocolDeliveredSignature, 'PNG', margin + 2, signatureY + 12, 58, 15)
+      }
+      if (deliveryProtocolReceivedSignature) {
+        doc.addImage(deliveryProtocolReceivedSignature, 'PNG', 114, signatureY + 12, 58, 15)
+      }
       doc.line(margin, signatureY + 28, 88, signatureY + 28)
       doc.line(112, signatureY + 28, pageWidth - margin, signatureY + 28)
       doc.setFontSize(8)
@@ -2841,6 +2853,8 @@ export default function DashboardPage() {
             deliveryProtocolReceivedBy={deliveryProtocolReceivedBy}
             deliveryProtocolTested={deliveryProtocolTested}
             deliveryProtocolBriefed={deliveryProtocolBriefed}
+            deliveryProtocolDeliveredSignature={deliveryProtocolDeliveredSignature}
+            deliveryProtocolReceivedSignature={deliveryProtocolReceivedSignature}
             editCustomerEmail={editCustomerEmail}
             editCustomerKontakt={editCustomerKontakt}
             editCustomerNazov={editCustomerNazov}
@@ -2938,6 +2952,8 @@ export default function DashboardPage() {
             setDeliveryProtocolReceivedBy={setDeliveryProtocolReceivedBy}
             setDeliveryProtocolTested={setDeliveryProtocolTested}
             setDeliveryProtocolBriefed={setDeliveryProtocolBriefed}
+            setDeliveryProtocolDeliveredSignature={setDeliveryProtocolDeliveredSignature}
+            setDeliveryProtocolReceivedSignature={setDeliveryProtocolReceivedSignature}
             setKontakt={setKontakt}
             setNazov={setNazov}
             setNewCustomerEmail={setNewCustomerEmail}
