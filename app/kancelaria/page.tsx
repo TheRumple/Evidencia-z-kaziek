@@ -47,6 +47,7 @@ export default function OfficeDashboardPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [revisions, setRevisions] = useState<MaintenanceRevision[]>([])
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0)
+  const [customerUpdatesCount, setCustomerUpdatesCount] = useState(0)
   const [weather, setWeather] = useState<WeatherState>({ temperature: null, windSpeed: null, code: null })
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
 
@@ -102,15 +103,21 @@ export default function OfficeDashboardPage() {
   }, [])
 
   async function loadData(currentUserId: string) {
-    const [ordersResult, pendingResult, revisionsResult] = await Promise.all([
+    const [ordersResult, pendingResult, revisionsResult, updatesResult] = await Promise.all([
       supabase.from('orders').select('*').eq('user_id', currentUserId),
       supabase.from('customer_requests').select('*', { count: 'exact', head: true }).eq('stav', 'na_schvalenie'),
       supabase.from('maintenance_revisions').select('*').eq('user_id', currentUserId).eq('active', true),
+      supabase
+        .from('customer_order_updates')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', currentUserId)
+        .is('seen_at', null),
     ])
 
     if (!ordersResult.error) setOrders((ordersResult.data || []) as Order[])
     if (!pendingResult.error && pendingResult.count !== null) setPendingRequestsCount(pendingResult.count)
     if (!revisionsResult.error) setRevisions((revisionsResult.data || []) as MaintenanceRevision[])
+    if (!updatesResult.error && updatesResult.count !== null) setCustomerUpdatesCount(updatesResult.count)
     setLastRefresh(new Date())
   }
 
@@ -141,6 +148,7 @@ export default function OfficeDashboardPage() {
       quotes: orders.filter((order) => order.stav === 'cenova_ponuka').length,
       inspections: orders.filter((order) => order.stav === 'obhliadka').length,
       waiting: orders.filter((order) => order.stav === 'caka').length,
+      customerUpdates: customerUpdatesCount,
       invoiced: orders.filter((order) => order.stav === 'odovzdana').length,
       revisionsDue: revisions.filter((revision) => {
         if (!revision.next_due_date) return false
@@ -150,7 +158,7 @@ export default function OfficeDashboardPage() {
         return days <= 30
       }).length,
     }
-  }, [orders, revisions])
+  }, [orders, revisions, customerUpdatesCount])
 
   if (checkingAuth) {
     return <div style={{ padding: 24, fontFamily: 'Arial, Helvetica, sans-serif' }}>Načítavam...</div>
@@ -373,8 +381,8 @@ export default function OfficeDashboardPage() {
         .statusGrid {
           display: grid;
           grid-column: 1 / -1;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-          grid-template-rows: repeat(2, minmax(82px, 1fr));
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          grid-template-rows: repeat(3, minmax(58px, 1fr));
           gap: 8px;
           min-height: 0;
         }
@@ -383,7 +391,7 @@ export default function OfficeDashboardPage() {
           min-height: 0;
           height: auto;
           border-radius: 14px;
-          padding: 10px 14px;
+          padding: 8px 12px;
           border: 1px solid rgba(148, 163, 184, 0.24);
           background:
             linear-gradient(160deg, rgba(255, 255, 255, 0.105), rgba(255, 255, 255, 0.035)),
@@ -417,7 +425,7 @@ export default function OfficeDashboardPage() {
 
         .statLabel {
           color: rgba(226, 232, 240, 0.76);
-          font-size: 13px;
+          font-size: 12px;
           font-weight: 900;
           line-height: 1.12;
           min-width: 0;
@@ -426,7 +434,7 @@ export default function OfficeDashboardPage() {
         .statValue {
           position: relative;
           z-index: 1;
-          font-size: clamp(48px, 4.2vw, 72px);
+          font-size: clamp(40px, 3.7vw, 62px);
           line-height: 0.95;
           font-weight: 900;
           text-align: right;
@@ -459,6 +467,7 @@ export default function OfficeDashboardPage() {
           .statGrid,
           .statusGrid {
             grid-template-columns: 1fr;
+            grid-template-rows: none;
           }
 
           .officeHeader {
@@ -543,6 +552,21 @@ export default function OfficeDashboardPage() {
           <div className="statCard" style={{ '--accent': '#fb923c', '--accentGlow': 'rgba(251, 146, 60, 0.17)' } as CSSProperties}>
             <div className="statLabel">Čaká na materiál</div>
             <div className="statValue">{stats.waiting}</div>
+          </div>
+          <div
+            className="statCard"
+            style={{
+              '--accent': stats.customerUpdates > 0 ? '#ef4444' : '#94a3b8',
+              '--accentGlow': stats.customerUpdates > 0 ? 'rgba(239, 68, 68, 0.24)' : 'rgba(148, 163, 184, 0.14)',
+              background:
+                stats.customerUpdates > 0
+                  ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.95), rgba(153, 27, 27, 0.84))'
+                  : undefined,
+              color: stats.customerUpdates > 0 ? '#fff' : undefined,
+            } as CSSProperties}
+          >
+            <div className="statLabel">Úpravy od zákazníkov</div>
+            <div className="statValue">{stats.customerUpdates}</div>
           </div>
           <div
             className="statCard"

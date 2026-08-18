@@ -1860,7 +1860,7 @@ export default function DashboardPage() {
 
   const unseenCustomerUpdateIds = useMemo(() => {
     const seen = new Set(seenCustomerUpdateIds)
-    return customerUpdates.filter((update) => !seen.has(update.id)).map((update) => update.id)
+    return customerUpdates.filter((update) => !update.seen_at && !seen.has(update.id)).map((update) => update.id)
   }, [customerUpdates, seenCustomerUpdateIds])
 
   const unseenCustomerUpdatesByOrder = useMemo(() => {
@@ -2190,13 +2190,40 @@ export default function DashboardPage() {
     color: '#f8fafc',
   }
 
-  function toggleExpandedOrder(orderId: string) {
-    const updateIdsForOrder = customerUpdatesByOrder[orderId]?.map((update) => update.id) || []
-    if (updateIdsForOrder.length > 0) {
-      setSeenCustomerUpdateIds((current) => Array.from(new Set([...current, ...updateIdsForOrder])))
-    }
+  async function markCustomerUpdatesSeen(orderId: string) {
+    const updatesForOrder = (customerUpdatesByOrder[orderId] || []).filter((update) => !update.seen_at)
+    const updateIdsForOrder = updatesForOrder.map((update) => update.id)
+    if (updateIdsForOrder.length === 0) return
 
-    setExpandedOrderIds((curr) => (curr.includes(orderId) ? [] : [orderId]))
+    const seenAt = new Date().toISOString()
+    setSeenCustomerUpdateIds((current) => Array.from(new Set([...current, ...updateIdsForOrder])))
+    setCustomerUpdates((current) =>
+      current.map((update) => (updateIdsForOrder.includes(update.id) ? { ...update, seen_at: seenAt } : update))
+    )
+
+    const { error } = await supabase
+      .from('customer_order_updates')
+      .update({ seen_at: seenAt })
+      .in('id', updateIdsForOrder)
+      .eq('user_id', userId)
+
+    if (error) {
+      console.error('CUSTOMER UPDATE SEEN ERROR:', error)
+      setNotice({
+        type: 'error',
+        text: error.code === '42703'
+          ? 'Chýba stĺpec seen_at. Spusť SQL skript scripts/supabase-customer-updates-seen.sql v Supabase.'
+          : `Úprava sa neoznačila ako videná: ${error.message}`,
+      })
+    }
+  }
+
+  function toggleExpandedOrder(orderId: string) {
+    setExpandedOrderIds((curr) => {
+      const willOpen = !curr.includes(orderId)
+      if (willOpen) void markCustomerUpdatesSeen(orderId)
+      return willOpen ? [orderId] : []
+    })
   }
 
   function isOverdue(order: Order) {

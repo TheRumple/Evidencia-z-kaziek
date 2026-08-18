@@ -51,6 +51,7 @@ export type CustomerUpdate = {
   customer_id: string
   message: string
   attachment_urls: string[] | null
+  seen_at?: string | null
   created_at?: string
 }
 

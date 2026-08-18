@@ -15,8 +15,12 @@ create table if not exists public.customer_order_updates (
   customer_id uuid not null references public.customers(id) on delete cascade,
   message text not null,
   attachment_urls text[] not null default '{}',
+  seen_at timestamptz,
   created_at timestamptz not null default now()
 );
+
+alter table public.customer_order_updates
+  add column if not exists seen_at timestamptz;
 
 alter table public.customer_order_updates enable row level security;
 
@@ -33,6 +37,14 @@ on public.customer_order_updates
 for delete
 to authenticated
 using (auth.uid() = user_id);
+
+drop policy if exists "Users can update own customer order updates" on public.customer_order_updates;
+create policy "Users can update own customer order updates"
+on public.customer_order_updates
+for update
+to authenticated
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values (
