@@ -1473,13 +1473,10 @@ export default function DashboardPage() {
         doc.line(margin, y + 14, pageWidth - margin, y + 14)
       }
 
-      function drawHeader(pageNumber: number, totalPages: number) {
+      function drawHeader(pageNumber: number) {
         doc.setTextColor(15, 23, 42)
         doc.setFont('helvetica', 'normal')
         doc.setCharSpace(0)
-        doc.setFontSize(8.5)
-        doc.text('info@itspot.sk   |   +421 908 806 691   |   www.itspot.sk', pageWidth / 2, 8, { align: 'center' })
-        doc.text(`Strana ${pageNumber} z ${totalPages}`, pageWidth - margin, 8, { align: 'right' })
 
         if (pageNumber === 1) {
           drawItspotLogo(margin, 29)
@@ -1495,14 +1492,16 @@ export default function DashboardPage() {
         }
       }
 
-      function drawFooter() {
+      function drawFooter(pageNumber: number, totalPages: number) {
         doc.setTextColor(100, 116, 139)
         doc.setFont('helvetica', 'normal')
         doc.setFontSize(8)
-        doc.text('Vygenerovane z aplikacie ITspot', margin, pageHeight - 5)
+        doc.text('info@itspot.sk | +421 908 806 691 | www.itspot.sk', margin, pageHeight - 5)
+        doc.text('Vygenerovane z aplikacie ITspot', pageWidth / 2, pageHeight - 5, { align: 'center' })
+        doc.text(`Strana ${pageNumber} z ${totalPages}`, pageWidth - margin, pageHeight - 5, { align: 'right' })
       }
 
-      drawHeader(1, 1)
+      drawHeader(1)
 
       doc.setTextColor(15, 23, 42)
       doc.setFont('helvetica', 'bold')
@@ -1597,8 +1596,8 @@ export default function DashboardPage() {
       const totalPages = doc.getNumberOfPages()
       for (let page = 1; page <= totalPages; page += 1) {
         doc.setPage(page)
-        drawHeader(page, totalPages)
-        drawFooter()
+        drawHeader(page)
+        drawFooter(page, totalPages)
       }
 
       const safeName = pdfSafeText(`${protocolNumber}-${customerName}`).replace(/[^a-zA-Z0-9\-_ ]/g, '').trim() || 'odovzdavaci-protokol'
