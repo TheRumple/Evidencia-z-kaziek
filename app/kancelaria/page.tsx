@@ -148,7 +148,6 @@ export default function OfficeDashboardPage() {
       quotes: orders.filter((order) => order.stav === 'cenova_ponuka').length,
       inspections: orders.filter((order) => order.stav === 'obhliadka').length,
       waiting: orders.filter((order) => order.stav === 'caka').length,
-      customerUpdates: customerUpdatesCount,
       invoiced: orders.filter((order) => order.stav === 'odovzdana').length,
       revisionsDue: revisions.filter((revision) => {
         if (!revision.next_due_date) return false
@@ -158,7 +157,7 @@ export default function OfficeDashboardPage() {
         return days <= 30
       }).length,
     }
-  }, [orders, revisions, customerUpdatesCount])
+  }, [orders, revisions])
 
   if (checkingAuth) {
     return <div style={{ padding: 24, fontFamily: 'Arial, Helvetica, sans-serif' }}>Načítavam...</div>
@@ -247,7 +246,7 @@ export default function OfficeDashboardPage() {
 
         .officeSideStack {
           display: grid;
-          grid-template-rows: 74px minmax(0, 1fr);
+          grid-template-rows: 68px 68px minmax(0, 1fr);
           gap: 8px;
           min-height: 0;
         }
@@ -301,7 +300,7 @@ export default function OfficeDashboardPage() {
 
         .requestBadge {
           min-width: 0;
-          height: 74px;
+          min-height: 0;
           border-radius: 16px;
           border: 1px solid rgba(190, 242, 100, 0.35);
           background:
@@ -381,8 +380,8 @@ export default function OfficeDashboardPage() {
         .statusGrid {
           display: grid;
           grid-column: 1 / -1;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          grid-template-rows: repeat(3, minmax(58px, 1fr));
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          grid-template-rows: repeat(2, minmax(82px, 1fr));
           gap: 8px;
           min-height: 0;
         }
@@ -511,6 +510,16 @@ export default function OfficeDashboardPage() {
               <div className="requestBadgeValue">{pendingRequestsCount}</div>
             </div>
 
+            <div className={`requestBadge ${customerUpdatesCount > 0 ? 'hasRequests' : ''}`}>
+              <div>
+                <div className="requestBadgeLabel">Úpravy od zákazníkov</div>
+                <div className="requestBadgeText">
+                  {customerUpdatesCount > 0 ? 'Čaká na pozretie' : 'Bez novej úpravy'}
+                </div>
+              </div>
+              <div className="requestBadgeValue">{customerUpdatesCount}</div>
+            </div>
+
             <div className="glassPanel weatherPanel">
               <div>
                 <div style={{ color: 'rgba(226,232,240,0.72)', fontWeight: 900, marginBottom: 8 }}>Počasie Nová Baňa</div>
@@ -552,21 +561,6 @@ export default function OfficeDashboardPage() {
           <div className="statCard" style={{ '--accent': '#fb923c', '--accentGlow': 'rgba(251, 146, 60, 0.17)' } as CSSProperties}>
             <div className="statLabel">Čaká na materiál</div>
             <div className="statValue">{stats.waiting}</div>
-          </div>
-          <div
-            className="statCard"
-            style={{
-              '--accent': stats.customerUpdates > 0 ? '#ef4444' : '#94a3b8',
-              '--accentGlow': stats.customerUpdates > 0 ? 'rgba(239, 68, 68, 0.24)' : 'rgba(148, 163, 184, 0.14)',
-              background:
-                stats.customerUpdates > 0
-                  ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.95), rgba(153, 27, 27, 0.84))'
-                  : undefined,
-              color: stats.customerUpdates > 0 ? '#fff' : undefined,
-            } as CSSProperties}
-          >
-            <div className="statLabel">Úpravy od zákazníkov</div>
-            <div className="statValue">{stats.customerUpdates}</div>
           </div>
           <div
             className="statCard"
