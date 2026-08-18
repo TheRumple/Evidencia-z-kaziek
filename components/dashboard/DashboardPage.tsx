@@ -186,7 +186,6 @@ export default function DashboardPage() {
   const [workLogKm, setWorkLogKm] = useState('')
   const [workLogEmployees, setWorkLogEmployees] = useState<string[]>([])
 
-  const [activeDeliveryProtocolOrderId, setActiveDeliveryProtocolOrderId] = useState('')
   const [deliveryProtocolNumber, setDeliveryProtocolNumber] = useState('')
   const [deliveryProtocolDate, setDeliveryProtocolDate] = useState(getTodayDate())
   const [deliveryProtocolCustomer, setDeliveryProtocolCustomer] = useState('')
@@ -702,7 +701,6 @@ export default function DashboardPage() {
   }
 
   function resetDeliveryProtocolForm() {
-    setActiveDeliveryProtocolOrderId('')
     setDeliveryProtocolNumber('')
     setDeliveryProtocolDate(getTodayDate())
     setDeliveryProtocolCustomer('')
@@ -1388,20 +1386,13 @@ export default function DashboardPage() {
     setOpenWorkLog(true)
   }
 
-  function openDeliveryProtocolModal(orderId: string) {
-    const order = orders.find((item) => item.id === orderId)
-    if (!order) {
-      setNotice({ type: 'error', text: 'Zákazka nebola nájdená.' })
-      return
-    }
-
+  function openDeliveryProtocolModal() {
     const today = getTodayDate()
-    setActiveDeliveryProtocolOrderId(orderId)
     setDeliveryProtocolNumber(`OP-${today.replaceAll('-', '')}`)
     setDeliveryProtocolDate(today)
-    setDeliveryProtocolCustomer(getCustomerName(order.customer_id))
+    setDeliveryProtocolCustomer('')
     setDeliveryProtocolDeliveredBy(employees[0]?.name || '')
-    setDeliveryProtocolReceivedBy(getRequesterFromDescription(order.popis) || '')
+    setDeliveryProtocolReceivedBy('')
     setDeliveryProtocolItems(createDeliveryProtocolItems())
     setOpenDeliveryProtocol(true)
   }
@@ -1441,12 +1432,6 @@ export default function DashboardPage() {
   }
 
   async function exportDeliveryProtocolPdf() {
-    const order = currentDeliveryProtocolOrder
-    if (!order) {
-      setNotice({ type: 'error', text: 'Zákazka nebola nájdená.' })
-      return
-    }
-
     const filledItems = deliveryProtocolItems.filter(
       (item) => item.name.trim() || item.serialNumber.trim() || item.quantity.trim() || item.note.trim()
     )
@@ -1458,6 +1443,7 @@ export default function DashboardPage() {
 
     try {
       const logoDataUrl = await loadFirstAvailableImage([
+        '/logo-new.png',
         '/logo.png',
         '/logo.jpg',
         '/logo.jpeg',
@@ -1474,7 +1460,7 @@ export default function DashboardPage() {
       const pageHeight = doc.internal.pageSize.getHeight()
       const margin = 14
       const protocolNumber = pdfSafeText(deliveryProtocolNumber || `OP-${deliveryProtocolDate.replaceAll('-', '')}`)
-      const customerName = pdfSafeText(deliveryProtocolCustomer || getCustomerName(order.customer_id))
+      const customerName = pdfSafeText(deliveryProtocolCustomer || '-')
       const deliveryDate = formatDate(deliveryProtocolDate)
       const deliveredBy = pdfSafeText(deliveryProtocolDeliveredBy || '-')
       const receivedBy = pdfSafeText(deliveryProtocolReceivedBy || '-')
@@ -1490,7 +1476,7 @@ export default function DashboardPage() {
         if (pageNumber === 1) {
           if (logoDataUrl) {
             try {
-              doc.addImage(logoDataUrl, 'PNG', margin, 14, 17, 17)
+              doc.addImage(logoDataUrl, 'PNG', margin, 14, 42, 16)
             } catch {}
           }
 
@@ -1525,27 +1511,22 @@ export default function DashboardPage() {
       doc.text(protocolNumber || '-', margin + 33, 51)
 
       doc.setFont('helvetica', 'bold')
-      doc.text('Zakazka:', margin, 58)
+      doc.text('Zakaznik:', margin, 62)
+      doc.text('Datum odovzdania:', 112, 62)
       doc.setFont('helvetica', 'normal')
-      doc.text(pdfSafeText(order.nazov || '-'), margin + 20, 58)
-
-      doc.setFont('helvetica', 'bold')
-      doc.text('Zakaznik:', margin, 70)
-      doc.text('Datum odovzdania:', 112, 70)
-      doc.setFont('helvetica', 'normal')
-      doc.text(customerName || '-', margin, 76)
-      doc.text(deliveryDate || '-', 112, 76)
+      doc.text(customerName || '-', margin, 68)
+      doc.text(deliveryDate || '-', 112, 68)
 
       doc.setDrawColor(15, 23, 42)
       doc.setLineWidth(0.4)
-      doc.line(margin, 82, pageWidth - margin, 82)
+      doc.line(margin, 76, pageWidth - margin, 76)
 
       doc.setFont('helvetica', 'bold')
       doc.setFontSize(11)
-      doc.text('ZOZNAM ODOVZDANEJ TECHNIKY A PRISLUSENSTVA', margin, 91)
+      doc.text('ZOZNAM ODOVZDANEJ TECHNIKY A PRISLUSENSTVA', margin, 85)
 
       autoTable(doc, {
-        startY: 96,
+        startY: 90,
         margin: { left: margin, right: margin, bottom: 54 },
         head: [['P. c.', 'Zariadenie / polozka', 'Seriove cislo (S/N)', 'Ks', 'Poznamka']],
         body: filledItems.map((item, index) => [
@@ -1616,7 +1597,7 @@ export default function DashboardPage() {
         drawFooter()
       }
 
-      const safeName = pdfSafeText(`${protocolNumber}-${order.nazov}`).replace(/[^a-zA-Z0-9\-_ ]/g, '').trim() || 'odovzdavaci-protokol'
+      const safeName = pdfSafeText(`${protocolNumber}-${customerName}`).replace(/[^a-zA-Z0-9\-_ ]/g, '').trim() || 'odovzdavaci-protokol'
       const blob = doc.output('blob')
       const url = URL.createObjectURL(blob)
       const win = window.open(url, '_blank')
@@ -2365,10 +2346,6 @@ export default function DashboardPage() {
     return orders.find((o) => o.id === activeWorkLogOrderId) || null
   }, [orders, activeWorkLogOrderId])
 
-  const currentDeliveryProtocolOrder = useMemo(() => {
-    return orders.find((o) => o.id === activeDeliveryProtocolOrderId) || null
-  }, [orders, activeDeliveryProtocolOrderId])
-
   const boxStyle: CSSProperties = {
     background: 'rgba(255,255,255,0.96)',
     border: '1px solid rgba(226,232,240,0.86)',
@@ -2581,6 +2558,11 @@ export default function DashboardPage() {
               <span className="sideMenuIcon">›</span>
             </Link>
 
+            <button type="button" style={sideNavButton(false)} onClick={openDeliveryProtocolModal}>
+              <span>Odovzdávací protokol</span>
+              <span className="sideMenuIcon">›</span>
+            </button>
+
             <Link href="/kancelaria" style={sideNavButton(false)}>
               <span>Kancelária</span>
               <span className="sideMenuIcon">›</span>
@@ -2764,7 +2746,6 @@ export default function DashboardPage() {
             isPinnedOrder={isPinnedOrder}
             labelStyle={labelStyle}
             openWorkLogModal={openWorkLogModal}
-            openDeliveryProtocolModal={openDeliveryProtocolModal}
             search={search}
             selectedCustomerId={selectedCustomerId}
             setSearch={setSearch}
@@ -2842,7 +2823,6 @@ export default function DashboardPage() {
             closeEditOrderModal={closeEditOrderModal}
             closeDeliveryProtocolModal={closeDeliveryProtocolModal}
             closeWorkLogModal={closeWorkLogModal}
-            currentDeliveryProtocolOrder={currentDeliveryProtocolOrder}
             currentOrder={currentOrder}
             currentOrderWorkLogs={currentOrderWorkLogs}
             customerId={customerId}

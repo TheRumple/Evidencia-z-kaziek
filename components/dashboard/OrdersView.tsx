@@ -29,7 +29,6 @@ type OrdersViewProps = {
   isPinnedOrder: (orderId: string) => boolean
   labelStyle: CSSProperties
   openWorkLogModal: (orderId: string) => void
-  openDeliveryProtocolModal: (orderId: string) => void
   search: string
   selectedCustomerId: string
   setSearch: (value: string) => void
@@ -67,7 +66,6 @@ export function OrdersView({
   isPinnedOrder,
   labelStyle,
   openWorkLogModal,
-  openDeliveryProtocolModal,
   search,
   selectedCustomerId,
   setSearch,
@@ -198,7 +196,6 @@ export function OrdersView({
                       getOrderKilometres={getOrderKilometres}
                       isOverdue={isOverdue}
                       openWorkLogModal={openWorkLogModal}
-                      openDeliveryProtocolModal={openDeliveryProtocolModal}
                       startEditOrder={startEditOrder}
                       toggleExpandedOrder={toggleExpandedOrder}
                       togglePinnedOrder={togglePinnedOrder}

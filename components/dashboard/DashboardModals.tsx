@@ -143,7 +143,6 @@ export function DashboardModals(props: DashboardModalsProps) {
     closeEditOrderModal,
     closeDeliveryProtocolModal,
     closeWorkLogModal,
-    currentDeliveryProtocolOrder,
     currentOrder,
     currentOrderWorkLogs,
     customerId,
@@ -950,25 +949,23 @@ export function DashboardModals(props: DashboardModalsProps) {
 
         <Modal
           open={openDeliveryProtocol}
-          title={currentDeliveryProtocolOrder ? `Odovzdávací protokol: ${currentDeliveryProtocolOrder.nazov}` : 'Odovzdávací protokol'}
+          title="Odovzdávací protokol"
           onClose={closeDeliveryProtocolModal}
         >
           <div style={{ display: 'grid', gap: 12 }}>
-            {currentDeliveryProtocolOrder && (
-              <div
-                style={{
-                  background: '#f8fafc',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: 14,
-                  padding: 12,
-                }}
-              >
-                <div style={{ fontSize: 17, fontWeight: 900 }}>{currentDeliveryProtocolOrder.nazov}</div>
-                <div style={{ color: '#475569', marginTop: 4, fontWeight: 800 }}>
-                  {getCustomerName(currentDeliveryProtocolOrder.customer_id)}
-                </div>
-              </div>
-            )}
+            <div
+              style={{
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                borderRadius: 14,
+                padding: 12,
+                color: '#475569',
+                fontSize: 13,
+                fontWeight: 800,
+              }}
+            >
+              Samostatný protokol bez väzby na zákazku. Doplň zákazníka, technika a odovzdávaný materiál.
+            </div>
 
             <div className="modalGrid">
               <div>
