@@ -265,7 +265,6 @@ export function DashboardModals(props: DashboardModalsProps) {
     deliveryProtocolReceivedBy,
     deliveryProtocolTested,
     deliveryProtocolBriefed,
-    deliveryProtocolDeliveredSignature,
     deliveryProtocolReceivedSignature,
     editCustomerEmail,
     editCustomerKontakt,
@@ -364,7 +363,6 @@ export function DashboardModals(props: DashboardModalsProps) {
     setDeliveryProtocolReceivedBy,
     setDeliveryProtocolTested,
     setDeliveryProtocolBriefed,
-    setDeliveryProtocolDeliveredSignature,
     setDeliveryProtocolReceivedSignature,
     setKontakt,
     setNazov,
@@ -1258,12 +1256,7 @@ export function DashboardModals(props: DashboardModalsProps) {
               }}
             >
               <div style={{ fontWeight: 900 }}>Podpisy do PDF</div>
-              <div className="modalGrid">
-                <SignaturePad
-                  label="Podpis odovzdal"
-                  value={deliveryProtocolDeliveredSignature}
-                  onChange={setDeliveryProtocolDeliveredSignature}
-                />
+              <div style={{ maxWidth: 560 }}>
                 <SignaturePad
                   label="Podpis prevzal"
                   value={deliveryProtocolReceivedSignature}

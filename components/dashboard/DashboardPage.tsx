@@ -69,6 +69,8 @@ type DeliveryProtocolItem = {
   note: string
 }
 
+const DEFAULT_DELIVERY_PROTOCOL_TECHNICIAN = 'Ľuboš Ivanič'
+
 function createDeliveryProtocolItem(): DeliveryProtocolItem {
   return {
     id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -193,7 +195,6 @@ export default function DashboardPage() {
   const [deliveryProtocolReceivedBy, setDeliveryProtocolReceivedBy] = useState('')
   const [deliveryProtocolTested, setDeliveryProtocolTested] = useState(true)
   const [deliveryProtocolBriefed, setDeliveryProtocolBriefed] = useState(true)
-  const [deliveryProtocolDeliveredSignature, setDeliveryProtocolDeliveredSignature] = useState('')
   const [deliveryProtocolReceivedSignature, setDeliveryProtocolReceivedSignature] = useState('')
   const [deliveryProtocolItems, setDeliveryProtocolItems] = useState<DeliveryProtocolItem[]>(() => createDeliveryProtocolItems())
 
@@ -708,11 +709,10 @@ export default function DashboardPage() {
     setDeliveryProtocolNumber('')
     setDeliveryProtocolDate(getTodayDate())
     setDeliveryProtocolCustomer('')
-    setDeliveryProtocolDeliveredBy('')
+    setDeliveryProtocolDeliveredBy(DEFAULT_DELIVERY_PROTOCOL_TECHNICIAN)
     setDeliveryProtocolReceivedBy('')
     setDeliveryProtocolTested(true)
     setDeliveryProtocolBriefed(true)
-    setDeliveryProtocolDeliveredSignature('')
     setDeliveryProtocolReceivedSignature('')
     setDeliveryProtocolItems(createDeliveryProtocolItems())
   }
@@ -1399,11 +1399,10 @@ export default function DashboardPage() {
     setDeliveryProtocolNumber(`OP-${today.replaceAll('-', '')}`)
     setDeliveryProtocolDate(today)
     setDeliveryProtocolCustomer('')
-    setDeliveryProtocolDeliveredBy(employees[0]?.name || '')
+    setDeliveryProtocolDeliveredBy(DEFAULT_DELIVERY_PROTOCOL_TECHNICIAN)
     setDeliveryProtocolReceivedBy('')
     setDeliveryProtocolTested(true)
     setDeliveryProtocolBriefed(true)
-    setDeliveryProtocolDeliveredSignature('')
     setDeliveryProtocolReceivedSignature('')
     setDeliveryProtocolItems(createDeliveryProtocolItems())
     setOpenDeliveryProtocol(true)
@@ -1598,9 +1597,6 @@ export default function DashboardPage() {
       doc.setFont('helvetica', 'normal')
       doc.text(`Meno: ${deliveredBy}`, margin, signatureY + 10)
       doc.text(`Meno: ${receivedBy}`, 112, signatureY + 10)
-      if (deliveryProtocolDeliveredSignature) {
-        doc.addImage(deliveryProtocolDeliveredSignature, 'PNG', margin + 2, signatureY + 12, 58, 15)
-      }
       if (deliveryProtocolReceivedSignature) {
         doc.addImage(deliveryProtocolReceivedSignature, 'PNG', 114, signatureY + 12, 58, 15)
       }
@@ -2858,7 +2854,6 @@ export default function DashboardPage() {
             deliveryProtocolReceivedBy={deliveryProtocolReceivedBy}
             deliveryProtocolTested={deliveryProtocolTested}
             deliveryProtocolBriefed={deliveryProtocolBriefed}
-            deliveryProtocolDeliveredSignature={deliveryProtocolDeliveredSignature}
             deliveryProtocolReceivedSignature={deliveryProtocolReceivedSignature}
             editCustomerEmail={editCustomerEmail}
             editCustomerKontakt={editCustomerKontakt}
@@ -2957,7 +2952,6 @@ export default function DashboardPage() {
             setDeliveryProtocolReceivedBy={setDeliveryProtocolReceivedBy}
             setDeliveryProtocolTested={setDeliveryProtocolTested}
             setDeliveryProtocolBriefed={setDeliveryProtocolBriefed}
-            setDeliveryProtocolDeliveredSignature={setDeliveryProtocolDeliveredSignature}
             setDeliveryProtocolReceivedSignature={setDeliveryProtocolReceivedSignature}
             setKontakt={setKontakt}
             setNazov={setNazov}
