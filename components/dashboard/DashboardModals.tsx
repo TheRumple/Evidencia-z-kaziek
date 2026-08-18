@@ -156,6 +156,8 @@ export function DashboardModals(props: DashboardModalsProps) {
     deliveryProtocolItems,
     deliveryProtocolNumber,
     deliveryProtocolReceivedBy,
+    deliveryProtocolTested,
+    deliveryProtocolBriefed,
     editCustomerEmail,
     editCustomerKontakt,
     editCustomerNazov,
@@ -251,6 +253,8 @@ export function DashboardModals(props: DashboardModalsProps) {
     setDeliveryProtocolDeliveredBy,
     setDeliveryProtocolNumber,
     setDeliveryProtocolReceivedBy,
+    setDeliveryProtocolTested,
+    setDeliveryProtocolBriefed,
     setKontakt,
     setNazov,
     setNewCustomerEmail,
@@ -1099,6 +1103,37 @@ export function DashboardModals(props: DashboardModalsProps) {
                   </div>
                 ))}
               </div>
+            </div>
+
+            <div
+              style={{
+                border: '1px solid #e2e8f0',
+                background: '#f8fafc',
+                borderRadius: 14,
+                padding: 12,
+                display: 'grid',
+                gap: 8,
+              }}
+            >
+              <div style={{ fontWeight: 900 }}>Potvrdenie</div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 800, color: '#0f172a', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={deliveryProtocolTested}
+                  onChange={(event) => setDeliveryProtocolTested(event.target.checked)}
+                  style={{ width: 18, height: 18 }}
+                />
+                <span>Zariadenie bolo odskúšané a je funkčné.</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 800, color: '#0f172a', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={deliveryProtocolBriefed}
+                  onChange={(event) => setDeliveryProtocolBriefed(event.target.checked)}
+                  style={{ width: 18, height: 18 }}
+                />
+                <span>Zákazník bol oboznámený so základnou obsluhou.</span>
+              </label>
             </div>
 
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 4 }}>

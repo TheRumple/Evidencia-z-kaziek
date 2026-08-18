@@ -191,6 +191,8 @@ export default function DashboardPage() {
   const [deliveryProtocolCustomer, setDeliveryProtocolCustomer] = useState('')
   const [deliveryProtocolDeliveredBy, setDeliveryProtocolDeliveredBy] = useState('')
   const [deliveryProtocolReceivedBy, setDeliveryProtocolReceivedBy] = useState('')
+  const [deliveryProtocolTested, setDeliveryProtocolTested] = useState(true)
+  const [deliveryProtocolBriefed, setDeliveryProtocolBriefed] = useState(true)
   const [deliveryProtocolItems, setDeliveryProtocolItems] = useState<DeliveryProtocolItem[]>(() => createDeliveryProtocolItems())
 
   const [openAddCustomer, setOpenAddCustomer] = useState(false)
@@ -706,6 +708,8 @@ export default function DashboardPage() {
     setDeliveryProtocolCustomer('')
     setDeliveryProtocolDeliveredBy('')
     setDeliveryProtocolReceivedBy('')
+    setDeliveryProtocolTested(true)
+    setDeliveryProtocolBriefed(true)
     setDeliveryProtocolItems(createDeliveryProtocolItems())
   }
 
@@ -1393,6 +1397,8 @@ export default function DashboardPage() {
     setDeliveryProtocolCustomer('')
     setDeliveryProtocolDeliveredBy(employees[0]?.name || '')
     setDeliveryProtocolReceivedBy('')
+    setDeliveryProtocolTested(true)
+    setDeliveryProtocolBriefed(true)
     setDeliveryProtocolItems(createDeliveryProtocolItems())
     setOpenDeliveryProtocol(true)
   }
@@ -1442,14 +1448,6 @@ export default function DashboardPage() {
     }
 
     try {
-      const logoDataUrl = await loadFirstAvailableImage([
-        '/logo-new.png',
-        '/logo.png',
-        '/logo.jpg',
-        '/logo.jpeg',
-        '/logo.webp',
-      ])
-
       const doc = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
@@ -1460,10 +1458,26 @@ export default function DashboardPage() {
       const pageHeight = doc.internal.pageSize.getHeight()
       const margin = 14
       const protocolNumber = pdfSafeText(deliveryProtocolNumber || `OP-${deliveryProtocolDate.replaceAll('-', '')}`)
-      const customerName = pdfSafeText(deliveryProtocolCustomer || '-')
+      const customerName = pdfSafeText(deliveryProtocolCustomer)
       const deliveryDate = formatDate(deliveryProtocolDate)
-      const deliveredBy = pdfSafeText(deliveryProtocolDeliveredBy || '-')
-      const receivedBy = pdfSafeText(deliveryProtocolReceivedBy || '-')
+      const deliveredBy = pdfSafeText(deliveryProtocolDeliveredBy)
+      const receivedBy = pdfSafeText(deliveryProtocolReceivedBy)
+
+      function drawItspotLogo(x: number, y: number) {
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(35)
+        doc.setTextColor(0, 0, 0)
+        doc.text('ITsp', x, y)
+        const firstPartWidth = doc.getTextWidth('ITsp')
+        doc.setTextColor(132, 204, 22)
+        doc.text('o', x + firstPartWidth, y)
+        const powerWidth = doc.getTextWidth('o')
+        doc.setTextColor(0, 0, 0)
+        doc.text('t', x + firstPartWidth + powerWidth, y)
+        doc.setDrawColor(0, 0, 0)
+        doc.setLineWidth(0.8)
+        doc.line(margin, y + 14, pageWidth - margin, y + 14)
+      }
 
       function drawHeader(pageNumber: number, totalPages: number) {
         doc.setTextColor(15, 23, 42)
@@ -1474,11 +1488,7 @@ export default function DashboardPage() {
         doc.text(`Strana ${pageNumber} z ${totalPages}`, pageWidth - margin, 8, { align: 'right' })
 
         if (pageNumber === 1) {
-          if (logoDataUrl) {
-            try {
-              doc.addImage(logoDataUrl, 'PNG', margin, 14, 42, 16)
-            } catch {}
-          }
+          drawItspotLogo(margin, 29)
 
           doc.setFont('helvetica', 'bold')
           doc.setFontSize(11)
@@ -1503,30 +1513,30 @@ export default function DashboardPage() {
       doc.setTextColor(15, 23, 42)
       doc.setFont('helvetica', 'bold')
       doc.setFontSize(18)
-      doc.text('ODOVZDAVACI PROTOKOL', margin, 42)
+      doc.text('ODOVZDAVACI PROTOKOL', margin, 52)
 
       doc.setFontSize(10)
-      doc.text('Cislo protokolu:', margin, 51)
+      doc.text('Cislo protokolu:', margin, 61)
       doc.setFont('helvetica', 'normal')
-      doc.text(protocolNumber || '-', margin + 33, 51)
+      doc.text(protocolNumber || '-', margin + 33, 61)
 
       doc.setFont('helvetica', 'bold')
-      doc.text('Zakaznik:', margin, 62)
-      doc.text('Datum odovzdania:', 112, 62)
+      doc.text('Zakaznik:', margin, 72)
+      doc.text('Datum odovzdania:', 112, 72)
       doc.setFont('helvetica', 'normal')
-      doc.text(customerName || '-', margin, 68)
-      doc.text(deliveryDate || '-', 112, 68)
+      doc.text(customerName, margin, 78)
+      doc.text(deliveryDate || '-', 112, 78)
 
       doc.setDrawColor(15, 23, 42)
       doc.setLineWidth(0.4)
-      doc.line(margin, 76, pageWidth - margin, 76)
+      doc.line(margin, 86, pageWidth - margin, 86)
 
       doc.setFont('helvetica', 'bold')
       doc.setFontSize(11)
-      doc.text('ZOZNAM ODOVZDANEJ TECHNIKY A PRISLUSENSTVA', margin, 85)
+      doc.text('ZOZNAM ODOVZDANEJ TECHNIKY A PRISLUSENSTVA', margin, 95)
 
       autoTable(doc, {
-        startY: 90,
+        startY: 100,
         margin: { left: margin, right: margin, bottom: 54 },
         head: [['P. c.', 'Zariadenie / polozka', 'Seriove cislo (S/N)', 'Ks', 'Poznamka']],
         body: filledItems.map((item, index) => [
@@ -1574,8 +1584,8 @@ export default function DashboardPage() {
       doc.text('POTVRDENIE', margin, footerStartY)
       doc.setFont('helvetica', 'normal')
       doc.setFontSize(10)
-      doc.text('[ ] Zariadenie bolo odskusane a je funkcne.', margin, footerStartY + 8)
-      doc.text('[ ] Zakaznik bol oboznameny so zakladnou obsluhou.', margin, footerStartY + 15)
+      doc.text(`${deliveryProtocolTested ? '[x]' : '[ ]'} Zariadenie bolo odskusane a je funkcne.`, margin, footerStartY + 8)
+      doc.text(`${deliveryProtocolBriefed ? '[x]' : '[ ]'} Zakaznik bol oboznameny so zakladnou obsluhou.`, margin, footerStartY + 15)
 
       const signatureY = footerStartY + 34
       doc.setFont('helvetica', 'bold')
@@ -2836,6 +2846,8 @@ export default function DashboardPage() {
             deliveryProtocolItems={deliveryProtocolItems}
             deliveryProtocolNumber={deliveryProtocolNumber}
             deliveryProtocolReceivedBy={deliveryProtocolReceivedBy}
+            deliveryProtocolTested={deliveryProtocolTested}
+            deliveryProtocolBriefed={deliveryProtocolBriefed}
             editCustomerEmail={editCustomerEmail}
             editCustomerKontakt={editCustomerKontakt}
             editCustomerNazov={editCustomerNazov}
@@ -2931,6 +2943,8 @@ export default function DashboardPage() {
             setDeliveryProtocolDeliveredBy={setDeliveryProtocolDeliveredBy}
             setDeliveryProtocolNumber={setDeliveryProtocolNumber}
             setDeliveryProtocolReceivedBy={setDeliveryProtocolReceivedBy}
+            setDeliveryProtocolTested={setDeliveryProtocolTested}
+            setDeliveryProtocolBriefed={setDeliveryProtocolBriefed}
             setKontakt={setKontakt}
             setNazov={setNazov}
             setNewCustomerEmail={setNewCustomerEmail}
