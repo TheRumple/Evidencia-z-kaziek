@@ -61,6 +61,28 @@ function getPortalCodeErrorMessage(error: { code?: string; message?: string } | 
   return message
 }
 
+type DeliveryProtocolItem = {
+  id: string
+  name: string
+  serialNumber: string
+  quantity: string
+  note: string
+}
+
+function createDeliveryProtocolItem(): DeliveryProtocolItem {
+  return {
+    id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    name: '',
+    serialNumber: '',
+    quantity: '1',
+    note: '',
+  }
+}
+
+function createDeliveryProtocolItems(count = 8) {
+  return Array.from({ length: count }, () => createDeliveryProtocolItem())
+}
+
 export default function DashboardPage() {
   const router = useRouter()
 
@@ -164,6 +186,14 @@ export default function DashboardPage() {
   const [workLogKm, setWorkLogKm] = useState('')
   const [workLogEmployees, setWorkLogEmployees] = useState<string[]>([])
 
+  const [activeDeliveryProtocolOrderId, setActiveDeliveryProtocolOrderId] = useState('')
+  const [deliveryProtocolNumber, setDeliveryProtocolNumber] = useState('')
+  const [deliveryProtocolDate, setDeliveryProtocolDate] = useState(getTodayDate())
+  const [deliveryProtocolCustomer, setDeliveryProtocolCustomer] = useState('')
+  const [deliveryProtocolDeliveredBy, setDeliveryProtocolDeliveredBy] = useState('')
+  const [deliveryProtocolReceivedBy, setDeliveryProtocolReceivedBy] = useState('')
+  const [deliveryProtocolItems, setDeliveryProtocolItems] = useState<DeliveryProtocolItem[]>(() => createDeliveryProtocolItems())
+
   const [openAddCustomer, setOpenAddCustomer] = useState(false)
   const [openAddOrder, setOpenAddOrder] = useState(false)
   const [openEditCustomer, setOpenEditCustomer] = useState(false)
@@ -171,6 +201,7 @@ export default function DashboardPage() {
   const [openAddEmployee, setOpenAddEmployee] = useState(false)
   const [openEditEmployee, setOpenEditEmployee] = useState(false)
   const [openWorkLog, setOpenWorkLog] = useState(false)
+  const [openDeliveryProtocol, setOpenDeliveryProtocol] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -668,6 +699,21 @@ export default function DashboardPage() {
     setActiveWorkLogOrderId('')
     resetWorkLogForm()
     setOpenWorkLog(false)
+  }
+
+  function resetDeliveryProtocolForm() {
+    setActiveDeliveryProtocolOrderId('')
+    setDeliveryProtocolNumber('')
+    setDeliveryProtocolDate(getTodayDate())
+    setDeliveryProtocolCustomer('')
+    setDeliveryProtocolDeliveredBy('')
+    setDeliveryProtocolReceivedBy('')
+    setDeliveryProtocolItems(createDeliveryProtocolItems())
+  }
+
+  function closeDeliveryProtocolModal() {
+    resetDeliveryProtocolForm()
+    setOpenDeliveryProtocol(false)
   }
 
 
@@ -1342,6 +1388,38 @@ export default function DashboardPage() {
     setOpenWorkLog(true)
   }
 
+  function openDeliveryProtocolModal(orderId: string) {
+    const order = orders.find((item) => item.id === orderId)
+    if (!order) {
+      setNotice({ type: 'error', text: 'Zákazka nebola nájdená.' })
+      return
+    }
+
+    const today = getTodayDate()
+    setActiveDeliveryProtocolOrderId(orderId)
+    setDeliveryProtocolNumber(`OP-${today.replaceAll('-', '')}`)
+    setDeliveryProtocolDate(today)
+    setDeliveryProtocolCustomer(getCustomerName(order.customer_id))
+    setDeliveryProtocolDeliveredBy(employees[0]?.name || '')
+    setDeliveryProtocolReceivedBy(getRequesterFromDescription(order.popis) || '')
+    setDeliveryProtocolItems(createDeliveryProtocolItems())
+    setOpenDeliveryProtocol(true)
+  }
+
+  function updateDeliveryProtocolItem(index: number, field: keyof Omit<DeliveryProtocolItem, 'id'>, value: string) {
+    setDeliveryProtocolItems((current) =>
+      current.map((item, itemIndex) => (itemIndex === index ? { ...item, [field]: value } : item))
+    )
+  }
+
+  function addDeliveryProtocolItem() {
+    setDeliveryProtocolItems((current) => [...current, createDeliveryProtocolItem()])
+  }
+
+  function removeDeliveryProtocolItem(index: number) {
+    setDeliveryProtocolItems((current) => (current.length <= 1 ? current : current.filter((_, itemIndex) => itemIndex !== index)))
+  }
+
   function toggleWorkLogEmployee(name: string) {
     setWorkLogEmployees((curr) =>
       curr.includes(name) ? curr.filter((n) => n !== name) : [...curr, name]
@@ -1360,6 +1438,202 @@ export default function DashboardPage() {
     setWorkLogEmployees(log.zamestnanci || [])
     setOpenWorkLog(true)
     setActiveWorkLogOrderId(log.order_id)
+  }
+
+  async function exportDeliveryProtocolPdf() {
+    const order = currentDeliveryProtocolOrder
+    if (!order) {
+      setNotice({ type: 'error', text: 'Zákazka nebola nájdená.' })
+      return
+    }
+
+    const filledItems = deliveryProtocolItems.filter(
+      (item) => item.name.trim() || item.serialNumber.trim() || item.quantity.trim() || item.note.trim()
+    )
+
+    if (filledItems.length === 0) {
+      setNotice({ type: 'error', text: 'Doplň aspoň jednu odovzdávanú položku.' })
+      return
+    }
+
+    try {
+      const logoDataUrl = await loadFirstAvailableImage([
+        '/logo.png',
+        '/logo.jpg',
+        '/logo.jpeg',
+        '/logo.webp',
+      ])
+
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      })
+
+      const pageWidth = doc.internal.pageSize.getWidth()
+      const pageHeight = doc.internal.pageSize.getHeight()
+      const margin = 14
+      const protocolNumber = pdfSafeText(deliveryProtocolNumber || `OP-${deliveryProtocolDate.replaceAll('-', '')}`)
+      const customerName = pdfSafeText(deliveryProtocolCustomer || getCustomerName(order.customer_id))
+      const deliveryDate = formatDate(deliveryProtocolDate)
+      const deliveredBy = pdfSafeText(deliveryProtocolDeliveredBy || '-')
+      const receivedBy = pdfSafeText(deliveryProtocolReceivedBy || '-')
+
+      function drawHeader(pageNumber: number, totalPages: number) {
+        doc.setTextColor(15, 23, 42)
+        doc.setFont('helvetica', 'normal')
+        doc.setCharSpace(0)
+        doc.setFontSize(8.5)
+        doc.text('info@itspot.sk   |   +421 908 806 691   |   www.itspot.sk', pageWidth / 2, 8, { align: 'center' })
+        doc.text(`Strana ${pageNumber} z ${totalPages}`, pageWidth - margin, 8, { align: 'right' })
+
+        if (pageNumber === 1) {
+          if (logoDataUrl) {
+            try {
+              doc.addImage(logoDataUrl, 'PNG', margin, 14, 17, 17)
+            } catch {}
+          }
+
+          doc.setFont('helvetica', 'bold')
+          doc.setFontSize(11)
+          doc.text('ITspot s. r. o.', pageWidth - margin, 16, { align: 'right' })
+          doc.setFont('helvetica', 'normal')
+          doc.setFontSize(8.5)
+          doc.text('Hajles 1703/6, 968 01 Nova Bana', pageWidth - margin, 20.5, { align: 'right' })
+          doc.text('ICO: 56430388', pageWidth - margin, 25, { align: 'right' })
+          doc.text('IC DPH: SK2122307462', pageWidth - margin, 29.5, { align: 'right' })
+        }
+      }
+
+      function drawFooter() {
+        doc.setTextColor(100, 116, 139)
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(8)
+        doc.text('Vygenerovane z aplikacie ITspot', margin, pageHeight - 5)
+      }
+
+      drawHeader(1, 1)
+
+      doc.setTextColor(15, 23, 42)
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(18)
+      doc.text('ODOVZDAVACI PROTOKOL', margin, 42)
+
+      doc.setFontSize(10)
+      doc.text('Cislo protokolu:', margin, 51)
+      doc.setFont('helvetica', 'normal')
+      doc.text(protocolNumber || '-', margin + 33, 51)
+
+      doc.setFont('helvetica', 'bold')
+      doc.text('Zakazka:', margin, 58)
+      doc.setFont('helvetica', 'normal')
+      doc.text(pdfSafeText(order.nazov || '-'), margin + 20, 58)
+
+      doc.setFont('helvetica', 'bold')
+      doc.text('Zakaznik:', margin, 70)
+      doc.text('Datum odovzdania:', 112, 70)
+      doc.setFont('helvetica', 'normal')
+      doc.text(customerName || '-', margin, 76)
+      doc.text(deliveryDate || '-', 112, 76)
+
+      doc.setDrawColor(15, 23, 42)
+      doc.setLineWidth(0.4)
+      doc.line(margin, 82, pageWidth - margin, 82)
+
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(11)
+      doc.text('ZOZNAM ODOVZDANEJ TECHNIKY A PRISLUSENSTVA', margin, 91)
+
+      autoTable(doc, {
+        startY: 96,
+        margin: { left: margin, right: margin, bottom: 54 },
+        head: [['P. c.', 'Zariadenie / polozka', 'Seriove cislo (S/N)', 'Ks', 'Poznamka']],
+        body: filledItems.map((item, index) => [
+          String(index + 1),
+          pdfSafeText(item.name || '-'),
+          pdfSafeText(item.serialNumber || '-'),
+          pdfSafeText(item.quantity || '1'),
+          pdfSafeText(item.note || ''),
+        ]),
+        styles: {
+          font: 'helvetica',
+          fontSize: 9,
+          cellPadding: 2.2,
+          textColor: [15, 23, 42],
+          lineColor: [203, 213, 225],
+          lineWidth: 0.25,
+          valign: 'top',
+          overflow: 'linebreak',
+        },
+        headStyles: {
+          fillColor: [15, 23, 42],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+        },
+        columnStyles: {
+          0: { cellWidth: 12, halign: 'center' },
+          1: { cellWidth: 63 },
+          2: { cellWidth: 42 },
+          3: { cellWidth: 13, halign: 'center' },
+          4: { cellWidth: 42 },
+        },
+      })
+
+      const finalTableY = (doc as unknown as { lastAutoTable?: { finalY?: number } }).lastAutoTable?.finalY || 130
+      const confirmationY = Math.min(finalTableY + 12, pageHeight - 76)
+
+      if (confirmationY > pageHeight - 86) {
+        doc.addPage()
+      }
+
+      const footerStartY = doc.getCurrentPageInfo().pageNumber === 1 ? confirmationY : 28
+      doc.setTextColor(15, 23, 42)
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(11)
+      doc.text('POTVRDENIE', margin, footerStartY)
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(10)
+      doc.text('[ ] Zariadenie bolo odskusane a je funkcne.', margin, footerStartY + 8)
+      doc.text('[ ] Zakaznik bol oboznameny so zakladnou obsluhou.', margin, footerStartY + 15)
+
+      const signatureY = footerStartY + 34
+      doc.setFont('helvetica', 'bold')
+      doc.text('ODOVZDAL', margin, signatureY)
+      doc.text('PREVZAL', 112, signatureY)
+      doc.setFont('helvetica', 'normal')
+      doc.text(`Meno: ${deliveredBy}`, margin, signatureY + 10)
+      doc.text(`Meno: ${receivedBy}`, 112, signatureY + 10)
+      doc.line(margin, signatureY + 28, 88, signatureY + 28)
+      doc.line(112, signatureY + 28, pageWidth - margin, signatureY + 28)
+      doc.setFontSize(8)
+      doc.text('Podpis', margin, signatureY + 33)
+      doc.text('Podpis', 112, signatureY + 33)
+
+      const totalPages = doc.getNumberOfPages()
+      for (let page = 1; page <= totalPages; page += 1) {
+        doc.setPage(page)
+        drawHeader(page, totalPages)
+        drawFooter()
+      }
+
+      const safeName = pdfSafeText(`${protocolNumber}-${order.nazov}`).replace(/[^a-zA-Z0-9\-_ ]/g, '').trim() || 'odovzdavaci-protokol'
+      const blob = doc.output('blob')
+      const url = URL.createObjectURL(blob)
+      const win = window.open(url, '_blank')
+
+      if (!win) {
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `${safeName}.pdf`
+        a.click()
+      }
+
+      setNotice({ type: 'success', text: 'Odovzdávací protokol bol otvorený.' })
+    } catch (error) {
+      console.error(error)
+      const message = error instanceof Error ? error.message : 'Neznáma chyba.'
+      setNotice({ type: 'error', text: `Protokol sa nepodarilo vytvoriť: ${message}` })
+    }
   }
 
   async function exportOrderWorkLogsPdf(orderId: string) {
@@ -2091,6 +2365,10 @@ export default function DashboardPage() {
     return orders.find((o) => o.id === activeWorkLogOrderId) || null
   }, [orders, activeWorkLogOrderId])
 
+  const currentDeliveryProtocolOrder = useMemo(() => {
+    return orders.find((o) => o.id === activeDeliveryProtocolOrderId) || null
+  }, [orders, activeDeliveryProtocolOrderId])
+
   const boxStyle: CSSProperties = {
     background: 'rgba(255,255,255,0.96)',
     border: '1px solid rgba(226,232,240,0.86)',
@@ -2486,6 +2764,7 @@ export default function DashboardPage() {
             isPinnedOrder={isPinnedOrder}
             labelStyle={labelStyle}
             openWorkLogModal={openWorkLogModal}
+            openDeliveryProtocolModal={openDeliveryProtocolModal}
             search={search}
             selectedCustomerId={selectedCustomerId}
             setSearch={setSearch}
@@ -2561,7 +2840,9 @@ export default function DashboardPage() {
             closeEditCustomerModal={closeEditCustomerModal}
             closeEditEmployeeModal={closeEditEmployeeModal}
             closeEditOrderModal={closeEditOrderModal}
+            closeDeliveryProtocolModal={closeDeliveryProtocolModal}
             closeWorkLogModal={closeWorkLogModal}
+            currentDeliveryProtocolOrder={currentDeliveryProtocolOrder}
             currentOrder={currentOrder}
             currentOrderWorkLogs={currentOrderWorkLogs}
             customerId={customerId}
@@ -2569,6 +2850,12 @@ export default function DashboardPage() {
             customers={customers}
             dangerButtonStyle={dangerButtonStyle}
             deleteWorkLog={deleteWorkLog}
+            deliveryProtocolCustomer={deliveryProtocolCustomer}
+            deliveryProtocolDate={deliveryProtocolDate}
+            deliveryProtocolDeliveredBy={deliveryProtocolDeliveredBy}
+            deliveryProtocolItems={deliveryProtocolItems}
+            deliveryProtocolNumber={deliveryProtocolNumber}
+            deliveryProtocolReceivedBy={deliveryProtocolReceivedBy}
             editCustomerEmail={editCustomerEmail}
             editCustomerKontakt={editCustomerKontakt}
             editCustomerNazov={editCustomerNazov}
@@ -2592,6 +2879,7 @@ export default function DashboardPage() {
             employeeName={employeeName}
             employeeTelefon={employeeTelefon}
             employees={employees}
+            exportDeliveryProtocolPdf={exportDeliveryProtocolPdf}
             exportOrderWorkLogsPdf={exportOrderWorkLogsPdf}
             formatDate={formatDate}
             formatTimeShort={formatTimeShort}
@@ -2610,6 +2898,7 @@ export default function DashboardPage() {
             openAddCustomer={openAddCustomer}
             openAddEmployee={openAddEmployee}
             openAddOrder={openAddOrder}
+            openDeliveryProtocol={openDeliveryProtocol}
             openEditCustomer={openEditCustomer}
             openEditEmployee={openEditEmployee}
             openEditOrder={openEditOrder}
@@ -2657,6 +2946,11 @@ export default function DashboardPage() {
             setEmployeeEmail={setEmployeeEmail}
             setEmployeeName={setEmployeeName}
             setEmployeeTelefon={setEmployeeTelefon}
+            setDeliveryProtocolCustomer={setDeliveryProtocolCustomer}
+            setDeliveryProtocolDate={setDeliveryProtocolDate}
+            setDeliveryProtocolDeliveredBy={setDeliveryProtocolDeliveredBy}
+            setDeliveryProtocolNumber={setDeliveryProtocolNumber}
+            setDeliveryProtocolReceivedBy={setDeliveryProtocolReceivedBy}
             setKontakt={setKontakt}
             setNazov={setNazov}
             setNewCustomerEmail={setNewCustomerEmail}
@@ -2681,7 +2975,10 @@ export default function DashboardPage() {
             startEditWorkLog={startEditWorkLog}
             STATUSY={STATUSY}
             telefon={telefon}
+            addDeliveryProtocolItem={addDeliveryProtocolItem}
+            removeDeliveryProtocolItem={removeDeliveryProtocolItem}
             toggleWorkLogEmployee={toggleWorkLogEmployee}
+            updateDeliveryProtocolItem={updateDeliveryProtocolItem}
             workLogDate={workLogDate}
             workLogEmployees={workLogEmployees}
             workLogEnd={workLogEnd}

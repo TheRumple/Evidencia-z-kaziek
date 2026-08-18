@@ -141,7 +141,9 @@ export function DashboardModals(props: DashboardModalsProps) {
     closeEditCustomerModal,
     closeEditEmployeeModal,
     closeEditOrderModal,
+    closeDeliveryProtocolModal,
     closeWorkLogModal,
+    currentDeliveryProtocolOrder,
     currentOrder,
     currentOrderWorkLogs,
     customerId,
@@ -149,6 +151,12 @@ export function DashboardModals(props: DashboardModalsProps) {
     customers,
     dangerButtonStyle,
     deleteWorkLog,
+    deliveryProtocolCustomer,
+    deliveryProtocolDate,
+    deliveryProtocolDeliveredBy,
+    deliveryProtocolItems,
+    deliveryProtocolNumber,
+    deliveryProtocolReceivedBy,
     editCustomerEmail,
     editCustomerKontakt,
     editCustomerNazov,
@@ -172,6 +180,7 @@ export function DashboardModals(props: DashboardModalsProps) {
     employeeName,
     employeeTelefon,
     employees,
+    exportDeliveryProtocolPdf,
     exportOrderWorkLogsPdf,
     formatDate,
     formatTimeShort,
@@ -190,6 +199,7 @@ export function DashboardModals(props: DashboardModalsProps) {
     openAddCustomer,
     openAddEmployee,
     openAddOrder,
+    openDeliveryProtocol,
     openEditCustomer,
     openEditEmployee,
     openEditOrder,
@@ -237,6 +247,11 @@ export function DashboardModals(props: DashboardModalsProps) {
     setEmployeeEmail,
     setEmployeeName,
     setEmployeeTelefon,
+    setDeliveryProtocolCustomer,
+    setDeliveryProtocolDate,
+    setDeliveryProtocolDeliveredBy,
+    setDeliveryProtocolNumber,
+    setDeliveryProtocolReceivedBy,
     setKontakt,
     setNazov,
     setNewCustomerEmail,
@@ -261,7 +276,10 @@ export function DashboardModals(props: DashboardModalsProps) {
     startEditWorkLog,
     STATUSY,
     telefon,
+    addDeliveryProtocolItem,
+    removeDeliveryProtocolItem,
     toggleWorkLogEmployee,
+    updateDeliveryProtocolItem,
     workLogDate,
     workLogEmployees,
     workLogEnd,
@@ -928,6 +946,176 @@ export function DashboardModals(props: DashboardModalsProps) {
               </div>
             </div>
           </form>
+        </Modal>
+
+        <Modal
+          open={openDeliveryProtocol}
+          title={currentDeliveryProtocolOrder ? `Odovzdávací protokol: ${currentDeliveryProtocolOrder.nazov}` : 'Odovzdávací protokol'}
+          onClose={closeDeliveryProtocolModal}
+        >
+          <div style={{ display: 'grid', gap: 12 }}>
+            {currentDeliveryProtocolOrder && (
+              <div
+                style={{
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: 14,
+                  padding: 12,
+                }}
+              >
+                <div style={{ fontSize: 17, fontWeight: 900 }}>{currentDeliveryProtocolOrder.nazov}</div>
+                <div style={{ color: '#475569', marginTop: 4, fontWeight: 800 }}>
+                  {getCustomerName(currentDeliveryProtocolOrder.customer_id)}
+                </div>
+              </div>
+            )}
+
+            <div className="modalGrid">
+              <div>
+                <label style={labelStyle} htmlFor="delivery-protocol-number">
+                  Číslo protokolu
+                </label>
+                <input
+                  id="delivery-protocol-number"
+                  style={inputStyle}
+                  value={deliveryProtocolNumber}
+                  onChange={(event) => setDeliveryProtocolNumber(event.target.value)}
+                />
+              </div>
+
+              <div>
+                <label style={labelStyle} htmlFor="delivery-protocol-date">
+                  Dátum odovzdania
+                </label>
+                <input
+                  id="delivery-protocol-date"
+                  type="date"
+                  style={inputStyle}
+                  value={deliveryProtocolDate}
+                  onChange={(event) => setDeliveryProtocolDate(event.target.value)}
+                />
+              </div>
+
+              <div>
+                <label style={labelStyle} htmlFor="delivery-protocol-customer">
+                  Zákazník
+                </label>
+                <input
+                  id="delivery-protocol-customer"
+                  style={inputStyle}
+                  value={deliveryProtocolCustomer}
+                  onChange={(event) => setDeliveryProtocolCustomer(event.target.value)}
+                />
+              </div>
+
+              <div>
+                <label style={labelStyle} htmlFor="delivery-protocol-delivered-by">
+                  Odovzdal
+                </label>
+                <input
+                  id="delivery-protocol-delivered-by"
+                  style={inputStyle}
+                  placeholder="Meno technika"
+                  value={deliveryProtocolDeliveredBy}
+                  onChange={(event) => setDeliveryProtocolDeliveredBy(event.target.value)}
+                />
+              </div>
+
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label style={labelStyle} htmlFor="delivery-protocol-received-by">
+                  Prevzal
+                </label>
+                <input
+                  id="delivery-protocol-received-by"
+                  style={inputStyle}
+                  placeholder="Meno zákazníka"
+                  value={deliveryProtocolReceivedBy}
+                  onChange={(event) => setDeliveryProtocolReceivedBy(event.target.value)}
+                />
+              </div>
+            </div>
+
+            <div>
+              <div style={{ fontWeight: 900, marginBottom: 8 }}>Odovzdaná technika a príslušenstvo</div>
+              <div style={{ display: 'grid', gap: 8 }}>
+                {deliveryProtocolItems.map((item: any, index: number) => (
+                  <div
+                    key={item.id}
+                    className="deliveryProtocolItemRow"
+                    style={{
+                      display: 'grid',
+                      gap: 7,
+                      alignItems: 'end',
+                    }}
+                  >
+                    <div>
+                      {index === 0 && <label style={labelStyle}>Zariadenie / položka</label>}
+                      <input
+                        style={inputStyle}
+                        placeholder="Napr. kamera, NVR, klávesnica"
+                        value={item.name}
+                        onChange={(event) => updateDeliveryProtocolItem(index, 'name', event.target.value)}
+                      />
+                    </div>
+                    <div>
+                      {index === 0 && <label style={labelStyle}>Sériové číslo</label>}
+                      <input
+                        style={inputStyle}
+                        placeholder="S/N"
+                        value={item.serialNumber}
+                        onChange={(event) => updateDeliveryProtocolItem(index, 'serialNumber', event.target.value)}
+                      />
+                    </div>
+                    <div>
+                      {index === 0 && <label style={labelStyle}>Ks</label>}
+                      <input
+                        style={inputStyle}
+                        inputMode="numeric"
+                        value={item.quantity}
+                        onChange={(event) => updateDeliveryProtocolItem(index, 'quantity', event.target.value)}
+                      />
+                    </div>
+                    <div>
+                      {index === 0 && <label style={labelStyle}>Poznámka</label>}
+                      <input
+                        style={inputStyle}
+                        placeholder="Voliteľné"
+                        value={item.note}
+                        onChange={(event) => updateDeliveryProtocolItem(index, 'note', event.target.value)}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeDeliveryProtocolItem(index)}
+                      disabled={deliveryProtocolItems.length <= 1}
+                      style={{
+                        ...dangerButtonStyle,
+                        minHeight: 40,
+                        padding: 0,
+                        borderRadius: 10,
+                        opacity: deliveryProtocolItems.length <= 1 ? 0.45 : 1,
+                      }}
+                      aria-label="Zmazať riadok"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 4 }}>
+              <button type="button" style={buttonStyle} onClick={addDeliveryProtocolItem}>
+                + Pridať položku
+              </button>
+              <button type="button" style={primaryButtonStyle} onClick={exportDeliveryProtocolPdf}>
+                Vytvoriť PDF protokol
+              </button>
+              <button type="button" style={secondaryDarkButtonStyle} onClick={closeDeliveryProtocolModal}>
+                Zrušiť
+              </button>
+            </div>
+          </div>
         </Modal>
 
         <Modal

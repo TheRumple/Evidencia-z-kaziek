@@ -31,6 +31,7 @@ type OrderCardProps = {
   getOrderKilometres: (orderId: string) => number
   isOverdue: (order: Order) => boolean
   openWorkLogModal: (orderId: string) => void
+  openDeliveryProtocolModal: (orderId: string) => void
   startEditOrder: (order: Order) => void
   toggleExpandedOrder: (orderId: string) => void
   togglePinnedOrder: (orderId: string) => void
@@ -94,6 +95,7 @@ export function OrderCard({
   getOrderKilometres,
   isOverdue,
   openWorkLogModal,
+  openDeliveryProtocolModal,
   startEditOrder,
   toggleExpandedOrder,
   togglePinnedOrder,
@@ -536,6 +538,9 @@ export function OrderCard({
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 14 }}>
             <button type="button" style={greenButtonStyle} onClick={() => openWorkLogModal(order.id)}>
               Výkaz / poznámka
+            </button>
+            <button type="button" style={buttonStyle} onClick={() => openDeliveryProtocolModal(order.id)}>
+              Odovzdávací protokol
             </button>
             <button type="button" style={buttonStyle} onClick={() => startEditOrder(order)}>
               Upraviť

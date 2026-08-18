@@ -524,6 +524,10 @@ export function DashboardStyles() {
           gap: 12px;
         }
 
+        .deliveryProtocolItemRow {
+          grid-template-columns: minmax(180px, 1.5fr) minmax(130px, 1fr) 70px minmax(150px, 1.1fr) 38px;
+        }
+
         .orderRowSummary {
           display: grid;
           grid-template-columns: minmax(260px, 1fr) 132px 170px 238px;
@@ -828,7 +832,8 @@ export function DashboardStyles() {
           .filtersGridOrders,
           .modalGrid,
           .summaryGrid,
-          .workLogGrid {
+          .workLogGrid,
+          .deliveryProtocolItemRow {
             grid-template-columns: 1fr;
           }
 
