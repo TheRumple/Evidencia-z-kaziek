@@ -1454,6 +1454,7 @@ export default function DashboardPage() {
     }
 
     try {
+      const protocolLogoDataUrl = await loadFirstAvailableImage(['/delivery-protocol-logo.png'])
       const doc = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
@@ -1470,13 +1471,17 @@ export default function DashboardPage() {
       const receivedBy = pdfSafeText(deliveryProtocolReceivedBy)
 
       function drawItspotLogo(x: number, y: number) {
-        doc.setFont('helvetica', 'bold')
-        doc.setFontSize(35)
-        doc.setTextColor(0, 0, 0)
-        doc.text('ITspot', x, y)
+        if (protocolLogoDataUrl) {
+          doc.addImage(protocolLogoDataUrl, 'PNG', x, y, 24, 24)
+        } else {
+          doc.setFont('helvetica', 'bold')
+          doc.setFontSize(35)
+          doc.setTextColor(0, 0, 0)
+          doc.text('ITspot', x, y + 15)
+        }
         doc.setDrawColor(0, 0, 0)
         doc.setLineWidth(0.8)
-        doc.line(margin, y + 14, pageWidth - margin, y + 14)
+        doc.line(margin, y + 28, pageWidth - margin, y + 28)
       }
 
       function drawHeader(pageNumber: number) {
@@ -1485,7 +1490,7 @@ export default function DashboardPage() {
         doc.setCharSpace(0)
 
         if (pageNumber === 1) {
-          drawItspotLogo(margin, 29)
+          drawItspotLogo(margin, 14)
 
           doc.setFont('helvetica', 'bold')
           doc.setFontSize(11)
