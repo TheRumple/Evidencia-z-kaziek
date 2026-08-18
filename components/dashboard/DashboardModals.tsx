@@ -5,6 +5,128 @@ import type { Customer, Employee, WorkLog } from '@/lib/dashboard-types'
 
 type DashboardModalsProps = Record<string, any>
 
+const INSPECTION_TEMPLATES = [
+  {
+    label: 'Kamery',
+    title: 'Obhliadka - kamerový systém',
+    text: `Typ obhliadky: Kamerový systém
+
+Checklist:
+[ ] počet kamier:
+[ ] NVR / záznamník:
+[ ] miesto záznamníka:
+[ ] internet dostupný:
+[ ] napájanie dostupné:
+[ ] existujúca kabeláž:
+[ ] treba ťahať novú kabeláž:
+[ ] montážna výška:
+[ ] prístup rebrík / plošina:
+[ ] požadované zóny záberu:
+[ ] fotky z miesta:
+
+Poznámka:
+`,
+  },
+  {
+    label: 'EZS alarm',
+    title: 'Obhliadka - EZS alarm',
+    text: `Typ obhliadky: EZS alarm
+
+Checklist:
+[ ] ústredňa / miesto ústredne:
+[ ] počet zón:
+[ ] vstupné dvere:
+[ ] pohybové senzory:
+[ ] magnetické kontakty:
+[ ] siréna vnútorná / vonkajšia:
+[ ] GSM / internet komunikácia:
+[ ] ovládanie klávesnica / aplikácia:
+[ ] existujúca kabeláž:
+[ ] treba ťahať novú kabeláž:
+[ ] fotky z miesta:
+
+Poznámka:
+`,
+  },
+  {
+    label: 'Loxone',
+    title: 'Obhliadka - Loxone / smart home',
+    text: `Typ obhliadky: Loxone / smart home
+
+Checklist:
+[ ] Miniserver / rozvádzač:
+[ ] ovládané svetlá:
+[ ] tienenie:
+[ ] kúrenie / chladenie:
+[ ] meranie energií:
+[ ] prístup do siete:
+[ ] existujúca dokumentácia:
+[ ] požiadavky zákazníka:
+[ ] možnosti kabeláže:
+[ ] fotky rozvádzača:
+
+Poznámka:
+`,
+  },
+  {
+    label: 'Sieť / Wi-Fi',
+    title: 'Obhliadka - sieť / Wi-Fi / LAN',
+    text: `Typ obhliadky: Sieť / Wi-Fi / LAN
+
+Checklist:
+[ ] internetový prívod:
+[ ] router:
+[ ] switch:
+[ ] počet dátových zásuviek:
+[ ] Wi-Fi pokrytie:
+[ ] problémové miesta:
+[ ] rack / miesto technológie:
+[ ] existujúca kabeláž:
+[ ] treba ťahať novú kabeláž:
+[ ] fotky z miesta:
+
+Poznámka:
+`,
+  },
+  {
+    label: 'Elektro',
+    title: 'Obhliadka - elektro / rozvádzač',
+    text: `Typ obhliadky: Elektro / rozvádzač
+
+Checklist:
+[ ] hlavný rozvádzač:
+[ ] podružný rozvádzač:
+[ ] ističe / chrániče:
+[ ] prívod:
+[ ] miesto montáže:
+[ ] potrebné vypnutie:
+[ ] prístup k rozvádzaču:
+[ ] dokumentácia:
+[ ] fotky rozvádzača:
+
+Poznámka:
+`,
+  },
+  {
+    label: 'Všeobecná',
+    title: 'Obhliadka - všeobecná',
+    text: `Typ obhliadky: Všeobecná
+
+Checklist:
+[ ] čo zákazník potrebuje vyriešiť:
+[ ] miesto realizácie:
+[ ] existujúci stav:
+[ ] potrebný materiál:
+[ ] prístup na miesto:
+[ ] termínová požiadavka:
+[ ] čo treba preveriť:
+[ ] fotky z miesta:
+
+Poznámka:
+`,
+  },
+]
+
 export function DashboardModals(props: DashboardModalsProps) {
   const {
     addCustomer,
@@ -150,6 +272,13 @@ export function DashboardModals(props: DashboardModalsProps) {
     workLogTitle,
     workLogsByOrder,
   } = props
+
+  function applyInspectionTemplate(template: (typeof INSPECTION_TEMPLATES)[number]) {
+    setWorkLogTitle(template.title)
+    setWorkLogText(template.text)
+    if (!workLogHours) setWorkLogHours('0.5')
+    if (!workLogKm) setWorkLogKm('0')
+  }
 
   return (
     <>
@@ -839,6 +968,46 @@ export function DashboardModals(props: DashboardModalsProps) {
                   </button>
                 </>
               )}
+            </div>
+
+            <div
+              style={{
+                border: '1px solid #bbf7d0',
+                background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfccb 100%)',
+                borderRadius: 14,
+                padding: 12,
+                display: 'grid',
+                gap: 9,
+              }}
+            >
+              <div>
+                <div style={{ color: '#14532d', fontWeight: 900, fontSize: 14 }}>Rýchla obhliadka</div>
+                <div style={{ color: '#3f6212', fontSize: 12, fontWeight: 700, marginTop: 2 }}>
+                  Vyber typ a formulár sa predvyplní bodmi, ktoré len doplníš.
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+                {INSPECTION_TEMPLATES.map((template) => (
+                  <button
+                    key={template.label}
+                    type="button"
+                    onClick={() => applyInspectionTemplate(template)}
+                    style={{
+                      border: '1px solid rgba(101, 163, 13, 0.34)',
+                      background: '#fff',
+                      color: '#14532d',
+                      borderRadius: 999,
+                      padding: '7px 10px',
+                      fontSize: 12,
+                      fontWeight: 900,
+                      cursor: 'pointer',
+                      boxShadow: '0 5px 12px rgba(22, 101, 52, 0.08)',
+                    }}
+                  >
+                    {template.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <form
