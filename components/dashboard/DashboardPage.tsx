@@ -12,7 +12,7 @@ import { CalendarView } from '@/components/dashboard/CalendarView'
 import { CustomersView } from '@/components/dashboard/CustomersView'
 import { OrdersView } from '@/components/dashboard/OrdersView'
 import { DashboardModals } from '@/components/dashboard/DashboardModals'
-import type { CalendarPlan, Customer, CustomerContact, CustomerContactCustomer, CustomerUpdate, Employee, Notice, Order, OrderSubtask, WorkLog } from '@/lib/dashboard-types'
+import type { CalendarPlan, Customer, CustomerContact, CustomerContactCustomer, CustomerUpdate, DeliveryProtocol, Employee, Notice, Order, OrderSubtask, WorkLog } from '@/lib/dashboard-types'
 import {
   AKTIVNE_STATUSY,
   STATUSY,
@@ -81,7 +81,7 @@ function createDeliveryProtocolItem(): DeliveryProtocolItem {
   }
 }
 
-function createDeliveryProtocolItems(count = 8) {
+function createDeliveryProtocolItems(count = 1) {
   return Array.from({ length: count }, () => createDeliveryProtocolItem())
 }
 
@@ -100,6 +100,7 @@ export default function DashboardPage() {
   const [savingEmployee, setSavingEmployee] = useState(false)
   const [savingEditEmployee, setSavingEditEmployee] = useState(false)
   const [savingWorkLog, setSavingWorkLog] = useState(false)
+  const [savingDeliveryProtocol, setSavingDeliveryProtocol] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
 
   const [notice, setNotice] = useState<Notice>(null)
@@ -111,6 +112,7 @@ export default function DashboardPage() {
   const [workLogs, setWorkLogs] = useState<WorkLog[]>([])
   const [customerUpdates, setCustomerUpdates] = useState<CustomerUpdate[]>([])
   const [calendarPlans, setCalendarPlans] = useState<CalendarPlan[]>([])
+  const [deliveryProtocols, setDeliveryProtocols] = useState<DeliveryProtocol[]>([])
   const [subtasks, setSubtasks] = useState<OrderSubtask[]>([])
   const [newSubtaskText, setNewSubtaskText] = useState<Record<string, string>>({})
 
@@ -188,6 +190,8 @@ export default function DashboardPage() {
   const [workLogKm, setWorkLogKm] = useState('')
   const [workLogEmployees, setWorkLogEmployees] = useState<string[]>([])
 
+  const [deliveryProtocolId, setDeliveryProtocolId] = useState('')
+  const [deliveryProtocolCustomerId, setDeliveryProtocolCustomerId] = useState('')
   const [deliveryProtocolNumber, setDeliveryProtocolNumber] = useState('')
   const [deliveryProtocolDate, setDeliveryProtocolDate] = useState(getTodayDate())
   const [deliveryProtocolCustomer, setDeliveryProtocolCustomer] = useState('')
@@ -337,6 +341,7 @@ export default function DashboardPage() {
         loadWorkLogs(currentUserId),
         loadCustomerUpdates(currentUserId),
         loadCalendarPlans(currentUserId),
+        loadDeliveryProtocols(currentUserId),
         loadSubtasks(),
         loadPendingCount(),
       ])
@@ -474,6 +479,7 @@ export default function DashboardPage() {
         loadWorkLogs(currentUserId),
         loadCustomerUpdates(currentUserId),
         loadCalendarPlans(currentUserId),
+        loadDeliveryProtocols(currentUserId),
         loadPendingCount(),
       ])
     } catch (error) {
@@ -504,6 +510,30 @@ export default function DashboardPage() {
     }
 
     setCalendarPlans((data || []) as CalendarPlan[])
+  }
+
+  async function loadDeliveryProtocols(currentUserId: string) {
+    const { data, error } = await supabase
+      .from('delivery_protocols')
+      .select('*')
+      .eq('user_id', currentUserId)
+      .order('updated_at', { ascending: false })
+
+    if (error) {
+      if (error.code === '42P01') {
+        setDeliveryProtocols([])
+        setNotice({
+          type: 'error',
+          text: 'Chýba tabuľka delivery_protocols. Spusť SQL skript scripts/supabase-delivery-protocols.sql v Supabase.',
+        })
+        return
+      }
+
+      setNotice({ type: 'error', text: `Odovzdávacie protokoly: ${error.message}` })
+      return
+    }
+
+    setDeliveryProtocols((data || []) as DeliveryProtocol[])
   }
 
   async function addCalendarPlan(input: {
@@ -706,6 +736,8 @@ export default function DashboardPage() {
   }
 
   function resetDeliveryProtocolForm() {
+    setDeliveryProtocolId('')
+    setDeliveryProtocolCustomerId('')
     setDeliveryProtocolNumber('')
     setDeliveryProtocolDate(getTodayDate())
     setDeliveryProtocolCustomer('')
@@ -1396,6 +1428,8 @@ export default function DashboardPage() {
 
   function openDeliveryProtocolModal() {
     const today = getTodayDate()
+    setDeliveryProtocolId('')
+    setDeliveryProtocolCustomerId('')
     setDeliveryProtocolNumber(`OP-${today.replaceAll('-', '')}`)
     setDeliveryProtocolDate(today)
     setDeliveryProtocolCustomer('')
@@ -1406,6 +1440,100 @@ export default function DashboardPage() {
     setDeliveryProtocolReceivedSignature('')
     setDeliveryProtocolItems(createDeliveryProtocolItems())
     setOpenDeliveryProtocol(true)
+  }
+
+  function selectDeliveryProtocolCustomer(customerIdValue: string) {
+    const customer = customers.find((item) => item.id === customerIdValue)
+    setDeliveryProtocolCustomerId(customerIdValue)
+    setDeliveryProtocolCustomer(customer?.nazov || '')
+    setDeliveryProtocolReceivedBy(customer?.kontakt || '')
+  }
+
+  function normalizeDeliveryProtocolItems(items: unknown): DeliveryProtocolItem[] {
+    if (!Array.isArray(items)) return createDeliveryProtocolItems()
+    const normalized = items
+      .map((item) => {
+        const raw = item as Partial<DeliveryProtocolItem>
+        return {
+          id: raw.id || createDeliveryProtocolItem().id,
+          name: raw.name || '',
+          serialNumber: raw.serialNumber || '',
+          quantity: raw.quantity || '1',
+          note: raw.note || '',
+        }
+      })
+      .filter((item) => item.name.trim() || item.serialNumber.trim() || item.quantity.trim() || item.note.trim())
+    return normalized.length > 0 ? normalized : createDeliveryProtocolItems()
+  }
+
+  function openSavedDeliveryProtocol(protocolId: string) {
+    if (!protocolId) {
+      openDeliveryProtocolModal()
+      return
+    }
+
+    const protocol = deliveryProtocols.find((item) => item.id === protocolId)
+    if (!protocol) return
+
+    setDeliveryProtocolId(protocol.id)
+    setDeliveryProtocolCustomerId(protocol.customer_id || '')
+    setDeliveryProtocolNumber(protocol.protocol_number || '')
+    setDeliveryProtocolDate(protocol.protocol_date || getTodayDate())
+    setDeliveryProtocolCustomer(protocol.customer_name || '')
+    setDeliveryProtocolDeliveredBy(protocol.delivered_by || DEFAULT_DELIVERY_PROTOCOL_TECHNICIAN)
+    setDeliveryProtocolReceivedBy(protocol.received_by || '')
+    setDeliveryProtocolTested(Boolean(protocol.tested))
+    setDeliveryProtocolBriefed(Boolean(protocol.briefed))
+    setDeliveryProtocolReceivedSignature('')
+    setDeliveryProtocolItems(normalizeDeliveryProtocolItems(protocol.items))
+  }
+
+  async function saveDeliveryProtocol() {
+    if (!userId) return
+
+    const cleanItems = deliveryProtocolItems.filter(
+      (item) => item.name.trim() || item.serialNumber.trim() || item.quantity.trim() || item.note.trim()
+    )
+
+    if (cleanItems.length === 0) {
+      setNotice({ type: 'error', text: 'Doplň aspoň jednu odovzdávanú položku.' })
+      return
+    }
+
+    const payload = {
+      user_id: userId,
+      customer_id: deliveryProtocolCustomerId || null,
+      protocol_number: deliveryProtocolNumber.trim() || `OP-${deliveryProtocolDate.replaceAll('-', '')}`,
+      protocol_date: deliveryProtocolDate,
+      customer_name: deliveryProtocolCustomer.trim() || null,
+      delivered_by: deliveryProtocolDeliveredBy.trim() || null,
+      received_by: deliveryProtocolReceivedBy.trim() || null,
+      tested: deliveryProtocolTested,
+      briefed: deliveryProtocolBriefed,
+      items: cleanItems,
+      updated_at: new Date().toISOString(),
+    }
+
+    setSavingDeliveryProtocol(true)
+    const query = deliveryProtocolId
+      ? supabase.from('delivery_protocols').update(payload).eq('id', deliveryProtocolId).eq('user_id', userId).select().single()
+      : supabase.from('delivery_protocols').insert([payload]).select().single()
+
+    const { data, error } = await query
+    setSavingDeliveryProtocol(false)
+
+    if (error) {
+      setNotice({ type: 'error', text: `Protokol sa neuložil: ${error.message}` })
+      return
+    }
+
+    const saved = data as DeliveryProtocol
+    setDeliveryProtocolId(saved.id)
+    setDeliveryProtocols((current) => {
+      const withoutSaved = current.filter((item) => item.id !== saved.id)
+      return [saved, ...withoutSaved]
+    })
+    setNotice({ type: 'success', text: 'Odovzdávací protokol je uložený.' })
   }
 
   function updateDeliveryProtocolItem(index: number, field: keyof Omit<DeliveryProtocolItem, 'id'>, value: string) {
@@ -1600,10 +1728,8 @@ export default function DashboardPage() {
       if (deliveryProtocolReceivedSignature) {
         doc.addImage(deliveryProtocolReceivedSignature, 'PNG', 114, signatureY + 12, 58, 15)
       }
-      doc.line(margin, signatureY + 28, 88, signatureY + 28)
       doc.line(112, signatureY + 28, pageWidth - margin, signatureY + 28)
       doc.setFontSize(8)
-      doc.text('Podpis', margin, signatureY + 33)
       doc.text('Podpis', 112, signatureY + 33)
 
       const totalPages = doc.getNumberOfPages()
@@ -2846,11 +2972,14 @@ export default function DashboardPage() {
             customers={customers}
             dangerButtonStyle={dangerButtonStyle}
             deleteWorkLog={deleteWorkLog}
+            deliveryProtocolId={deliveryProtocolId}
             deliveryProtocolCustomer={deliveryProtocolCustomer}
+            deliveryProtocolCustomerId={deliveryProtocolCustomerId}
             deliveryProtocolDate={deliveryProtocolDate}
             deliveryProtocolDeliveredBy={deliveryProtocolDeliveredBy}
             deliveryProtocolItems={deliveryProtocolItems}
             deliveryProtocolNumber={deliveryProtocolNumber}
+            deliveryProtocols={deliveryProtocols}
             deliveryProtocolReceivedBy={deliveryProtocolReceivedBy}
             deliveryProtocolTested={deliveryProtocolTested}
             deliveryProtocolBriefed={deliveryProtocolBriefed}
@@ -2912,6 +3041,7 @@ export default function DashboardPage() {
             primaryButtonStyle={primaryButtonStyle}
             resetWorkLogForm={resetWorkLogForm}
             saveCustomerEdit={saveCustomerEdit}
+            saveDeliveryProtocol={saveDeliveryProtocol}
             saveEmployeeEdit={saveEmployeeEdit}
             saveOrderEdit={saveOrderEdit}
             savingCustomer={savingCustomer}
@@ -2919,6 +3049,7 @@ export default function DashboardPage() {
             savingEditEmployee={savingEditEmployee}
             savingEditOrder={savingEditOrder}
             savingEmployee={savingEmployee}
+            savingDeliveryProtocol={savingDeliveryProtocol}
             savingOrder={savingOrder}
             savingWorkLog={savingWorkLog}
             secondaryDarkButtonStyle={secondaryDarkButtonStyle}
@@ -2945,6 +3076,7 @@ export default function DashboardPage() {
             setEmployeeEmail={setEmployeeEmail}
             setEmployeeName={setEmployeeName}
             setEmployeeTelefon={setEmployeeTelefon}
+            selectDeliveryProtocolCustomer={selectDeliveryProtocolCustomer}
             setDeliveryProtocolCustomer={setDeliveryProtocolCustomer}
             setDeliveryProtocolDate={setDeliveryProtocolDate}
             setDeliveryProtocolDeliveredBy={setDeliveryProtocolDeliveredBy}
@@ -2979,6 +3111,7 @@ export default function DashboardPage() {
             telefon={telefon}
             addDeliveryProtocolItem={addDeliveryProtocolItem}
             removeDeliveryProtocolItem={removeDeliveryProtocolItem}
+            openSavedDeliveryProtocol={openSavedDeliveryProtocol}
             toggleWorkLogEmployee={toggleWorkLogEmployee}
             updateDeliveryProtocolItem={updateDeliveryProtocolItem}
             workLogDate={workLogDate}

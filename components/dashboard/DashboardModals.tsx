@@ -257,11 +257,14 @@ export function DashboardModals(props: DashboardModalsProps) {
     customers,
     dangerButtonStyle,
     deleteWorkLog,
+    deliveryProtocolId,
     deliveryProtocolCustomer,
+    deliveryProtocolCustomerId,
     deliveryProtocolDate,
     deliveryProtocolDeliveredBy,
     deliveryProtocolItems,
     deliveryProtocolNumber,
+    deliveryProtocols,
     deliveryProtocolReceivedBy,
     deliveryProtocolTested,
     deliveryProtocolBriefed,
@@ -323,6 +326,7 @@ export function DashboardModals(props: DashboardModalsProps) {
     primaryButtonStyle,
     resetWorkLogForm,
     saveCustomerEdit,
+    saveDeliveryProtocol,
     saveEmployeeEdit,
     saveOrderEdit,
     savingCustomer,
@@ -330,6 +334,7 @@ export function DashboardModals(props: DashboardModalsProps) {
     savingEditEmployee,
     savingEditOrder,
     savingEmployee,
+    savingDeliveryProtocol,
     savingOrder,
     savingWorkLog,
     secondaryDarkButtonStyle,
@@ -356,6 +361,7 @@ export function DashboardModals(props: DashboardModalsProps) {
     setEmployeeEmail,
     setEmployeeName,
     setEmployeeTelefon,
+    selectDeliveryProtocolCustomer,
     setDeliveryProtocolCustomer,
     setDeliveryProtocolDate,
     setDeliveryProtocolDeliveredBy,
@@ -390,6 +396,7 @@ export function DashboardModals(props: DashboardModalsProps) {
     telefon,
     addDeliveryProtocolItem,
     removeDeliveryProtocolItem,
+    openSavedDeliveryProtocol,
     toggleWorkLogEmployee,
     updateDeliveryProtocolItem,
     workLogDate,
@@ -1077,8 +1084,29 @@ export function DashboardModals(props: DashboardModalsProps) {
                 fontWeight: 800,
               }}
             >
-              Samostatný protokol bez väzby na zákazku. Doplň zákazníka, technika a odovzdávaný materiál.
+              Priprav protokol vopred, ulož ho a u zákazníka už len doplň podpis a vytvor PDF.
             </div>
+
+            {deliveryProtocols.length > 0 && (
+              <div>
+                <label style={labelStyle} htmlFor="delivery-protocol-saved">
+                  Pripravené protokoly
+                </label>
+                <select
+                  id="delivery-protocol-saved"
+                  style={inputStyle}
+                  value={deliveryProtocolId}
+                  onChange={(event) => openSavedDeliveryProtocol(event.target.value)}
+                >
+                  <option value="">Nový protokol</option>
+                  {deliveryProtocols.map((protocol: any) => (
+                    <option key={protocol.id} value={protocol.id}>
+                      {protocol.protocol_number} - {protocol.customer_name || 'Bez zákazníka'} ({formatDate(protocol.protocol_date)})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div className="modalGrid">
               <div>
@@ -1110,12 +1138,19 @@ export function DashboardModals(props: DashboardModalsProps) {
                 <label style={labelStyle} htmlFor="delivery-protocol-customer">
                   Zákazník
                 </label>
-                <input
+                <select
                   id="delivery-protocol-customer"
                   style={inputStyle}
-                  value={deliveryProtocolCustomer}
-                  onChange={(event) => setDeliveryProtocolCustomer(event.target.value)}
-                />
+                  value={deliveryProtocolCustomerId}
+                  onChange={(event) => selectDeliveryProtocolCustomer(event.target.value)}
+                >
+                  <option value="">Vyber zákazníka</option>
+                  {customers.map((customer: Customer) => (
+                    <option key={customer.id} value={customer.id}>
+                      {customer.nazov}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
@@ -1268,6 +1303,9 @@ export function DashboardModals(props: DashboardModalsProps) {
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 4 }}>
               <button type="button" style={buttonStyle} onClick={addDeliveryProtocolItem}>
                 + Pridať položku
+              </button>
+              <button type="button" style={buttonStyle} onClick={saveDeliveryProtocol} disabled={savingDeliveryProtocol}>
+                {savingDeliveryProtocol ? 'Ukladám...' : 'Uložiť prípravu'}
               </button>
               <button type="button" style={primaryButtonStyle} onClick={exportDeliveryProtocolPdf}>
                 Vytvoriť PDF protokol

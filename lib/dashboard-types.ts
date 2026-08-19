@@ -101,6 +101,22 @@ export type CalendarPlan = {
   created_at?: string
 }
 
+export type DeliveryProtocol = {
+  id: string
+  user_id: string
+  customer_id: string | null
+  protocol_number: string
+  protocol_date: string
+  customer_name: string | null
+  delivered_by: string | null
+  received_by: string | null
+  tested: boolean
+  briefed: boolean
+  items: unknown
+  created_at?: string
+  updated_at?: string
+}
+
 export type MaintenanceRevision = {
   id: string
   user_id: string
