@@ -1624,9 +1624,9 @@ export default function DashboardPage() {
           doc.text('ITspot s. r. o.', pageWidth - margin, 16, { align: 'right' })
           doc.setFont('helvetica', 'normal')
           doc.setFontSize(8.5)
-          doc.text('Hajles 1703/6, 968 01 Nova Bana', pageWidth - margin, 20.5, { align: 'right' })
-          doc.text('ICO: 56430388', pageWidth - margin, 25, { align: 'right' })
-          doc.text('IC DPH: SK2122307462', pageWidth - margin, 29.5, { align: 'right' })
+          doc.text('Hájles 1703/6, 968 01 Nová Baňa', pageWidth - margin, 20.5, { align: 'right' })
+          doc.text('IČO: 56430388', pageWidth - margin, 25, { align: 'right' })
+          doc.text('IČ DPH: SK2122307462', pageWidth - margin, 29.5, { align: 'right' })
         }
       }
 
@@ -1635,7 +1635,7 @@ export default function DashboardPage() {
         doc.setFont('helvetica', 'normal')
         doc.setFontSize(8)
         doc.text('info@itspot.sk | +421 908 806 691 | www.itspot.sk', margin, pageHeight - 5)
-        doc.text('Vygenerovane z aplikacie ITspot', pageWidth / 2, pageHeight - 5, { align: 'center' })
+        doc.text('Vygenerované z aplikácie ITspot', pageWidth / 2, pageHeight - 5, { align: 'center' })
         doc.text(`Strana ${pageNumber} z ${totalPages}`, pageWidth - margin, pageHeight - 5, { align: 'right' })
       }
 
@@ -1644,16 +1644,16 @@ export default function DashboardPage() {
       doc.setTextColor(15, 23, 42)
       doc.setFont('helvetica', 'bold')
       doc.setFontSize(18)
-      doc.text('ODOVZDAVACI PROTOKOL', margin, 52)
+      doc.text('ODOVZDÁVACÍ PROTOKOL', margin, 52)
 
       doc.setFontSize(10)
-      doc.text('Cislo protokolu:', margin, 61)
+      doc.text('Číslo protokolu:', margin, 61)
       doc.setFont('helvetica', 'normal')
       doc.text(protocolNumber || '-', margin + 33, 61)
 
       doc.setFont('helvetica', 'bold')
-      doc.text('Zakaznik:', margin, 72)
-      doc.text('Datum odovzdania:', 112, 72)
+      doc.text('Zákazník:', margin, 72)
+      doc.text('Dátum odovzdania:', 112, 72)
       doc.setFont('helvetica', 'normal')
       doc.text(customerName, margin, 78)
       doc.text(deliveryDate || '-', 112, 78)
@@ -1664,12 +1664,12 @@ export default function DashboardPage() {
 
       doc.setFont('helvetica', 'bold')
       doc.setFontSize(11)
-      doc.text('ZOZNAM ODOVZDANEJ TECHNIKY A PRISLUSENSTVA', margin, 95)
+      doc.text('ZOZNAM ODOVZDANEJ TECHNIKY A PRÍSLUŠENSTVA', margin, 95)
 
       autoTable(doc, {
         startY: 100,
         margin: { left: margin, right: margin, bottom: 54 },
-        head: [['P. c.', 'Zariadenie / polozka', 'Seriove cislo (S/N)', 'Ks', 'Poznamka']],
+        head: [['P. č.', 'Zariadenie / položka', 'Sériové číslo (S/N)', 'Ks', 'Poznámka']],
         body: filledItems.map((item, index) => [
           String(index + 1),
           pdfSafeText(item.name || '-'),
@@ -1715,8 +1715,8 @@ export default function DashboardPage() {
       doc.text('POTVRDENIE', margin, footerStartY)
       doc.setFont('helvetica', 'normal')
       doc.setFontSize(10)
-      doc.text(`${deliveryProtocolTested ? '[x]' : '[ ]'} Zariadenie bolo odskusane a je funkcne.`, margin, footerStartY + 8)
-      doc.text(`${deliveryProtocolBriefed ? '[x]' : '[ ]'} Zakaznik bol oboznameny so zakladnou obsluhou.`, margin, footerStartY + 15)
+      doc.text(`${deliveryProtocolTested ? '[x]' : '[ ]'} Zariadenie bolo odskúšané a je funkčné.`, margin, footerStartY + 8)
+      doc.text(`${deliveryProtocolBriefed ? '[x]' : '[ ]'} Zákazník bol oboznámený so základnou obsluhou.`, margin, footerStartY + 15)
 
       const signatureY = footerStartY + 34
       doc.setFont('helvetica', 'bold')
@@ -1934,21 +1934,21 @@ export default function DashboardPage() {
           doc.setFontSize(9)
 
           doc.text(
-            'Hajles 1703/6, 968 01 Nova Bana',
+            'Hájles 1703/6, 968 01 Nová Baňa',
             pageWidth - margin,
             20.5,
             { align: 'right' }
           )
 
           doc.text(
-            'ICO: 56430388   DIC: 2122307462',
+            'IČO: 56430388   DIČ: 2122307462',
             pageWidth - margin,
             24.8,
             { align: 'right' }
           )
 
           doc.text(
-            'IC DPH: SK2122307462',
+            'IČ DPH: SK2122307462',
             pageWidth - margin,
             29.1,
             { align: 'right' }
@@ -1957,11 +1957,11 @@ export default function DashboardPage() {
           doc.setFont('helvetica', 'bold')
           doc.setFontSize(18)
 
-          doc.text('Servisny vykaz', margin, 38)
+          doc.text('Servisný výkaz', margin, 38)
 
           doc.setFontSize(11)
 
-          doc.text('Zakazka:', margin, 44)
+          doc.text('Zákazka:', margin, 44)
 
           doc.setFont('helvetica', 'normal')
 
@@ -1969,7 +1969,7 @@ export default function DashboardPage() {
 
           doc.setFont('helvetica', 'bold')
 
-          doc.text('Zakaznik:', 105, 44)
+          doc.text('Zákazník:', 105, 44)
 
           doc.setFont('helvetica', 'normal')
 
@@ -1977,7 +1977,7 @@ export default function DashboardPage() {
 
           doc.setFont('helvetica', 'bold')
 
-          doc.text('Prijatie zakazky:', margin, 51)
+          doc.text('Prijatie zákazky:', margin, 51)
 
           doc.setFont('helvetica', 'normal')
 
@@ -2002,7 +2002,7 @@ export default function DashboardPage() {
           doc.setFont('helvetica', 'bold')
           doc.setFontSize(10)
 
-          doc.text(`Pocet zaznamov: ${logs.length}`, margin + 4, 67.5)
+          doc.text(`Počet záznamov: ${logs.length}`, margin + 4, 67.5)
 
           doc.text('|', 56, 67.5)
 
@@ -2029,7 +2029,7 @@ export default function DashboardPage() {
             align: 'center',
           })
 
-          doc.text('Prevzal zakaznik:', pageWidth - 52, signTitleY, {
+          doc.text('Prevzal zákazník:', pageWidth - 52, signTitleY, {
             align: 'center',
           })
 
@@ -2073,7 +2073,7 @@ export default function DashboardPage() {
         doc.setFontSize(9)
 
         doc.text(
-          'Vygenerovane z aplikacie ITspot',
+          'Vygenerované z aplikácie ITspot',
           margin,
           pageHeight - 4
         )

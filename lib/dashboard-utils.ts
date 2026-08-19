@@ -120,14 +120,7 @@ export function calculateHoursFromTimes(startValue: string, endValue: string) {
 
 export function pdfSafeText(value: string | null | undefined) {
   return String(value ?? '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/ł/g, 'l')
-    .replace(/Ł/g, 'L')
-    .replace(/đ/g, 'd')
-    .replace(/Đ/g, 'D')
-    .replace(/ß/g, 'ss')
-    .replace(/[^\x20-\x7E]/g, ' ')
+    .replace(/[\u0000-\u001F\u007F]/g, ' ')
     .replace(/\s{2,}/g, ' ')
     .trim()
 }
