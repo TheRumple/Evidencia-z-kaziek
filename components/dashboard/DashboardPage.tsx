@@ -1570,7 +1570,7 @@ export default function DashboardPage() {
     setActiveWorkLogOrderId(log.order_id)
   }
 
-  async function exportDeliveryProtocolPdf() {
+  async function exportDeliveryProtocolPdf(action: 'show' | 'mail' = 'show') {
     const filledItems = deliveryProtocolItems.filter(
       (item) => item.name.trim() || item.serialNumber.trim() || item.quantity.trim() || item.note.trim()
     )
@@ -1742,16 +1742,44 @@ export default function DashboardPage() {
       const safeName = pdfSafeText(`${protocolNumber}-${customerName}`).replace(/[^a-zA-Z0-9\-_ ]/g, '').trim() || 'odovzdavaci-protokol'
       const blob = doc.output('blob')
       const url = URL.createObjectURL(blob)
-      const win = window.open(url, '_blank')
 
-      if (!win) {
+      if (action === 'mail') {
         const a = document.createElement('a')
         a.href = url
         a.download = `${safeName}.pdf`
         a.click()
+
+        const selectedCustomer = customers.find((customer) => customer.id === deliveryProtocolCustomerId)
+        const recipient = selectedCustomer?.email || ''
+        const subject = `Odovzdávací protokol ${protocolNumber}`
+        const body = [
+          'Dobrý deň,',
+          '',
+          'v prílohe posielame odovzdávací protokol.',
+          '',
+          'S pozdravom',
+          'ITspot s. r. o.',
+        ].join('\n')
+
+        window.location.href = `mailto:${encodeURIComponent(recipient)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+        setNotice({ type: 'success', text: 'PDF bolo stiahnuté. Prilož ho do otvoreného emailu.' })
+      } else {
+        const win = window.open(url, '_blank')
+        if (!win) {
+          const a = document.createElement('a')
+          a.href = url
+          a.download = `${safeName}.pdf`
+          a.click()
+        }
+
+        setNotice({ type: 'success', text: 'Odovzdávací protokol bol otvorený.' })
       }
 
-      setNotice({ type: 'success', text: 'Odovzdávací protokol bol otvorený.' })
+      window.setTimeout(() => URL.revokeObjectURL(url), 30000)
+
+      if (action === 'mail' && !customers.find((customer) => customer.id === deliveryProtocolCustomerId)?.email) {
+        setNotice({ type: 'success', text: 'PDF bolo stiahnuté a email otvorený. Zákazník nemá vyplnený email, doplň adresu ručne.' })
+      }
     } catch (error) {
       console.error(error)
       const message = error instanceof Error ? error.message : 'Neznáma chyba.'

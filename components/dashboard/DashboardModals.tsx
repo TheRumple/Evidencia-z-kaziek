@@ -1307,8 +1307,11 @@ export function DashboardModals(props: DashboardModalsProps) {
               <button type="button" style={buttonStyle} onClick={saveDeliveryProtocol} disabled={savingDeliveryProtocol}>
                 {savingDeliveryProtocol ? 'Ukladám...' : 'Uložiť prípravu'}
               </button>
-              <button type="button" style={primaryButtonStyle} onClick={exportDeliveryProtocolPdf}>
-                Vytvoriť PDF protokol
+              <button type="button" style={primaryButtonStyle} onClick={() => exportDeliveryProtocolPdf('show')}>
+                Ukáž PDF
+              </button>
+              <button type="button" style={primaryButtonStyle} onClick={() => exportDeliveryProtocolPdf('mail')}>
+                Odoslať mailom
               </button>
               <button type="button" style={secondaryDarkButtonStyle} onClick={closeDeliveryProtocolModal}>
                 Zrušiť
