@@ -144,6 +144,8 @@ export default function QuotesPage() {
   const [contactEmail, setContactEmail] = useState('')
   const [realizationNote, setRealizationNote] = useState('')
   const [note, setNote] = useState('')
+  const [discountType, setDiscountType] = useState<'none' | 'percent' | 'amount'>('none')
+  const [discountValue, setDiscountValue] = useState('')
   const [items, setItems] = useState<QuoteItem[]>([createQuoteItem()])
 
   const [search, setSearch] = useState('')
@@ -198,7 +200,7 @@ export default function QuotesPage() {
   }, [])
 
   const totals = useMemo(() => {
-    return items.reduce(
+    const base = items.reduce(
       (sum, item) => {
         const itemTotals = getItemTotals(item)
         return {
@@ -209,7 +211,22 @@ export default function QuotesPage() {
       },
       { net: 0, vat: 0, gross: 0 }
     )
-  }, [items])
+    const rawDiscount = parseMoney(discountValue)
+    const discount = discountType === 'percent'
+      ? Math.min(base.net, Math.max(0, base.net * (rawDiscount / 100)))
+      : discountType === 'amount'
+        ? Math.min(base.net, Math.max(0, rawDiscount))
+        : 0
+    const discountedNet = base.net - discount
+    const vat = discountedNet * 0.23
+    return {
+      originalNet: base.net,
+      discount,
+      net: discountedNet,
+      vat,
+      gross: discountedNet + vat,
+    }
+  }, [discountType, discountValue, items])
 
   const filteredQuotes = useMemo(() => {
     const term = search.trim().toLowerCase()
@@ -276,6 +293,8 @@ export default function QuotesPage() {
     setContactEmail('')
     setRealizationNote('')
     setNote('')
+    setDiscountType('none')
+    setDiscountValue('')
     setItems([createQuoteItem()])
   }
 
@@ -308,6 +327,8 @@ export default function QuotesPage() {
     setContactEmail(quote.contact_email || '')
     setRealizationNote(quote.realization_note || '')
     setNote(quote.note || '')
+    setDiscountType((quote.discount_type === 'percent' || quote.discount_type === 'amount') ? quote.discount_type : 'none')
+    setDiscountValue(quote.discount_value ? String(quote.discount_value).replace('.', ',') : '')
     setItems(normalizeItems(quote.items))
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -356,6 +377,8 @@ export default function QuotesPage() {
       contact_email: contactEmail.trim() || null,
       realization_note: realizationNote.trim() || null,
       note: note.trim() || null,
+      discount_type: discountType,
+      discount_value: discountType === 'none' ? 0 : parseMoney(discountValue),
       items: cleanItems,
       updated_at: new Date().toISOString(),
     }
@@ -398,6 +421,8 @@ export default function QuotesPage() {
       contact_email: null,
       realization_note: 'Termín realizácie podľa dohody.',
       note: 'Importované z pôvodnej ponuky Flowii číslo 260802.',
+      discount_type: 'none' as const,
+      discount_value: 0,
       items: flowiiQuote260802Items,
       updated_at: new Date().toISOString(),
     }
@@ -436,6 +461,8 @@ export default function QuotesPage() {
           email: quoteLike.contact_email || '',
           realization: quoteLike.realization_note || '',
           note: quoteLike.note || '',
+          discountType: (quoteLike.discount_type === 'percent' || quoteLike.discount_type === 'amount') ? quoteLike.discount_type : 'none',
+          discountValue: quoteLike.discount_value ? String(quoteLike.discount_value) : '',
           items: normalizeItems(quoteLike.items),
         }
       : {
@@ -448,16 +475,34 @@ export default function QuotesPage() {
           email: contactEmail,
           realization: realizationNote,
           note,
+          discountType,
+          discountValue,
           items: items.filter((item) => item.name.trim() || item.note.trim() || item.unitPrice.trim()),
         }
 
-    const quoteTotals = source.items.reduce(
+    const baseTotals = source.items.reduce(
       (sum, item) => {
         const itemTotals = getItemTotals(item)
         return { net: sum.net + itemTotals.net, vat: sum.vat + itemTotals.vat, gross: sum.gross + itemTotals.gross }
       },
       { net: 0, vat: 0, gross: 0 }
     )
+    const rawDiscount = parseMoney(source.discountValue)
+    const discount = source.discountType === 'percent'
+      ? Math.min(baseTotals.net, Math.max(0, baseTotals.net * (rawDiscount / 100)))
+      : source.discountType === 'amount'
+        ? Math.min(baseTotals.net, Math.max(0, rawDiscount))
+        : 0
+    const quoteTotals = {
+      originalNet: baseTotals.net,
+      discount,
+      net: baseTotals.net - discount,
+      vat: (baseTotals.net - discount) * 0.23,
+      gross: (baseTotals.net - discount) * 1.23,
+    }
+    const discountLabel = source.discountType === 'percent'
+      ? `Zľava ${escapeHtml(source.discountValue || '0')} %`
+      : 'Zľava'
 
     const rows = source.items
       .map((item, index) => {
@@ -525,7 +570,8 @@ export default function QuotesPage() {
   .total-row { display:flex; justify-content:space-between; gap:12px; padding:11px 14px; border-bottom:1px solid var(--line); font-size:12px; }
   .total-row strong { font-size:13px; }
   .total-row.final { background:var(--deep); color:white; border-bottom:0; align-items:baseline; }
-  .total-row.final strong { font-size:24px; }
+  .total-row.final strong { font-size:26px; }
+  .total-row.muted { color:var(--muted); }
   .footer { position:absolute; left:18mm; right:18mm; bottom:12mm; display:flex; justify-content:space-between; gap:20px; border-top:1px solid var(--line); padding-top:10px; color:var(--muted); font-size:10px; font-weight:800; }
   .toolbar { position:fixed; right:20px; top:20px; display:flex; gap:8px; z-index:10; }
   .toolbar button { border:0; border-radius:10px; background:#77d20b; color:#111827; padding:10px 14px; font-weight:900; cursor:pointer; }
@@ -564,9 +610,10 @@ export default function QuotesPage() {
   <section class="summary">
     <div class="terms"><strong>Poznámka a podmienky</strong>${escapeHtml(source.note || 'Ceny sú uvedené bez nepredvídaného materiálu. Presný termín realizácie bude dohodnutý po schválení ponuky.')}</div>
     <div class="totals">
-      <div class="total-row"><span>Spolu bez DPH</span><strong>${formatMoney(quoteTotals.net)}</strong></div>
-      <div class="total-row"><span>DPH</span><strong>${formatMoney(quoteTotals.vat)}</strong></div>
-      <div class="total-row final"><span>Celkom s DPH</span><strong>${formatMoney(quoteTotals.gross)}</strong></div>
+      ${quoteTotals.discount > 0 ? `<div class="total-row muted"><span>Pôvodná cena bez DPH</span><strong>${formatMoney(quoteTotals.originalNet)}</strong></div><div class="total-row"><span>${discountLabel}</span><strong>- ${formatMoney(quoteTotals.discount)}</strong></div>` : ''}
+      <div class="total-row final"><span>Celkom bez DPH</span><strong>${formatMoney(quoteTotals.net)}</strong></div>
+      <div class="total-row"><span>DPH 23 %</span><strong>${formatMoney(quoteTotals.vat)}</strong></div>
+      <div class="total-row muted"><span>Celkom s DPH</span><strong>${formatMoney(quoteTotals.gross)}</strong></div>
     </div>
   </section>
   <footer class="footer"><span>www.itspot.sk</span><span>info@itspot.sk</span><span>Strana 1 / 1</span></footer>
@@ -749,6 +796,27 @@ export default function QuotesPage() {
               <label style={labelStyle}>Poznámka a podmienky</label>
               <textarea style={{ ...inputStyle, minHeight: 96, resize: 'vertical' }} value={note} onChange={(event) => setNote(event.target.value)} placeholder="Ceny sú uvedené bez nepredvídaného materiálu..." />
             </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <div>
+                <label style={labelStyle}>Zľava</label>
+                <select style={inputStyle} value={discountType} onChange={(event) => setDiscountType(event.target.value as 'none' | 'percent' | 'amount')}>
+                  <option value="none">Bez zľavy</option>
+                  <option value="percent">Percentá %</option>
+                  <option value="amount">Suma bez DPH €</option>
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Hodnota zľavy</label>
+                <input
+                  style={inputStyle}
+                  value={discountValue}
+                  onChange={(event) => setDiscountValue(event.target.value)}
+                  placeholder={discountType === 'percent' ? 'napr. 5' : discountType === 'amount' ? 'napr. 100' : '0'}
+                  disabled={discountType === 'none'}
+                />
+              </div>
+            </div>
           </div>
 
           <div style={{ ...boxStyle, padding: 18 }}>
@@ -801,17 +869,29 @@ export default function QuotesPage() {
                 Prvá verzia generuje tlačový náhľad. V náhľade klikneš <strong>Tlačiť / uložiť PDF</strong>.
               </div>
               <div style={{ border: '1px solid #dbe3ee', borderRadius: 14, overflow: 'hidden' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: 12, borderBottom: '1px solid #dbe3ee' }}>
-                  <span>Spolu bez DPH</span>
-                  <strong>{formatMoney(totals.net)}</strong>
+                {totals.discount > 0 && (
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: 12, borderBottom: '1px solid #dbe3ee', color: '#64748b' }}>
+                      <span>Pôvodná cena bez DPH</span>
+                      <strong>{formatMoney(totals.originalNet)}</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: 12, borderBottom: '1px solid #dbe3ee', color: '#166534' }}>
+                      <span>Zľava</span>
+                      <strong>- {formatMoney(totals.discount)}</strong>
+                    </div>
+                  </>
+                )}
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: 14, background: '#101827', color: '#fff', alignItems: 'baseline' }}>
+                  <span>Celkom bez DPH</span>
+                  <strong style={{ fontSize: 28 }}>{formatMoney(totals.net)}</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: 12, borderBottom: '1px solid #dbe3ee' }}>
-                  <span>DPH</span>
+                  <span>DPH 23 %</span>
                   <strong>{formatMoney(totals.vat)}</strong>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: 14, background: '#101827', color: '#fff', alignItems: 'baseline' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: 12, color: '#64748b' }}>
                   <span>Celkom s DPH</span>
-                  <strong style={{ fontSize: 24 }}>{formatMoney(totals.gross)}</strong>
+                  <strong>{formatMoney(totals.gross)}</strong>
                 </div>
               </div>
             </div>

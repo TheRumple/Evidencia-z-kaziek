@@ -131,6 +131,8 @@ export type Quote = {
   contact_email: string | null
   realization_note: string | null
   note: string | null
+  discount_type?: 'none' | 'percent' | 'amount' | null
+  discount_value?: string | number | null
   items: unknown
   created_at?: string
   updated_at?: string

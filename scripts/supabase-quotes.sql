@@ -15,10 +15,13 @@ create table if not exists public.quotes (
   contact_email text,
   realization_note text,
   note text,
+  discount_type text not null default 'none',
+  discount_value numeric not null default 0,
   items jsonb not null default '[]'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  constraint quotes_status_check check (status in ('draft', 'sent', 'approved', 'rejected'))
+  constraint quotes_status_check check (status in ('draft', 'sent', 'approved', 'rejected')),
+  constraint quotes_discount_type_check check (discount_type in ('none', 'percent', 'amount'))
 );
 
 alter table public.quotes
@@ -53,6 +56,12 @@ alter table public.quotes
 
 alter table public.quotes
   add column if not exists note text;
+
+alter table public.quotes
+  add column if not exists discount_type text not null default 'none';
+
+alter table public.quotes
+  add column if not exists discount_value numeric not null default 0;
 
 alter table public.quotes
   add column if not exists items jsonb not null default '[]'::jsonb;
