@@ -522,7 +522,7 @@ export default function QuotesPage() {
             <td>${escapeHtml(item.unit || 'ks')}</td>
             <td class="num">${formatMoney(parseMoney(item.unitPrice))}</td>
             <td class="num">${escapeHtml(item.vatRate || '23')} %</td>
-            <td class="num">${formatMoney(itemTotals.gross)}</td>
+            <td class="num strong">${formatMoney(itemTotals.net)}</td>
           </tr>`
       })
       .join('')
@@ -533,64 +533,64 @@ export default function QuotesPage() {
 <meta charset="utf-8" />
 <title>${escapeHtml(source.number)} - ${escapeHtml(source.customer)}</title>
 <style>
-  :root { --ink:#0f172a; --muted:#64748b; --line:#dbe3ee; --soft:#f5f8fc; --lime:#77d20b; --deep:#101827; }
+  :root { --ink:#111827; --muted:#667085; --line:#d7dde7; --soft:#f6f8fb; --lime:#77d20b; --deep:#111827; }
   * { box-sizing: border-box; }
-  body { margin:0; background:#dfe7f1; color:var(--ink); font-family:Arial,Helvetica,sans-serif; padding:28px; }
-  .page { width:210mm; min-height:297mm; margin:0 auto; background:white; box-shadow:0 24px 70px rgba(15,23,42,.18); padding:18mm; position:relative; overflow:hidden; }
-  .page:before { content:""; position:absolute; inset:0 0 auto; height:7mm; background:linear-gradient(90deg,var(--deep),#1e293b 62%,var(--lime)); }
-  .header { display:grid; grid-template-columns:1fr 1.1fr; gap:18mm; padding-top:8mm; align-items:start; }
-  .brand { display:flex; gap:12px; align-items:center; }
-  .brand img { width:48px; height:48px; object-fit:contain; }
-  .brand-title { font-size:26px; font-weight:900; }
-  .brand-sub { margin-top:3px; font-size:12px; color:var(--muted); font-weight:700; }
-  .company { margin-top:12mm; font-size:11px; line-height:1.55; color:#334155; }
-  .quote-box { border:1px solid var(--line); border-radius:14px; padding:16px 18px; background:linear-gradient(145deg,#fff,#f8fafc); }
-  .quote-label { font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:900; letter-spacing:.08em; }
-  .quote-number { margin-top:7px; font-size:30px; font-weight:900; color:var(--deep); }
-  .quote-meta { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px; font-size:12px; }
-  .meta-card { border-radius:10px; background:var(--soft); padding:10px; }
-  .meta-card span { display:block; color:var(--muted); font-weight:800; font-size:10px; text-transform:uppercase; }
-  .meta-card strong { display:block; margin-top:4px; font-size:13px; }
-  .customer-row { display:grid; grid-template-columns:1fr 1fr; gap:12mm; margin-top:18mm; }
-  .panel { border:1px solid var(--line); border-radius:14px; padding:14px; }
-  .panel h2 { margin:0 0 10px; font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; }
-  .panel .name { font-size:18px; font-weight:900; margin-bottom:6px; }
-  .panel p { margin:0; color:#475569; font-size:12px; line-height:1.55; white-space:pre-line; }
-  .offer-title { margin-top:16mm; padding:16px 18px; border-radius:16px; color:white; background:linear-gradient(135deg,#111827,#1f2937 70%,#365314); }
-  .offer-title span { color:#b7f45a; font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.08em; }
-  .offer-title h1 { margin:6px 0 0; font-size:26px; line-height:1.18; }
-  table { width:100%; border-collapse:collapse; margin-top:12mm; font-size:11px; }
-  th { background:var(--deep); color:white; padding:10px 9px; text-align:left; font-size:10px; text-transform:uppercase; letter-spacing:.04em; }
-  th:first-child { border-radius:10px 0 0 10px; } th:last-child { border-radius:0 10px 10px 0; }
-  td { padding:11px 9px; border-bottom:1px solid #edf2f7; vertical-align:top; }
-  tbody tr:nth-child(even) td { background:#fafcff; }
+  body { margin:0; background:#dfe7f1; color:var(--ink); font-family:Arial,Helvetica,sans-serif; padding:24px; }
+  .page { width:210mm; min-height:297mm; margin:0 auto; background:white; box-shadow:0 24px 70px rgba(15,23,42,.16); padding:15mm 16mm 13mm; position:relative; }
+  .topline { height:4px; background:linear-gradient(90deg,var(--deep),var(--deep) 78%,var(--lime)); margin:-15mm -16mm 12mm; }
+  .header { display:grid; grid-template-columns:1.1fr .9fr; gap:16mm; align-items:start; padding-bottom:9mm; border-bottom:1px solid var(--line); }
+  .brand-title { font-size:33px; line-height:1; font-weight:950; letter-spacing:-.02em; }
+  .brand-title .green { color:var(--lime); }
+  .brand-sub { margin-top:6px; font-size:11px; color:var(--muted); font-weight:800; text-transform:uppercase; letter-spacing:.06em; }
+  .company { margin-top:9mm; font-size:10.5px; line-height:1.55; color:#344054; }
+  .quote-box { border:1px solid var(--deep); padding:14px 16px; background:#fff; }
+  .quote-label { font-size:10px; color:var(--muted); text-transform:uppercase; font-weight:900; letter-spacing:.09em; }
+  .quote-number { margin-top:6px; font-size:29px; font-weight:950; color:var(--deep); }
+  .quote-meta { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; font-size:11px; }
+  .meta-card { border-top:1px solid var(--line); padding-top:8px; }
+  .meta-card span { display:block; color:var(--muted); font-weight:900; font-size:9px; text-transform:uppercase; letter-spacing:.06em; }
+  .meta-card strong { display:block; margin-top:4px; font-size:12px; }
+  .customer-row { display:grid; grid-template-columns:1fr 1fr; gap:9mm; margin-top:10mm; }
+  .panel { border:1px solid var(--line); padding:12px; background:#fff; }
+  .panel h2 { margin:0 0 9px; font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; }
+  .panel .name { font-size:16px; font-weight:950; margin-bottom:6px; }
+  .panel p { margin:0; color:#475467; font-size:11px; line-height:1.5; white-space:pre-line; }
+  .offer-title { margin-top:10mm; }
+  .offer-title span { color:var(--lime); font-size:10px; font-weight:950; text-transform:uppercase; letter-spacing:.08em; }
+  .offer-title h1 { margin:4px 0 0; font-size:22px; line-height:1.18; color:var(--ink); }
+  table { width:100%; border-collapse:collapse; margin-top:8mm; font-size:10.3px; }
+  th { background:#f0f3f7; color:#344054; padding:8px 7px; text-align:left; font-size:9px; text-transform:uppercase; letter-spacing:.04em; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+  td { padding:8px 7px; border-bottom:1px solid #e8edf3; vertical-align:top; }
+  tbody tr:nth-child(even) td { background:#fbfcfe; }
   .num { text-align:right; white-space:nowrap; }
-  .item-name { font-weight:900; }
+  .strong { font-weight:950; color:var(--ink); }
+  .item-name { font-weight:850; }
   .item-note { margin-top:3px; color:var(--muted); font-size:10px; }
-  .summary { display:grid; grid-template-columns:1fr 78mm; gap:12mm; margin-top:12mm; align-items:start; }
-  .terms { background:var(--soft); border-radius:14px; padding:14px; color:#475569; font-size:11px; line-height:1.55; white-space:pre-line; }
+  .summary { display:grid; grid-template-columns:1fr 76mm; gap:10mm; margin-top:9mm; align-items:start; }
+  .terms { background:var(--soft); border:1px solid #e8edf3; padding:12px; color:#475467; font-size:10.5px; line-height:1.5; white-space:pre-line; }
   .terms strong { display:block; color:var(--ink); margin-bottom:6px; }
-  .totals { border:1px solid var(--line); border-radius:14px; overflow:hidden; }
-  .total-row { display:flex; justify-content:space-between; gap:12px; padding:11px 14px; border-bottom:1px solid var(--line); font-size:12px; }
-  .total-row strong { font-size:13px; }
+  .totals { border:1px solid var(--line); }
+  .total-row { display:flex; justify-content:space-between; gap:12px; padding:9px 12px; border-bottom:1px solid var(--line); font-size:11px; }
+  .total-row strong { font-size:12px; }
   .total-row.final { background:var(--deep); color:white; border-bottom:0; align-items:baseline; }
-  .total-row.final strong { font-size:26px; }
+  .total-row.final strong { font-size:24px; }
   .total-row.muted { color:var(--muted); }
-  .footer { position:absolute; left:18mm; right:18mm; bottom:12mm; display:flex; justify-content:space-between; gap:20px; border-top:1px solid var(--line); padding-top:10px; color:var(--muted); font-size:10px; font-weight:800; }
+  .signatures { display:grid; grid-template-columns:1fr 1fr; gap:18mm; margin-top:18mm; page-break-inside:avoid; }
+  .signature { border-top:1px solid #98a2b3; padding-top:7px; color:#667085; font-size:10px; font-weight:800; }
+  .footer { margin-top:12mm; display:flex; justify-content:space-between; gap:20px; border-top:1px solid var(--line); padding-top:8px; color:var(--muted); font-size:9.5px; font-weight:800; }
   .toolbar { position:fixed; right:20px; top:20px; display:flex; gap:8px; z-index:10; }
   .toolbar button { border:0; border-radius:10px; background:#77d20b; color:#111827; padding:10px 14px; font-weight:900; cursor:pointer; }
-  @media print { body { background:white; padding:0; } .page { box-shadow:none; margin:0; } .toolbar { display:none; } }
+  @media print { body { background:white; padding:0; } .page { box-shadow:none; margin:0; width:auto; min-height:auto; } .toolbar { display:none; } }
 </style>
 </head>
 <body>
 <div class="toolbar"><button onclick="window.print()">Tlačiť / uložiť PDF</button></div>
 <main class="page">
+  <div class="topline"></div>
   <section class="header">
     <div>
-      <div class="brand">
-        <img src="/delivery-protocol-logo.png" alt="ITspot" />
-        <div><div class="brand-title">ITspot</div><div class="brand-sub">Servis, montáž a inteligentné technológie</div></div>
-      </div>
+      <div class="brand-title">ITsp<span class="green">o</span>t</div>
+      <div class="brand-sub">Servis, montáž a inteligentné technológie</div>
       <div class="company"><strong>ITspot s. r. o.</strong><br />Hájles 1703/6, 968 01 Nová Baňa<br />IČO: 56430388 · DIČ: 2122307462<br />IČ DPH: SK2122307462<br />info@itspot.sk · +421 908 806 691</div>
     </div>
     <div class="quote-box">
@@ -608,7 +608,7 @@ export default function QuotesPage() {
   </section>
   <section class="offer-title"><span>Návrh riešenia</span><h1>${escapeHtml(source.title || 'Cenová ponuka')}</h1></section>
   <table>
-    <thead><tr><th style="width:8%">Č.</th><th>Položka</th><th style="width:10%" class="num">Množstvo</th><th style="width:10%">MJ</th><th style="width:14%" class="num">Cena bez DPH</th><th style="width:12%" class="num">DPH</th><th style="width:16%" class="num">Spolu s DPH</th></tr></thead>
+    <thead><tr><th style="width:7%">Č.</th><th>Položka</th><th style="width:10%" class="num">Množstvo</th><th style="width:8%">MJ</th><th style="width:15%" class="num">Cena/MJ bez DPH</th><th style="width:10%" class="num">DPH</th><th style="width:16%" class="num">Spolu bez DPH</th></tr></thead>
     <tbody>${rows}</tbody>
   </table>
   <section class="summary">
@@ -620,7 +620,11 @@ export default function QuotesPage() {
       <div class="total-row muted"><span>Celkom s DPH</span><strong>${formatMoney(quoteTotals.gross)}</strong></div>
     </div>
   </section>
-  <footer class="footer"><span>www.itspot.sk</span><span>info@itspot.sk</span><span>Strana 1 / 1</span></footer>
+  <section class="signatures">
+    <div class="signature">Vystavil: ITspot s. r. o.</div>
+    <div class="signature">Schválil / objednal</div>
+  </section>
+  <footer class="footer"><span>www.itspot.sk</span><span>info@itspot.sk</span><span>Cenová ponuka ${escapeHtml(source.number)}</span></footer>
 </main>
 </body>
 </html>`
