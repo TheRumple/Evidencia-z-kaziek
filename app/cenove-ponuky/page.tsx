@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -104,6 +104,7 @@ function getItemTotals(item: QuoteItem) {
 
 export default function QuotesPage() {
   const router = useRouter()
+  const formRef = useRef<HTMLElement | null>(null)
   const [checkingAuth, setCheckingAuth] = useState(true)
   const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -164,6 +165,11 @@ export default function QuotesPage() {
     const timer = window.setTimeout(() => setNotice(null), 4200)
     return () => window.clearTimeout(timer)
   }, [notice])
+
+  useEffect(() => {
+    if (editingId || quoteNumber) return
+    setQuoteNumber(generateQuoteNumber())
+  }, [editingId, quoteNumber, quotes])
 
   const totals = useMemo(() => {
     return items.reduce(
@@ -245,6 +251,14 @@ export default function QuotesPage() {
     setRealizationNote('')
     setNote('')
     setItems([createQuoteItem()])
+  }
+
+  function startNewQuote() {
+    resetForm()
+    setNotice({ type: 'success', text: 'Nová cenová ponuka je pripravená.' })
+    window.setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 50)
   }
 
   function selectCustomer(customerIdValue: string) {
@@ -590,7 +604,7 @@ export default function QuotesPage() {
           </div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <Link href="/" style={buttonStyle}>Domov</Link>
-            <button type="button" style={primaryButtonStyle} onClick={resetForm}>+ Nová ponuka</button>
+            <button type="button" style={primaryButtonStyle} onClick={startNewQuote}>+ Nová ponuka</button>
           </div>
         </header>
 
@@ -600,7 +614,7 @@ export default function QuotesPage() {
           </div>
         )}
 
-        <section style={{ display: 'grid', gridTemplateColumns: 'minmax(360px, 520px) 1fr', gap: 16, alignItems: 'start' }}>
+        <section ref={formRef} style={{ display: 'grid', gridTemplateColumns: 'minmax(360px, 520px) 1fr', gap: 16, alignItems: 'start' }}>
           <div style={{ ...boxStyle, padding: 18, display: 'grid', gap: 14 }}>
             <div>
               <div style={{ color: '#77d20b', fontSize: 12, fontWeight: 950, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
@@ -738,7 +752,7 @@ export default function QuotesPage() {
               <button type="button" style={primaryButtonStyle} onClick={saveQuote} disabled={saving}>{saving ? 'Ukladám...' : 'Uložiť ponuku'}</button>
               <button type="button" style={buttonStyle} onClick={() => showQuote()}>Ukáž ponuku</button>
               <button type="button" style={buttonStyle} onClick={() => sendQuoteEmail()}>Odoslať mailom</button>
-              {editingId && <button type="button" style={buttonStyle} onClick={resetForm}>Zrušiť úpravu</button>}
+              {editingId && <button type="button" style={buttonStyle} onClick={startNewQuote}>Zrušiť úpravu</button>}
             </div>
           </div>
         </section>
