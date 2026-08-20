@@ -151,6 +151,7 @@ export default function QuotesPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [isCompact, setIsCompact] = useState(false)
+  const [isNarrow, setIsNarrow] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -193,7 +194,10 @@ export default function QuotesPage() {
   }, [editingId, quoteNumber, quotes])
 
   useEffect(() => {
-    const updateSize = () => setIsCompact(window.innerWidth < 1180)
+    const updateSize = () => {
+      setIsCompact(window.innerWidth < 1320)
+      setIsNarrow(window.innerWidth < 760)
+    }
     updateSize()
     window.addEventListener('resize', updateSize)
     return () => window.removeEventListener('resize', updateSize)
@@ -738,7 +742,7 @@ export default function QuotesPage() {
               <h2 style={{ margin: '4px 0 0', fontSize: 24 }}>Základné údaje</h2>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr' : '1fr 1fr', gap: 10 }}>
               <div>
                 <label style={labelStyle}>Číslo ponuky</label>
                 <input style={inputStyle} value={quoteNumber} onChange={(event) => setQuoteNumber(event.target.value)} placeholder="CP-2026-001" />
@@ -776,7 +780,7 @@ export default function QuotesPage() {
               <input style={inputStyle} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Kamerový systém pre areál" />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr' : '1fr 1fr', gap: 10 }}>
               <div>
                 <label style={labelStyle}>Kontaktná osoba</label>
                 <input style={inputStyle} value={contactName} onChange={(event) => setContactName(event.target.value)} />
@@ -797,7 +801,7 @@ export default function QuotesPage() {
               <textarea style={{ ...inputStyle, minHeight: 96, resize: 'vertical' }} value={note} onChange={(event) => setNote(event.target.value)} placeholder="Ceny sú uvedené bez nepredvídaného materiálu..." />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr' : '1fr 1fr', gap: 10 }}>
               <div>
                 <label style={labelStyle}>Zľava</label>
                 <select style={inputStyle} value={discountType} onChange={(event) => setDiscountType(event.target.value as 'none' | 'percent' | 'amount')}>
@@ -831,30 +835,64 @@ export default function QuotesPage() {
             <div style={{ display: 'grid', gap: 10 }}>
               {items.map((item, index) => {
                 const itemTotals = getItemTotals(item)
+                if (isCompact) {
+                  return (
+                    <div key={item.id} style={{ display: 'grid', gap: 10, border: '1px solid #e2e8f0', borderRadius: 14, padding: 12, background: '#fff' }}>
+                      <div>
+                        <label style={labelStyle}>Položka</label>
+                        <input style={inputStyle} value={item.name} onChange={(event) => updateItem(index, 'name', event.target.value)} placeholder="Názov položky" />
+                        <input style={{ ...inputStyle, minHeight: 38, marginTop: 6, fontSize: 13 }} value={item.note} onChange={(event) => updateItem(index, 'note', event.target.value)} placeholder="Poznámka k položke" />
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr 1fr' : '0.75fr 0.55fr 0.9fr 0.65fr 1fr 44px', gap: 8, alignItems: 'end' }}>
+                        <div>
+                          <label style={labelStyle}>Množstvo</label>
+                          <input style={inputStyle} value={item.quantity} onChange={(event) => updateItem(index, 'quantity', event.target.value)} />
+                        </div>
+                        <div>
+                          <label style={labelStyle}>MJ</label>
+                          <input style={inputStyle} value={item.unit} onChange={(event) => updateItem(index, 'unit', event.target.value)} />
+                        </div>
+                        <div>
+                          <label style={labelStyle}>Cena bez DPH</label>
+                          <input style={inputStyle} value={item.unitPrice} onChange={(event) => updateItem(index, 'unitPrice', event.target.value)} placeholder="0,00" />
+                        </div>
+                        <div>
+                          <label style={labelStyle}>DPH %</label>
+                          <input style={inputStyle} value={item.vatRate} onChange={(event) => updateItem(index, 'vatRate', event.target.value)} />
+                        </div>
+                        <div>
+                          <label style={labelStyle}>Spolu</label>
+                          <div style={{ ...inputStyle, display: 'flex', alignItems: 'center', background: '#f8fafc' }}>{formatMoney(itemTotals.gross)}</div>
+                        </div>
+                        <button type="button" style={{ ...buttonStyle, minHeight: 44, padding: 0, color: '#991b1b' }} onClick={() => removeItem(index)} disabled={items.length <= 1}>×</button>
+                      </div>
+                    </div>
+                  )
+                }
                 return (
-                  <div key={item.id} style={{ display: 'grid', gridTemplateColumns: isCompact ? 'minmax(220px, 1.7fr) 0.7fr 0.55fr 0.8fr 0.55fr 0.85fr 44px' : '2fr 0.7fr 0.6fr 0.9fr 0.7fr 0.9fr 44px', gap: 8, alignItems: 'end', border: '1px solid #e2e8f0', borderRadius: 14, padding: 10, overflowX: isCompact ? 'auto' : 'visible' }}>
-                    <div style={{ minWidth: isCompact ? 220 : undefined }}>
+                  <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '2fr 0.7fr 0.6fr 0.9fr 0.7fr 0.9fr 44px', gap: 8, alignItems: 'end', border: '1px solid #e2e8f0', borderRadius: 14, padding: 10 }}>
+                    <div>
                       {index === 0 && <label style={labelStyle}>Položka</label>}
                       <input style={inputStyle} value={item.name} onChange={(event) => updateItem(index, 'name', event.target.value)} placeholder="Názov položky" />
                       <input style={{ ...inputStyle, minHeight: 36, marginTop: 6, fontSize: 13 }} value={item.note} onChange={(event) => updateItem(index, 'note', event.target.value)} placeholder="Poznámka k položke" />
                     </div>
-                    <div style={{ minWidth: isCompact ? 86 : undefined }}>
+                    <div>
                       {index === 0 && <label style={labelStyle}>Množstvo</label>}
                       <input style={inputStyle} value={item.quantity} onChange={(event) => updateItem(index, 'quantity', event.target.value)} />
                     </div>
-                    <div style={{ minWidth: isCompact ? 58 : undefined }}>
+                    <div>
                       {index === 0 && <label style={labelStyle}>MJ</label>}
                       <input style={inputStyle} value={item.unit} onChange={(event) => updateItem(index, 'unit', event.target.value)} />
                     </div>
-                    <div style={{ minWidth: isCompact ? 96 : undefined }}>
+                    <div>
                       {index === 0 && <label style={labelStyle}>Cena bez DPH</label>}
                       <input style={inputStyle} value={item.unitPrice} onChange={(event) => updateItem(index, 'unitPrice', event.target.value)} placeholder="0,00" />
                     </div>
-                    <div style={{ minWidth: isCompact ? 64 : undefined }}>
+                    <div>
                       {index === 0 && <label style={labelStyle}>DPH %</label>}
                       <input style={inputStyle} value={item.vatRate} onChange={(event) => updateItem(index, 'vatRate', event.target.value)} />
                     </div>
-                    <div style={{ minWidth: isCompact ? 110 : undefined }}>
+                    <div>
                       {index === 0 && <label style={labelStyle}>Spolu</label>}
                       <div style={{ ...inputStyle, display: 'flex', alignItems: 'center', background: '#f8fafc' }}>{formatMoney(itemTotals.gross)}</div>
                     </div>
@@ -865,9 +903,7 @@ export default function QuotesPage() {
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: isCompact ? '1fr' : '1fr 320px', gap: 16, marginTop: 16, alignItems: 'start' }}>
-              <div style={{ color: '#64748b', fontWeight: 800 }}>
-                Prvá verzia generuje tlačový náhľad. V náhľade klikneš <strong>Tlačiť / uložiť PDF</strong>.
-              </div>
+              <div />
               <div style={{ border: '1px solid #dbe3ee', borderRadius: 14, overflow: 'hidden' }}>
                 {totals.discount > 0 && (
                   <>
@@ -934,15 +970,15 @@ export default function QuotesPage() {
 
           <div style={{ display: 'grid', gap: 8 }}>
             {filteredQuotes.map((quote) => (
-              <div key={quote.id} style={{ display: 'grid', gridTemplateColumns: '150px 1fr 220px 140px 280px', gap: 10, alignItems: 'center', border: '1px solid #e2e8f0', borderRadius: 14, padding: 12 }}>
+              <div key={quote.id} style={{ display: 'grid', gridTemplateColumns: isCompact ? '1fr' : '150px 1fr 220px 140px 280px', gap: 10, alignItems: 'center', border: '1px solid #e2e8f0', borderRadius: 14, padding: 12 }}>
                 <strong>{quote.quote_number}</strong>
                 <div>
                   <div style={{ fontWeight: 950 }}>{quote.title}</div>
                   <div style={{ color: '#64748b', fontWeight: 800, fontSize: 13 }}>{quote.customer_name || 'Bez zákazníka'}</div>
                 </div>
                 <div style={{ color: '#64748b', fontWeight: 800 }}>{formatDate(quote.quote_date)}</div>
-                <span style={{ ...statusStyle[quote.status], borderRadius: 999, padding: '7px 10px', fontWeight: 900, textAlign: 'center' }}>{STATUS_LABELS[quote.status]}</span>
-                <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                <span style={{ ...statusStyle[quote.status], borderRadius: 999, padding: '7px 10px', fontWeight: 900, textAlign: 'center', width: 'fit-content' }}>{STATUS_LABELS[quote.status]}</span>
+                <div style={{ display: 'flex', gap: 8, justifyContent: isCompact ? 'flex-start' : 'flex-end', flexWrap: 'wrap' }}>
                   <button type="button" style={buttonStyle} onClick={() => startEdit(quote)}>Upraviť</button>
                   <button type="button" style={buttonStyle} onClick={() => showQuote(quote)}>Ukáž</button>
                   <button type="button" style={buttonStyle} onClick={() => sendQuoteEmail(quote)}>Email</button>
