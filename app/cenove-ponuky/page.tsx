@@ -33,6 +33,24 @@ const statusStyle: Record<Quote['status'], CSSProperties> = {
   rejected: { background: '#fee2e2', color: '#991b1b', border: '1px solid #fca5a5' },
 }
 
+const flowiiQuote260802Items: QuoteItem[] = [
+  { id: 'flowii-260802-1', name: 'Dahua Pentabridný AI videorekordér', note: '', quantity: '1', unit: 'ks', unitPrice: '127', vatRate: '23' },
+  { id: 'flowii-260802-2', name: 'Montáž a nastavenie videorekordéra', note: '', quantity: '1', unit: 'ks', unitPrice: '60', vatRate: '23' },
+  { id: 'flowii-260802-3', name: 'Seagate HDD2000S 24/7 SATA disk', note: '', quantity: '1', unit: 'ks', unitPrice: '139', vatRate: '23' },
+  { id: 'flowii-260802-4', name: 'Dahua 5 Mpx turret HDCVI kamera', note: '', quantity: '2', unit: 'ks', unitPrice: '82', vatRate: '23' },
+  { id: 'flowii-260802-5', name: 'Montáž a nastavenie kamier', note: '', quantity: '2', unit: 'ks', unitPrice: '50', vatRate: '23' },
+  { id: 'flowii-260802-6', name: 'Dahua PFA137 prídavný límec pre kamery', note: '', quantity: '2', unit: 'ks', unitPrice: '12', vatRate: '23' },
+  { id: 'flowii-260802-7', name: 'Simple PS 12/2000 napájací zdroj', note: '', quantity: '2', unit: 'ks', unitPrice: '11,5', vatRate: '23' },
+  { id: 'flowii-260802-8', name: 'Dahua PFM800-4K súprava 1-kanálových pasívnych video prevodníkov BNC', note: '', quantity: '2', unit: 'ks', unitPrice: '8', vatRate: '23' },
+  { id: 'flowii-260802-9', name: 'Zapojenie kamerového systému, konektory, oživenie', note: '', quantity: '1', unit: 'ks', unitPrice: '50', vatRate: '23' },
+  { id: 'flowii-260802-10', name: 'AB Cryptobox 750HD', note: '', quantity: '1', unit: 'ks', unitPrice: '67', vatRate: '23' },
+  { id: 'flowii-260802-11', name: 'Satelitná parabola LTC 110', note: '', quantity: '1', unit: 'ks', unitPrice: '45', vatRate: '23' },
+  { id: 'flowii-260802-12', name: 'Montáž paraboly + LNB', note: '', quantity: '1', unit: 'ks', unitPrice: '60', vatRate: '23' },
+  { id: 'flowii-260802-13', name: 'LNB Smart TWIN Titanium Edition', note: '', quantity: '1', unit: 'ks', unitPrice: '15', vatRate: '23' },
+  { id: 'flowii-260802-14', name: 'Konzola T-sat 50 cm', note: '', quantity: '1', unit: 'ks', unitPrice: '23', vatRate: '23' },
+  { id: 'flowii-260802-15', name: 'Nastavenie satelitu a nastavenie prijímača', note: '', quantity: '1', unit: 'ks', unitPrice: '80', vatRate: '23' },
+]
+
 function createQuoteItem(): QuoteItem {
   return {
     id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -130,6 +148,7 @@ export default function QuotesPage() {
 
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [isCompact, setIsCompact] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -170,6 +189,13 @@ export default function QuotesPage() {
     if (editingId || quoteNumber) return
     setQuoteNumber(generateQuoteNumber())
   }, [editingId, quoteNumber, quotes])
+
+  useEffect(() => {
+    const updateSize = () => setIsCompact(window.innerWidth < 1180)
+    updateSize()
+    window.addEventListener('resize', updateSize)
+    return () => window.removeEventListener('resize', updateSize)
+  }, [])
 
   const totals = useMemo(() => {
     return items.reduce(
@@ -354,6 +380,48 @@ export default function QuotesPage() {
     })
     startEdit(saved)
     setNotice({ type: 'success', text: editingId ? 'Ponuka bola upravená.' : 'Ponuka bola uložená.' })
+  }
+
+  async function importFlowiiQuote260802() {
+    if (!userId) return
+
+    const payload = {
+      user_id: userId,
+      customer_id: null,
+      quote_number: '260802',
+      quote_date: '2026-08-20',
+      valid_until: null,
+      status: 'draft' as Quote['status'],
+      title: 'Kamerový systém + Satelit',
+      customer_name: 'Prochyra',
+      contact_name: null,
+      contact_email: null,
+      realization_note: 'Termín realizácie podľa dohody.',
+      note: 'Importované z pôvodnej ponuky Flowii číslo 260802.',
+      items: flowiiQuote260802Items,
+      updated_at: new Date().toISOString(),
+    }
+
+    setSaving(true)
+    const { data, error } = await supabase
+      .from('quotes')
+      .upsert(payload, { onConflict: 'user_id,quote_number' })
+      .select()
+      .single()
+    setSaving(false)
+
+    if (error) {
+      setNotice({ type: 'error', text: `Import sa nepodaril: ${error.message}` })
+      return
+    }
+
+    const saved = data as Quote
+    setQuotes((current) => {
+      const withoutSaved = current.filter((quote) => quote.id !== saved.id && quote.quote_number !== saved.quote_number)
+      return [saved, ...withoutSaved]
+    })
+    startEdit(saved)
+    setNotice({ type: 'success', text: 'Ponuka 260802 bola uložená do našej evidencie.' })
   }
 
   function getPrintableHtml(quoteLike?: Quote) {
@@ -614,7 +682,7 @@ export default function QuotesPage() {
           </div>
         )}
 
-        <section ref={formRef} style={{ display: 'grid', gridTemplateColumns: 'minmax(360px, 520px) 1fr', gap: 16, alignItems: 'start' }}>
+        <section ref={formRef} style={{ display: 'grid', gridTemplateColumns: isCompact ? '1fr' : 'minmax(360px, 520px) 1fr', gap: 16, alignItems: 'start' }}>
           <div style={{ ...boxStyle, padding: 18, display: 'grid', gap: 14 }}>
             <div>
               <div style={{ color: '#77d20b', fontSize: 12, fontWeight: 950, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
@@ -696,29 +764,29 @@ export default function QuotesPage() {
               {items.map((item, index) => {
                 const itemTotals = getItemTotals(item)
                 return (
-                  <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '2fr 0.7fr 0.6fr 0.9fr 0.7fr 0.9fr 44px', gap: 8, alignItems: 'end', border: '1px solid #e2e8f0', borderRadius: 14, padding: 10 }}>
-                    <div>
+                  <div key={item.id} style={{ display: 'grid', gridTemplateColumns: isCompact ? 'minmax(220px, 1.7fr) 0.7fr 0.55fr 0.8fr 0.55fr 0.85fr 44px' : '2fr 0.7fr 0.6fr 0.9fr 0.7fr 0.9fr 44px', gap: 8, alignItems: 'end', border: '1px solid #e2e8f0', borderRadius: 14, padding: 10, overflowX: isCompact ? 'auto' : 'visible' }}>
+                    <div style={{ minWidth: isCompact ? 220 : undefined }}>
                       {index === 0 && <label style={labelStyle}>Položka</label>}
                       <input style={inputStyle} value={item.name} onChange={(event) => updateItem(index, 'name', event.target.value)} placeholder="Názov položky" />
                       <input style={{ ...inputStyle, minHeight: 36, marginTop: 6, fontSize: 13 }} value={item.note} onChange={(event) => updateItem(index, 'note', event.target.value)} placeholder="Poznámka k položke" />
                     </div>
-                    <div>
+                    <div style={{ minWidth: isCompact ? 86 : undefined }}>
                       {index === 0 && <label style={labelStyle}>Množstvo</label>}
                       <input style={inputStyle} value={item.quantity} onChange={(event) => updateItem(index, 'quantity', event.target.value)} />
                     </div>
-                    <div>
+                    <div style={{ minWidth: isCompact ? 58 : undefined }}>
                       {index === 0 && <label style={labelStyle}>MJ</label>}
                       <input style={inputStyle} value={item.unit} onChange={(event) => updateItem(index, 'unit', event.target.value)} />
                     </div>
-                    <div>
+                    <div style={{ minWidth: isCompact ? 96 : undefined }}>
                       {index === 0 && <label style={labelStyle}>Cena bez DPH</label>}
                       <input style={inputStyle} value={item.unitPrice} onChange={(event) => updateItem(index, 'unitPrice', event.target.value)} placeholder="0,00" />
                     </div>
-                    <div>
+                    <div style={{ minWidth: isCompact ? 64 : undefined }}>
                       {index === 0 && <label style={labelStyle}>DPH %</label>}
                       <input style={inputStyle} value={item.vatRate} onChange={(event) => updateItem(index, 'vatRate', event.target.value)} />
                     </div>
-                    <div>
+                    <div style={{ minWidth: isCompact ? 110 : undefined }}>
                       {index === 0 && <label style={labelStyle}>Spolu</label>}
                       <div style={{ ...inputStyle, display: 'flex', alignItems: 'center', background: '#f8fafc' }}>{formatMoney(itemTotals.gross)}</div>
                     </div>
@@ -728,7 +796,7 @@ export default function QuotesPage() {
               })}
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 16, marginTop: 16, alignItems: 'start' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isCompact ? '1fr' : '1fr 320px', gap: 16, marginTop: 16, alignItems: 'start' }}>
               <div style={{ color: '#64748b', fontWeight: 800 }}>
                 Prvá verzia generuje tlačový náhľad. V náhľade klikneš <strong>Tlačiť / uložiť PDF</strong>.
               </div>
@@ -775,7 +843,14 @@ export default function QuotesPage() {
           </div>
 
           {loading ? <div style={{ color: '#64748b', fontWeight: 800 }}>Načítavam...</div> : null}
-          {!loading && filteredQuotes.length === 0 ? <div style={{ color: '#64748b', fontWeight: 800 }}>Zatiaľ tu nie sú žiadne ponuky.</div> : null}
+          {!loading && filteredQuotes.length === 0 ? (
+            <div style={{ display: 'grid', gap: 12, color: '#64748b', fontWeight: 800 }}>
+              <div>Zatiaľ tu nie sú žiadne ponuky.</div>
+              <button type="button" style={{ ...primaryButtonStyle, width: 'fit-content' }} onClick={importFlowiiQuote260802} disabled={saving}>
+                {saving ? 'Ukladám...' : 'Uložiť ponuku 260802 z Flowii'}
+              </button>
+            </div>
+          ) : null}
 
           <div style={{ display: 'grid', gap: 8 }}>
             {filteredQuotes.map((quote) => (
