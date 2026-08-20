@@ -539,8 +539,7 @@ export default function QuotesPage() {
   .page { width:210mm; min-height:297mm; margin:0 auto; background:white; box-shadow:0 24px 70px rgba(15,23,42,.16); padding:15mm 16mm 13mm; position:relative; }
   .topline { height:4px; background:linear-gradient(90deg,var(--deep),var(--deep) 78%,var(--lime)); margin:-15mm -16mm 12mm; }
   .header { display:grid; grid-template-columns:1.1fr .9fr; gap:16mm; align-items:start; padding-bottom:9mm; border-bottom:1px solid var(--line); }
-  .brand-title { font-size:33px; line-height:1; font-weight:950; letter-spacing:-.02em; }
-  .brand-title .green { color:var(--lime); }
+  .brand-logo { display:block; width:64mm; max-width:100%; height:auto; }
   .company { margin-top:8mm; font-size:10.5px; line-height:1.55; color:#344054; }
   .quote-box { border:1px solid var(--deep); padding:14px 16px; background:#fff; }
   .quote-label { font-size:10px; color:var(--muted); text-transform:uppercase; font-weight:900; letter-spacing:.09em; }
@@ -588,7 +587,7 @@ export default function QuotesPage() {
   <div class="topline"></div>
   <section class="header">
     <div>
-      <div class="brand-title">ITsp<span class="green">o</span>t</div>
+      <img class="brand-logo" src="/quote-logo.jpg" alt="ITspot" />
       <div class="company"><strong>ITspot s. r. o.</strong><br />Hájles 1703/6, 968 01 Nová Baňa<br />IČO: 56430388 · DIČ: 2122307462<br />IČ DPH: SK2122307462<br />info@itspot.sk · +421 908 806 691</div>
     </div>
     <div class="quote-box">
