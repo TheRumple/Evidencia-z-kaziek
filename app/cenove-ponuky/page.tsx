@@ -567,11 +567,12 @@ export default function QuotesPage() {
   .summary { display:grid; grid-template-columns:1fr 76mm; gap:10mm; margin-top:9mm; align-items:start; }
   .terms { background:var(--soft); border:1px solid #e8edf3; padding:12px; color:#475467; font-size:10.5px; line-height:1.5; white-space:pre-line; }
   .terms strong { display:block; color:var(--ink); margin-bottom:6px; }
-  .totals { border:1px solid var(--line); }
+  .totals { border:1px solid var(--line); background:#fff; }
   .total-row { display:flex; justify-content:space-between; gap:12px; padding:9px 12px; border-bottom:1px solid var(--line); font-size:11px; }
   .total-row strong { font-size:12px; }
-  .total-row.final { background:var(--deep); color:white; border-bottom:0; align-items:baseline; }
-  .total-row.final strong { font-size:24px; }
+  .total-row.final { background:#eefbdc; color:#111827; border:2px solid var(--lime); margin:-1px; align-items:baseline; padding:13px 12px; }
+  .total-row.final span { font-size:12px; font-weight:950; text-transform:uppercase; letter-spacing:.04em; }
+  .total-row.final strong { font-size:30px; color:#111827; }
   .total-row.muted { color:var(--muted); }
   .signatures { display:grid; grid-template-columns:1fr 1fr; gap:18mm; margin-top:18mm; page-break-inside:avoid; }
   .signature { border-top:1px solid #98a2b3; padding-top:7px; color:#667085; font-size:10px; font-weight:800; }
