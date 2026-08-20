@@ -541,8 +541,7 @@ export default function QuotesPage() {
   .header { display:grid; grid-template-columns:1.1fr .9fr; gap:16mm; align-items:start; padding-bottom:9mm; border-bottom:1px solid var(--line); }
   .brand-title { font-size:33px; line-height:1; font-weight:950; letter-spacing:-.02em; }
   .brand-title .green { color:var(--lime); }
-  .brand-sub { margin-top:6px; font-size:11px; color:var(--muted); font-weight:800; text-transform:uppercase; letter-spacing:.06em; }
-  .company { margin-top:9mm; font-size:10.5px; line-height:1.55; color:#344054; }
+  .company { margin-top:8mm; font-size:10.5px; line-height:1.55; color:#344054; }
   .quote-box { border:1px solid var(--deep); padding:14px 16px; background:#fff; }
   .quote-label { font-size:10px; color:var(--muted); text-transform:uppercase; font-weight:900; letter-spacing:.09em; }
   .quote-number { margin-top:6px; font-size:29px; font-weight:950; color:var(--deep); }
@@ -590,7 +589,6 @@ export default function QuotesPage() {
   <section class="header">
     <div>
       <div class="brand-title">ITsp<span class="green">o</span>t</div>
-      <div class="brand-sub">Servis, montáž a inteligentné technológie</div>
       <div class="company"><strong>ITspot s. r. o.</strong><br />Hájles 1703/6, 968 01 Nová Baňa<br />IČO: 56430388 · DIČ: 2122307462<br />IČ DPH: SK2122307462<br />info@itspot.sk · +421 908 806 691</div>
     </div>
     <div class="quote-box">
@@ -604,7 +602,7 @@ export default function QuotesPage() {
   </section>
   <section class="customer-row">
     <div class="panel"><h2>Odberateľ</h2><div class="name">${escapeHtml(source.customer || 'Bez zákazníka')}</div><p>${source.contact ? `Kontaktná osoba: ${escapeHtml(source.contact)}<br />` : ''}${source.email ? `Email: ${escapeHtml(source.email)}` : ''}</p></div>
-    <div class="panel"><h2>Realizácia</h2><div class="name">${escapeHtml(source.title || 'Cenová ponuka')}</div><p>${escapeHtml(source.realization || 'Termín realizácie podľa dohody.')}</p></div>
+    <div class="panel"><h2>Realizácia</h2><p>${escapeHtml(source.realization || 'Termín realizácie podľa dohody.')}</p></div>
   </section>
   <section class="offer-title"><span>Návrh riešenia</span><h1>${escapeHtml(source.title || 'Cenová ponuka')}</h1></section>
   <table>
