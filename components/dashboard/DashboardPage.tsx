@@ -2728,6 +2728,11 @@ export default function DashboardPage() {
               <span className="sideMenuIcon">›</span>
             </Link>
 
+            <Link href="/cenove-ponuky" style={sideNavButton(false)}>
+              <span>Cenové ponuky</span>
+              <span className="sideMenuIcon">›</span>
+            </Link>
+
             <button type="button" style={sideNavButton(false)} onClick={openDeliveryProtocolModal}>
               <span>Odovzdávací protokol</span>
               <span className="sideMenuIcon">›</span>

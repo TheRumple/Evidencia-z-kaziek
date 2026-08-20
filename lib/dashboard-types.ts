@@ -117,6 +117,25 @@ export type DeliveryProtocol = {
   updated_at?: string
 }
 
+export type Quote = {
+  id: string
+  user_id: string
+  customer_id: string | null
+  quote_number: string
+  quote_date: string
+  valid_until: string | null
+  status: 'draft' | 'sent' | 'approved' | 'rejected'
+  title: string
+  customer_name: string | null
+  contact_name: string | null
+  contact_email: string | null
+  realization_note: string | null
+  note: string | null
+  items: unknown
+  created_at?: string
+  updated_at?: string
+}
+
 export type MaintenanceRevision = {
   id: string
   user_id: string
