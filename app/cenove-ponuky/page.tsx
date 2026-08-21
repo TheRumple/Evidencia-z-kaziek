@@ -51,6 +51,14 @@ const flowiiQuote260802Items: QuoteItem[] = [
   { id: 'flowii-260802-15', name: 'Nastavenie satelitu a nastavenie prijímača', note: '', quantity: '1', unit: 'ks', unitPrice: '80', vatRate: '23' },
 ]
 
+const quoteItemTemplates: Array<Omit<QuoteItem, 'id'>> = [
+  { name: 'Obhliadka a konzultácia u zákazníka', note: '', quantity: '1', unit: 'ks', unitPrice: '', vatRate: '23' },
+  { name: 'Montáž a nastavenie zariadenia', note: '', quantity: '1', unit: 'ks', unitPrice: '', vatRate: '23' },
+  { name: 'Programovanie a konfigurácia systému', note: '', quantity: '1', unit: 'ks', unitPrice: '', vatRate: '23' },
+  { name: 'Zapojenie, konektory a oživenie systému', note: '', quantity: '1', unit: 'ks', unitPrice: '', vatRate: '23' },
+  { name: 'Doprava', note: '', quantity: '1', unit: 'ks', unitPrice: '', vatRate: '23' },
+]
+
 function createQuoteItem(): QuoteItem {
   return {
     id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -360,8 +368,61 @@ export default function QuotesPage() {
     setItems((current) => [...current, createQuoteItem()])
   }
 
+  function addTemplateItem(template: Omit<QuoteItem, 'id'>) {
+    setItems((current) => [
+      ...current.filter((item) => item.name.trim() || item.note.trim() || item.unitPrice.trim()),
+      { ...template, id: createQuoteItem().id },
+    ])
+  }
+
   function removeItem(index: number) {
     setItems((current) => (current.length <= 1 ? current : current.filter((_item, itemIndex) => itemIndex !== index)))
+  }
+
+  function duplicateQuote(quote: Quote) {
+    setActiveSection('create')
+    setEditingId('')
+    setCustomerId(quote.customer_id || '')
+    setQuoteNumber(generateQuoteNumber())
+    setQuoteDate(getTodayDate())
+    setValidUntil(addDays(getTodayDate(), 14))
+    setStatus('draft')
+    setTitle(quote.title || '')
+    setCustomerName(quote.customer_name || '')
+    setContactName(quote.contact_name || '')
+    setContactEmail(quote.contact_email || '')
+    setRealizationNote(quote.realization_note || '')
+    setNote(quote.note || '')
+    setDiscountType((quote.discount_type === 'percent' || quote.discount_type === 'amount') ? quote.discount_type : 'none')
+    setDiscountValue(quote.discount_value ? String(quote.discount_value).replace('.', ',') : '')
+    setItems(normalizeItems(quote.items).map((item) => ({ ...item, id: createQuoteItem().id })))
+    setNotice({ type: 'success', text: 'Ponuka je skopírovaná ako nová rozpracovaná ponuka.' })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  async function updateQuoteStatus(quote: Quote, nextStatus: Quote['status']) {
+    if (!userId) return
+    setSaving(true)
+    const { data, error } = await supabase
+      .from('quotes')
+      .update({ status: nextStatus, updated_at: new Date().toISOString() })
+      .eq('id', quote.id)
+      .eq('user_id', userId)
+      .select()
+      .single()
+    setSaving(false)
+
+    if (error) {
+      setNotice({ type: 'error', text: `Stav ponuky sa neuložil: ${error.message}` })
+      return
+    }
+
+    const saved = data as Quote
+    setQuotes((current) => current.map((item) => (item.id === saved.id ? saved : item)))
+    if (editingId === saved.id) {
+      setStatus(saved.status)
+    }
+    setNotice({ type: 'success', text: `Ponuka je označená ako ${STATUS_LABELS[nextStatus].toLowerCase()}.` })
   }
 
   async function saveQuote() {
@@ -847,6 +908,17 @@ export default function QuotesPage() {
     color: active ? '#fff' : '#0f172a',
   })
 
+  const workflowStepStyle = (active: boolean, tone: CSSProperties = {}): CSSProperties => ({
+    ...buttonStyle,
+    borderColor: active ? '#77d20b' : '#cbd5e1',
+    background: active ? '#ecfccb' : '#fff',
+    color: active ? '#365314' : '#334155',
+    boxShadow: active ? 'inset 0 0 0 1px rgba(119,210,11,0.35)' : 'none',
+    ...tone,
+  })
+
+  const editingQuote = editingId ? quotes.find((quote) => quote.id === editingId) : null
+
   return (
     <main style={pageStyle}>
       <div style={{ maxWidth: 1500, margin: '0 auto' }}>
@@ -910,6 +982,37 @@ export default function QuotesPage() {
                 <label style={labelStyle}>Platnosť do</label>
                 <input type="date" style={inputStyle} value={validUntil} onChange={(event) => setValidUntil(event.target.value)} />
               </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 5, alignItems: 'center', flexWrap: 'wrap' }}>
+              <span style={{ color: '#64748b', fontSize: 11, fontWeight: 900 }}>Workflow</span>
+              {(['draft', 'sent', 'approved'] as Quote['status'][]).map((step) => (
+                <button
+                  key={step}
+                  type="button"
+                  style={workflowStepStyle(status === step)}
+                  onClick={() => setStatus(step)}
+                >
+                  {STATUS_LABELS[step]}
+                </button>
+              ))}
+              <button
+                type="button"
+                style={workflowStepStyle(status === 'rejected', { color: status === 'rejected' ? '#991b1b' : '#334155' })}
+                onClick={() => setStatus('rejected')}
+              >
+                Zamietnutá
+              </button>
+              {editingQuote && (
+                <button
+                  type="button"
+                  style={{ ...workflowStepStyle(false), borderColor: '#86efac', background: '#dcfce7', color: '#166534' }}
+                  onClick={() => void createOrderFromQuote(editingQuote)}
+                  disabled={saving}
+                >
+                  Vytvoriť zákazku
+                </button>
+              )}
             </div>
 
             <div>
@@ -977,6 +1080,19 @@ export default function QuotesPage() {
                 <h2 style={{ margin: 0, fontSize: 18 }}>Rozpočet ponuky</h2>
               </div>
               <button type="button" style={buttonStyle} onClick={addItem}>+ Pridať položku</button>
+            </div>
+
+            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 6 }}>
+              {quoteItemTemplates.map((template) => (
+                <button
+                  key={template.name}
+                  type="button"
+                  style={{ ...buttonStyle, background: '#f8fafc', color: '#334155' }}
+                  onClick={() => addTemplateItem(template)}
+                >
+                  + {template.name.replace(' u zákazníka', '').replace(' systému', '')}
+                </button>
+              ))}
             </div>
 
             <div style={{ display: 'grid', gap: 3 }}>
@@ -1103,15 +1219,15 @@ export default function QuotesPage() {
         )}
 
         {activeSection === 'list' && (
-        <section style={{ ...boxStyle, padding: 18, marginTop: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', flexWrap: 'wrap', marginBottom: 14 }}>
+        <section style={{ ...boxStyle, padding: 10, marginTop: 8 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
             <div>
               <div style={{ color: '#77d20b', fontSize: 12, fontWeight: 950, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Evidencia</div>
-              <h2 style={{ margin: '4px 0 0', fontSize: 24 }}>Uložené ponuky</h2>
+              <h2 style={{ margin: 0, fontSize: 18 }}>Uložené ponuky</h2>
             </div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <input style={{ ...inputStyle, width: 260 }} value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Hľadať..." />
-              <select style={{ ...inputStyle, width: 180 }} value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              <input style={{ ...inputStyle, width: isNarrow ? '100%' : 240 }} value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Hľadať..." />
+              <select style={{ ...inputStyle, width: isNarrow ? '100%' : 160 }} value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
                 <option value="all">Všetky stavy</option>
                 {Object.entries(STATUS_LABELS).map(([value, label]) => (
                   <option key={value} value={value}>{label}</option>
@@ -1130,31 +1246,72 @@ export default function QuotesPage() {
             </div>
           ) : null}
 
-          <div style={{ display: 'grid', gap: 8 }}>
-            {filteredQuotes.map((quote) => (
-              <div key={quote.id} style={{ display: 'grid', gridTemplateColumns: isCompact ? '1fr' : '150px 1fr 220px 140px 280px', gap: 10, alignItems: 'center', border: '1px solid #e2e8f0', borderRadius: 14, padding: 12 }}>
-                <strong>{quote.quote_number}</strong>
-                <div>
-                  <div style={{ fontWeight: 950 }}>{quote.title}</div>
-                  <div style={{ color: '#64748b', fontWeight: 800, fontSize: 13 }}>{quote.customer_name || 'Bez zákazníka'}</div>
-                </div>
-                <div style={{ color: '#64748b', fontWeight: 800 }}>{formatDate(quote.quote_date)}</div>
-                <span style={{ ...statusStyle[quote.status], borderRadius: 999, padding: '7px 10px', fontWeight: 900, textAlign: 'center', width: 'fit-content' }}>{STATUS_LABELS[quote.status]}</span>
-                <div style={{ display: 'flex', gap: 8, justifyContent: isCompact ? 'flex-start' : 'flex-end', flexWrap: 'wrap' }}>
-                  <button type="button" style={buttonStyle} onClick={() => startEdit(quote)}>Upraviť</button>
-                  <button type="button" style={buttonStyle} onClick={() => showQuote(quote)}>Ukáž</button>
-                  <button type="button" style={buttonStyle} onClick={() => sendQuoteEmail(quote)}>Email</button>
-                  <button
-                    type="button"
-                    style={{ ...buttonStyle, borderColor: '#86efac', background: '#dcfce7', color: '#166534' }}
-                    onClick={() => void createOrderFromQuote(quote)}
-                    disabled={saving}
-                  >
-                    Vytvoriť zákazku
-                  </button>
-                </div>
+          <div style={{ border: '1px solid #e2e8f0', borderRadius: 8, overflow: 'hidden', background: '#fff' }}>
+            {!isCompact && filteredQuotes.length > 0 && (
+              <div style={{ display: 'grid', gridTemplateColumns: '105px 1.05fr 1.6fr 128px 118px 88px 360px', gap: 8, alignItems: 'center', background: '#f8fafc', color: '#475569', fontSize: 10, fontWeight: 950, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '7px 8px', borderBottom: '1px solid #e2e8f0' }}>
+                <span>Číslo</span>
+                <span>Zákazník</span>
+                <span>Názov</span>
+                <span>Stav</span>
+                <span style={{ textAlign: 'right' }}>Bez DPH</span>
+                <span>Dátum</span>
+                <span style={{ textAlign: 'right' }}>Akcie</span>
               </div>
-            ))}
+            )}
+            {filteredQuotes.map((quote, index) => {
+              const quoteItems = normalizeItems(quote.items)
+              const quoteDiscountType = (quote.discount_type === 'percent' || quote.discount_type === 'amount') ? quote.discount_type : 'none'
+              const quoteTotals = getQuoteTotals(quoteItems, quoteDiscountType, quote.discount_value ? String(quote.discount_value) : '')
+
+              if (isCompact) {
+                return (
+                  <div key={quote.id} style={{ display: 'grid', gap: 6, padding: 9, borderTop: index === 0 ? 'none' : '1px solid #e2e8f0' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'flex-start' }}>
+                      <div>
+                        <strong>{quote.quote_number}</strong>
+                        <div style={{ fontWeight: 950 }}>{quote.title}</div>
+                        <div style={{ color: '#64748b', fontWeight: 800, fontSize: 12 }}>{quote.customer_name || 'Bez zákazníka'} · {formatMoney(quoteTotals.net)} bez DPH</div>
+                      </div>
+                      <span style={{ ...statusStyle[quote.status], borderRadius: 999, padding: '4px 8px', fontWeight: 900, textAlign: 'center', width: 'fit-content', fontSize: 12 }}>{STATUS_LABELS[quote.status]}</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: 5, justifyContent: 'flex-start', flexWrap: 'wrap' }}>
+                      <button type="button" style={buttonStyle} onClick={() => startEdit(quote)}>Upraviť</button>
+                      <button type="button" style={buttonStyle} onClick={() => duplicateQuote(quote)}>Duplikovať</button>
+                      <button type="button" style={buttonStyle} onClick={() => showQuote(quote)}>PDF</button>
+                      <button type="button" style={buttonStyle} onClick={() => sendQuoteEmail(quote)}>Email</button>
+                      <button type="button" style={{ ...buttonStyle, borderColor: '#bfdbfe', background: '#eff6ff', color: '#1e40af' }} onClick={() => void updateQuoteStatus(quote, 'sent')} disabled={saving}>Odoslaná</button>
+                      <button type="button" style={{ ...buttonStyle, borderColor: '#86efac', background: '#dcfce7', color: '#166534' }} onClick={() => void createOrderFromQuote(quote)} disabled={saving}>Zákazka</button>
+                    </div>
+                  </div>
+                )
+              }
+
+              return (
+                <div key={quote.id} style={{ display: 'grid', gridTemplateColumns: '105px 1.05fr 1.6fr 128px 118px 88px 360px', gap: 8, alignItems: 'center', padding: '6px 8px', borderTop: index === 0 ? 'none' : '1px solid #e2e8f0', background: index % 2 ? '#fbfdff' : '#fff' }}>
+                  <strong style={{ fontSize: 13 }}>{quote.quote_number}</strong>
+                  <div style={{ color: '#334155', fontWeight: 900, fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{quote.customer_name || 'Bez zákazníka'}</div>
+                  <div style={{ fontWeight: 950, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{quote.title}</div>
+                  <span style={{ ...statusStyle[quote.status], borderRadius: 999, padding: '4px 8px', fontWeight: 900, textAlign: 'center', width: 'fit-content', fontSize: 12 }}>{STATUS_LABELS[quote.status]}</span>
+                  <strong style={{ textAlign: 'right', fontSize: 13 }}>{formatMoney(quoteTotals.net)}</strong>
+                  <div style={{ color: '#64748b', fontWeight: 800, fontSize: 12 }}>{formatDate(quote.quote_date)}</div>
+                  <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                    <button type="button" style={buttonStyle} onClick={() => startEdit(quote)}>Upraviť</button>
+                    <button type="button" style={buttonStyle} onClick={() => duplicateQuote(quote)}>Kópia</button>
+                    <button type="button" style={buttonStyle} onClick={() => showQuote(quote)}>PDF</button>
+                    <button type="button" style={buttonStyle} onClick={() => sendQuoteEmail(quote)}>Email</button>
+                    <button type="button" style={{ ...buttonStyle, borderColor: '#bfdbfe', background: '#eff6ff', color: '#1e40af' }} onClick={() => void updateQuoteStatus(quote, 'sent')} disabled={saving}>Odoslaná</button>
+                    <button
+                      type="button"
+                      style={{ ...buttonStyle, borderColor: '#86efac', background: '#dcfce7', color: '#166534' }}
+                      onClick={() => void createOrderFromQuote(quote)}
+                      disabled={saving}
+                    >
+                      Zákazka
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </section>
         )}
