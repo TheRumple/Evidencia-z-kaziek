@@ -79,6 +79,14 @@ function formatMoney(value: number) {
   return `${value.toLocaleString('sk-SK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`
 }
 
+function normalizeCustomerName(value: string | null | undefined) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/\bs\.?\s*r\.?\s*o\.?\b/g, '')
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .trim()
+}
+
 function escapeHtml(value: string | null | undefined) {
   return String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -114,6 +122,35 @@ function getItemTotals(item: QuoteItem) {
   const net = quantity * unitPrice
   const vat = net * (vatRate / 100)
   return {
+    net,
+    vat,
+    gross: net + vat,
+  }
+}
+
+function getQuoteTotals(items: QuoteItem[], discountType: 'none' | 'percent' | 'amount', discountValue: string) {
+  const base = items.reduce(
+    (sum, item) => {
+      const itemTotals = getItemTotals(item)
+      return {
+        net: sum.net + itemTotals.net,
+        vat: sum.vat + itemTotals.vat,
+        gross: sum.gross + itemTotals.gross,
+      }
+    },
+    { net: 0, vat: 0, gross: 0 }
+  )
+  const rawDiscount = parseMoney(discountValue)
+  const discount = discountType === 'percent'
+    ? Math.min(base.net, Math.max(0, base.net * (rawDiscount / 100)))
+    : discountType === 'amount'
+      ? Math.min(base.net, Math.max(0, rawDiscount))
+      : 0
+  const net = base.net - discount
+  const vat = net * 0.23
+  return {
+    originalNet: base.net,
+    discount,
     net,
     vat,
     gross: net + vat,
@@ -204,32 +241,7 @@ export default function QuotesPage() {
   }, [])
 
   const totals = useMemo(() => {
-    const base = items.reduce(
-      (sum, item) => {
-        const itemTotals = getItemTotals(item)
-        return {
-          net: sum.net + itemTotals.net,
-          vat: sum.vat + itemTotals.vat,
-          gross: sum.gross + itemTotals.gross,
-        }
-      },
-      { net: 0, vat: 0, gross: 0 }
-    )
-    const rawDiscount = parseMoney(discountValue)
-    const discount = discountType === 'percent'
-      ? Math.min(base.net, Math.max(0, base.net * (rawDiscount / 100)))
-      : discountType === 'amount'
-        ? Math.min(base.net, Math.max(0, rawDiscount))
-        : 0
-    const discountedNet = base.net - discount
-    const vat = discountedNet * 0.23
-    return {
-      originalNet: base.net,
-      discount,
-      net: discountedNet,
-      vat,
-      gross: discountedNet + vat,
-    }
+    return getQuoteTotals(items, discountType, discountValue)
   }, [discountType, discountValue, items])
 
   const filteredQuotes = useMemo(() => {
@@ -453,6 +465,135 @@ export default function QuotesPage() {
     setNotice({ type: 'success', text: 'Ponuka 260802 bola uložená do našej evidencie.' })
   }
 
+  async function createOrderFromQuote(quote: Quote) {
+    if (!userId) return
+
+    const quoteItems = normalizeItems(quote.items)
+    const quoteDiscountType = (quote.discount_type === 'percent' || quote.discount_type === 'amount') ? quote.discount_type : 'none'
+    const quoteDiscountValue = quote.discount_value ? String(quote.discount_value) : ''
+    const quoteTotals = getQuoteTotals(quoteItems, quoteDiscountType, quoteDiscountValue)
+    const requestedCustomerName = quote.customer_name?.trim() || 'Zákazník z ponuky'
+
+    setSaving(true)
+
+    let finalCustomerId = quote.customer_id || ''
+    if (!finalCustomerId) {
+      const normalizedQuoteCustomer = normalizeCustomerName(requestedCustomerName)
+      const existingCustomer = customers.find((customer) => normalizeCustomerName(customer.nazov) === normalizedQuoteCustomer)
+
+      if (existingCustomer) {
+        finalCustomerId = existingCustomer.id
+      } else {
+        const { data: createdCustomer, error: customerError } = await supabase
+          .from('customers')
+          .insert([
+            {
+              user_id: userId,
+              nazov: requestedCustomerName,
+              kontakt: quote.contact_name || null,
+              telefon: null,
+              email: quote.contact_email || null,
+            },
+          ])
+          .select()
+          .single()
+
+        if (customerError || !createdCustomer) {
+          setSaving(false)
+          setNotice({ type: 'error', text: `Zákazník sa nevytvoril: ${customerError?.message || 'neznáma chyba'}` })
+          return
+        }
+
+        const newCustomer = createdCustomer as Customer
+        finalCustomerId = newCustomer.id
+        setCustomers((current) => [newCustomer, ...current])
+      }
+    }
+
+    const itemLines = quoteItems.map((item, index) => {
+      const itemTotals = getItemTotals(item)
+      return `${index + 1}. ${item.name} - ${item.quantity || '1'} ${item.unit || 'ks'} x ${formatMoney(parseMoney(item.unitPrice))} bez DPH = ${formatMoney(itemTotals.net)}`
+    })
+
+    const description = [
+      `Vytvorené z cenovej ponuky ${quote.quote_number}.`,
+      `Cena spolu bez DPH: ${formatMoney(quoteTotals.net)}`,
+      `Cena spolu s DPH: ${formatMoney(quoteTotals.gross)}`,
+      '',
+      'Položky:',
+      ...itemLines,
+      quote.note ? ['', 'Poznámka:', quote.note] : '',
+    ]
+      .flat()
+      .filter(Boolean)
+      .join('\n')
+
+    const { data: existingOrders, error: existingOrderError } = await supabase
+      .from('orders')
+      .select('id, nazov')
+      .eq('user_id', userId)
+      .ilike('popis', `%cenovej ponuky ${quote.quote_number}%`)
+      .limit(1)
+
+    if (existingOrderError) {
+      setSaving(false)
+      setNotice({ type: 'error', text: `Kontrola existujúcej zákazky zlyhala: ${existingOrderError.message}` })
+      return
+    }
+
+    if (existingOrders && existingOrders.length > 0) {
+      setSaving(false)
+      setNotice({ type: 'success', text: `Z tejto ponuky už existuje zákazka: ${existingOrders[0].nazov}.` })
+      return
+    }
+
+    const { data: insertedOrder, error: orderError } = await supabase
+      .from('orders')
+      .insert([
+        {
+          user_id: userId,
+          nazov: quote.title || `Zákazka z ponuky ${quote.quote_number}`,
+          customer_id: finalCustomerId,
+          stav: 'nova',
+          praca: null,
+          popis: description,
+          requester_email: quote.contact_email || null,
+          public_message: null,
+          termin: null,
+          prijatie_zakazky: getTodayDate(),
+          hodiny: 0,
+        },
+      ])
+      .select()
+      .single()
+
+    if (orderError || !insertedOrder) {
+      setSaving(false)
+      setNotice({ type: 'error', text: `Zákazka sa nevytvorila: ${orderError?.message || 'neznáma chyba'}` })
+      return
+    }
+
+    const { data: updatedQuote, error: quoteError } = await supabase
+      .from('quotes')
+      .update({ status: 'approved', updated_at: new Date().toISOString() })
+      .eq('id', quote.id)
+      .eq('user_id', userId)
+      .select()
+      .single()
+
+    setSaving(false)
+
+    if (quoteError) {
+      setNotice({ type: 'error', text: `Zákazka vznikla, ale ponuka sa neoznačila ako schválená: ${quoteError.message}` })
+      return
+    }
+
+    const savedQuote = updatedQuote as Quote
+    setQuotes((current) => current.map((item) => (item.id === savedQuote.id ? savedQuote : item)))
+    if (editingId === savedQuote.id) startEdit(savedQuote)
+    setNotice({ type: 'success', text: `Zo schválenej ponuky ${quote.quote_number} vznikla nová zákazka.` })
+  }
+
   function getPrintableHtml(quoteLike?: Quote) {
     const source = quoteLike
       ? {
@@ -484,26 +625,8 @@ export default function QuotesPage() {
           items: items.filter((item) => item.name.trim() || item.note.trim() || item.unitPrice.trim()),
         }
 
-    const baseTotals = source.items.reduce(
-      (sum, item) => {
-        const itemTotals = getItemTotals(item)
-        return { net: sum.net + itemTotals.net, vat: sum.vat + itemTotals.vat, gross: sum.gross + itemTotals.gross }
-      },
-      { net: 0, vat: 0, gross: 0 }
-    )
-    const rawDiscount = parseMoney(source.discountValue)
-    const discount = source.discountType === 'percent'
-      ? Math.min(baseTotals.net, Math.max(0, baseTotals.net * (rawDiscount / 100)))
-      : source.discountType === 'amount'
-        ? Math.min(baseTotals.net, Math.max(0, rawDiscount))
-        : 0
-    const quoteTotals = {
-      originalNet: baseTotals.net,
-      discount,
-      net: baseTotals.net - discount,
-      vat: (baseTotals.net - discount) * 0.23,
-      gross: (baseTotals.net - discount) * 1.23,
-    }
+    const sourceDiscountType = (source.discountType === 'percent' || source.discountType === 'amount') ? source.discountType : 'none'
+    const quoteTotals = getQuoteTotals(source.items, sourceDiscountType, source.discountValue)
     const discountLabel = source.discountType === 'percent'
       ? `Zľava ${escapeHtml(source.discountValue || '0')} %`
       : 'Zľava'
@@ -938,6 +1061,19 @@ export default function QuotesPage() {
               <button type="button" style={primaryButtonStyle} onClick={saveQuote} disabled={saving}>{saving ? 'Ukladám...' : 'Uložiť ponuku'}</button>
               <button type="button" style={buttonStyle} onClick={() => showQuote()}>Ukáž ponuku</button>
               <button type="button" style={buttonStyle} onClick={() => sendQuoteEmail()}>Odoslať mailom</button>
+              {editingId && (
+                <button
+                  type="button"
+                  style={{ ...buttonStyle, borderColor: '#86efac', background: '#dcfce7', color: '#166534' }}
+                  onClick={() => {
+                    const quote = quotes.find((item) => item.id === editingId)
+                    if (quote) void createOrderFromQuote(quote)
+                  }}
+                  disabled={saving}
+                >
+                  Vytvoriť zákazku
+                </button>
+              )}
               {editingId && <button type="button" style={buttonStyle} onClick={startNewQuote}>Zrušiť úpravu</button>}
             </div>
           </div>
@@ -984,6 +1120,14 @@ export default function QuotesPage() {
                   <button type="button" style={buttonStyle} onClick={() => startEdit(quote)}>Upraviť</button>
                   <button type="button" style={buttonStyle} onClick={() => showQuote(quote)}>Ukáž</button>
                   <button type="button" style={buttonStyle} onClick={() => sendQuoteEmail(quote)}>Email</button>
+                  <button
+                    type="button"
+                    style={{ ...buttonStyle, borderColor: '#86efac', background: '#dcfce7', color: '#166534' }}
+                    onClick={() => void createOrderFromQuote(quote)}
+                    disabled={saving}
+                  >
+                    Vytvoriť zákazku
+                  </button>
                 </div>
               </div>
             ))}
