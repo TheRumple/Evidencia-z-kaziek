@@ -187,6 +187,7 @@ export default function QuotesPage() {
 
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [activeSection, setActiveSection] = useState<'create' | 'list'>('create')
   const [isCompact, setIsCompact] = useState(false)
   const [isNarrow, setIsNarrow] = useState(false)
 
@@ -316,6 +317,7 @@ export default function QuotesPage() {
 
   function startNewQuote() {
     resetForm()
+    setActiveSection('create')
     setNotice({ type: 'success', text: 'Nová cenová ponuka je pripravená.' })
     window.setTimeout(() => {
       formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -331,6 +333,7 @@ export default function QuotesPage() {
   }
 
   function startEdit(quote: Quote) {
+    setActiveSection('create')
     setEditingId(quote.id)
     setCustomerId(quote.customer_id || '')
     setQuoteNumber(quote.quote_number)
@@ -835,6 +838,13 @@ export default function QuotesPage() {
     boxShadow: '0 12px 24px rgba(119,210,11,0.2)',
   }
 
+  const tabButtonStyle = (active: boolean): CSSProperties => ({
+    ...buttonStyle,
+    borderColor: active ? '#101827' : '#cbd5e1',
+    background: active ? '#101827' : '#fff',
+    color: active ? '#fff' : '#0f172a',
+  })
+
   return (
     <main style={pageStyle}>
       <div style={{ maxWidth: 1500, margin: '0 auto' }}>
@@ -852,13 +862,23 @@ export default function QuotesPage() {
           </div>
         </header>
 
+        <div style={{ ...boxStyle, padding: 10, marginBottom: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button type="button" style={tabButtonStyle(activeSection === 'create')} onClick={() => setActiveSection('create')}>
+            Tvorba ponuky
+          </button>
+          <button type="button" style={tabButtonStyle(activeSection === 'list')} onClick={() => setActiveSection('list')}>
+            Uložené ponuky ({quotes.length})
+          </button>
+        </div>
+
         {notice && (
           <div style={{ ...boxStyle, padding: 14, marginBottom: 16, borderColor: notice.type === 'success' ? '#86efac' : '#fecaca', color: notice.type === 'success' ? '#166534' : '#991b1b' }}>
             <strong>{notice.text}</strong>
           </div>
         )}
 
-        <section ref={formRef} style={{ display: 'grid', gridTemplateColumns: isCompact ? '1fr' : 'minmax(360px, 520px) 1fr', gap: 16, alignItems: 'start' }}>
+        {activeSection === 'create' && (
+        <section ref={formRef} style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16, alignItems: 'start' }}>
           <div style={{ ...boxStyle, padding: 18, display: 'grid', gap: 14 }}>
             <div>
               <div style={{ color: '#77d20b', fontSize: 12, fontWeight: 950, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
@@ -1078,7 +1098,9 @@ export default function QuotesPage() {
             </div>
           </div>
         </section>
+        )}
 
+        {activeSection === 'list' && (
         <section style={{ ...boxStyle, padding: 18, marginTop: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', flexWrap: 'wrap', marginBottom: 14 }}>
             <div>
@@ -1133,6 +1155,7 @@ export default function QuotesPage() {
             ))}
           </div>
         </section>
+        )}
       </div>
     </main>
   )
