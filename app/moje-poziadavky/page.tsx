@@ -934,7 +934,6 @@ export default function MyRequestsPage() {
                     <div className="customerRequestMeta">
                       <span style={{ color: '#166534' }}>Firma: {item.customer_name || group.customerName}</span>
                       <span>Odoslané: {formatDate(item.created_at)}</span>
-                      {canPrioritize && <span style={{ color: '#0f172a' }}>Priorita: #{customerPriority}</span>}
                     </div>
                   </div>
 
@@ -967,37 +966,65 @@ export default function MyRequestsPage() {
 
                   <div className="customerRequestActions" style={{ gap: 6, flexWrap: 'wrap' }}>
                     {canPrioritize && (
-                      <>
+                      <div
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          border: `1px solid ${statusColor.border}`,
+                          background: '#fff',
+                          color: '#334155',
+                          borderRadius: 9,
+                          padding: '3px 5px',
+                          fontSize: 11,
+                          fontWeight: 900,
+                          lineHeight: 1,
+                        }}
+                      >
+                        <span>Priorita {customerPriority}:</span>
                         <button
-                          className="customerEditButton"
-                          type="button"
-                          onClick={() => void moveCustomerPriority(item.id, 'top')}
-                          disabled={movingPriorityId === item.id || itemIndex === 0}
-                          style={{ border: '1px solid #bfdbfe', background: '#eff6ff', color: '#1e40af' }}
-                        >
-                          Navrch
-                        </button>
-                        <button
-                          className="customerEditButton"
                           type="button"
                           onClick={() => void moveCustomerPriority(item.id, 'up')}
                           disabled={movingPriorityId === item.id || itemIndex === 0}
-                          style={{ border: '1px solid #cbd5e1', background: '#fff', color: '#334155' }}
+                          style={{
+                            width: 24,
+                            height: 22,
+                            border: '1px solid #cbd5e1',
+                            background: itemIndex === 0 ? '#f8fafc' : '#f8fafc',
+                            color: '#334155',
+                            borderRadius: 7,
+                            cursor: movingPriorityId === item.id || itemIndex === 0 ? 'not-allowed' : 'pointer',
+                            fontSize: 13,
+                            fontWeight: 950,
+                            padding: 0,
+                            lineHeight: 1,
+                          }}
                           aria-label="Posunúť vyššie"
                         >
                           ↑
                         </button>
                         <button
-                          className="customerEditButton"
                           type="button"
                           onClick={() => void moveCustomerPriority(item.id, 'down')}
                           disabled={movingPriorityId === item.id || itemIndex === group.items.length - 1}
-                          style={{ border: '1px solid #cbd5e1', background: '#fff', color: '#334155' }}
+                          style={{
+                            width: 24,
+                            height: 22,
+                            border: '1px solid #cbd5e1',
+                            background: itemIndex === group.items.length - 1 ? '#f8fafc' : '#f8fafc',
+                            color: '#334155',
+                            borderRadius: 7,
+                            cursor: movingPriorityId === item.id || itemIndex === group.items.length - 1 ? 'not-allowed' : 'pointer',
+                            fontSize: 13,
+                            fontWeight: 950,
+                            padding: 0,
+                            lineHeight: 1,
+                          }}
                           aria-label="Posunúť nižšie"
                         >
                           ↓
                         </button>
-                      </>
+                      </div>
                     )}
                     {canUpdate && updateOrderId !== item.id && (
                       <button
