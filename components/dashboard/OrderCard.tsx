@@ -19,6 +19,7 @@ type OrderCardProps = {
   orderLogs: WorkLog[]
   customerUpdates: CustomerUpdate[]
   unseenCustomerUpdatesCount: number
+  hasUnseenCustomerPriority: boolean
   boxStyle: CSSProperties
   buttonStyle: CSSProperties
   dangerButtonStyle: CSSProperties
@@ -36,6 +37,7 @@ type OrderCardProps = {
   togglePinnedOrder: (orderId: string) => void
   updateOrderStatus: (orderId: string, status: string) => void
   updateOrderProgress: (orderId: string, progressPercent: number) => void
+  markCustomerPrioritySeen: (orderId: string) => void
   deleteCustomerUpdate: (updateId: string) => void
 }
 
@@ -82,6 +84,7 @@ export function OrderCard({
   orderLogs,
   customerUpdates,
   unseenCustomerUpdatesCount,
+  hasUnseenCustomerPriority,
   boxStyle,
   buttonStyle,
   dangerButtonStyle,
@@ -99,6 +102,7 @@ export function OrderCard({
   togglePinnedOrder,
   updateOrderStatus,
   updateOrderProgress,
+  markCustomerPrioritySeen,
   deleteCustomerUpdate,
 }: OrderCardProps) {
   const overdue = isOverdue(order)
@@ -260,6 +264,21 @@ export function OrderCard({
                     Nová úprava {unseenCustomerUpdatesCount}
                   </span>
                 )}
+                {order.customer_priority && (
+                  <span
+                    style={{
+                      background: hasUnseenCustomerPriority ? '#fef3c7' : '#eff6ff',
+                      color: hasUnseenCustomerPriority ? '#92400e' : '#1e40af',
+                      border: hasUnseenCustomerPriority ? '1px solid #fbbf24' : '1px solid #bfdbfe',
+                      borderRadius: 999,
+                      padding: '2px 7px',
+                      fontSize: 10,
+                      fontWeight: 900,
+                    }}
+                  >
+                    {hasUnseenCustomerPriority ? 'Nová priorita ' : ''}P{order.customer_priority} zákazník
+                  </span>
+                )}
               </div>
               <div className="orderCardCustomer orderCardCustomerInline">{getCustomerName(order.customer_id)}</div>
             </div>
@@ -360,6 +379,30 @@ export function OrderCard({
                 <div>
                   <strong>Kilometre spolu:</strong> {getOrderKilometres(order.id).toFixed(0)} km
                 </div>
+                {order.customer_priority && (
+                  <div>
+                    <strong>Priorita zákazníka:</strong> P{order.customer_priority}
+                    {hasUnseenCustomerPriority && (
+                      <button
+                        type="button"
+                        onClick={() => markCustomerPrioritySeen(order.id)}
+                        style={{
+                          marginLeft: 8,
+                          border: '1px solid #fbbf24',
+                          background: '#fef3c7',
+                          color: '#92400e',
+                          borderRadius: 8,
+                          padding: '3px 7px',
+                          fontSize: 12,
+                          fontWeight: 900,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Označiť ako videné
+                      </button>
+                    )}
+                  </div>
+                )}
                 <div>
                   <strong>Poznámky k zákazke:</strong>
                   {cleanOrderDescription ? (

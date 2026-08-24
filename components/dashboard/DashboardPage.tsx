@@ -49,6 +49,12 @@ function composeOrderDescription(requester: string, description: string) {
     .join('\n')
 }
 
+function hasUnseenCustomerPriority(order: Order) {
+  if (!order.customer_priority || !order.customer_priority_updated_at) return false
+  if (!order.customer_priority_seen_at) return true
+  return new Date(order.customer_priority_updated_at).getTime() > new Date(order.customer_priority_seen_at).getTime()
+}
+
 function getPortalCodeErrorMessage(error: { code?: string; message?: string } | null | undefined) {
   if (!error) return ''
   const message = error.message || ''
@@ -1101,6 +1107,27 @@ export default function DashboardPage() {
       setOrders(previous)
       setNotice({ type: 'error', text: error.message })
       return
+    }
+  }
+
+  async function markCustomerPrioritySeen(orderId: string) {
+    if (!userId) return
+    const seenAt = new Date().toISOString()
+    setOrders((curr) => curr.map((order) => (order.id === orderId ? { ...order, customer_priority_seen_at: seenAt } : order)))
+
+    const { error } = await supabase
+      .from('orders')
+      .update({ customer_priority_seen_at: seenAt })
+      .eq('id', orderId)
+      .eq('user_id', userId)
+
+    if (error) {
+      setNotice({
+        type: 'error',
+        text: error.code === '42703'
+          ? 'Chýbajú polia priority zákazníka. Spusť SQL skript scripts/supabase-customer-priorities.sql v Supabase.'
+          : `Priorita sa neoznačila ako videná: ${error.message}`,
+      })
     }
   }
 
@@ -2348,6 +2375,18 @@ export default function DashboardPage() {
     return orders.filter((o) => AKTIVNE_STATUSY.includes(o.stav))
   }, [orders])
 
+  const unseenCustomerPriorityOrders = useMemo(() => {
+    return activeOrders.filter(hasUnseenCustomerPriority)
+  }, [activeOrders])
+
+  const unseenCustomerPriorityByOrder = useMemo(() => {
+    const result: Record<string, boolean> = {}
+    for (const order of unseenCustomerPriorityOrders) {
+      result[order.id] = true
+    }
+    return result
+  }, [unseenCustomerPriorityOrders])
+
   const selectedCustomer = useMemo(() => {
     if (selectedCustomerId === 'vsetci') return null
     return customers.find((c) => c.id === selectedCustomerId) || null
@@ -2706,6 +2745,13 @@ export default function DashboardPage() {
               </span>
             </button>
 
+            <button type="button" style={sideNavButton(unseenCustomerPriorityOrders.length > 0)} onClick={() => setActiveTab('zakazky')}>
+              <span>Zmeny priorít</span>
+              <span className={unseenCustomerPriorityOrders.length > 0 ? 'sideMenuBadge sideMenuBadgeAlert' : 'sideMenuBadge'}>
+                {unseenCustomerPriorityOrders.length}
+              </span>
+            </button>
+
             <Link href="/admin/requests" style={sideNavButton(pendingRequestsCount > 0)}>
               <span>Žiadosti</span>
               <span className={pendingRequestsCount > 0 ? 'sideMenuBadge sideMenuBadgeAlert' : 'sideMenuBadge'}>
@@ -2856,6 +2902,31 @@ export default function DashboardPage() {
                   </span>
                 </Link>
 
+                {unseenCustomerPriorityOrders.length > 0 && (
+                  <button
+                    type="button"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      background: '#fef3c7',
+                      border: '1px solid #fbbf24',
+                      color: '#92400e',
+                      padding: '7px 11px',
+                      borderRadius: 10,
+                      fontWeight: 900,
+                      fontSize: 13,
+                      cursor: 'pointer',
+                    }}
+                    onClick={() => setActiveTab('zakazky')}
+                  >
+                    Zmeny priorít
+                    <span style={{ background: '#f59e0b', color: '#fff', padding: '2px 8px', borderRadius: 999, fontSize: 12 }}>
+                      {unseenCustomerPriorityOrders.length}
+                    </span>
+                  </button>
+                )}
+
                 <button
                   type="button"
                   style={{ ...primaryButtonStyle, minWidth: 138, padding: '8px 12px', borderRadius: 10 }}
@@ -2937,6 +3008,8 @@ export default function DashboardPage() {
             workLogsByOrder={workLogsByOrder}
             customerUpdatesByOrder={customerUpdatesByOrder}
             unseenCustomerUpdatesByOrder={unseenCustomerUpdatesByOrder}
+            unseenCustomerPriorityByOrder={unseenCustomerPriorityByOrder}
+            markCustomerPrioritySeen={markCustomerPrioritySeen}
           />
         )}
 

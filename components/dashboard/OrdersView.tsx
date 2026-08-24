@@ -45,6 +45,8 @@ type OrdersViewProps = {
   workLogsByOrder: Record<string, WorkLog[]>
   customerUpdatesByOrder: Record<string, CustomerUpdate[]>
   unseenCustomerUpdatesByOrder: Record<string, number>
+  unseenCustomerPriorityByOrder: Record<string, boolean>
+  markCustomerPrioritySeen: (orderId: string) => void
 }
 
 export function OrdersView({
@@ -82,6 +84,8 @@ export function OrdersView({
   workLogsByOrder,
   customerUpdatesByOrder,
   unseenCustomerUpdatesByOrder,
+  unseenCustomerPriorityByOrder,
+  markCustomerPrioritySeen,
 }: OrdersViewProps) {
   return (
     <div className="ordersWorkspace">
@@ -183,6 +187,7 @@ export function OrdersView({
                       orderLogs={workLogsByOrder[order.id] || []}
                       customerUpdates={customerUpdatesByOrder[order.id] || []}
                       unseenCustomerUpdatesCount={unseenCustomerUpdatesByOrder[order.id] || 0}
+                      hasUnseenCustomerPriority={Boolean(unseenCustomerPriorityByOrder[order.id])}
                       boxStyle={boxStyle}
                       buttonStyle={buttonStyle}
                       dangerButtonStyle={dangerButtonStyle}
@@ -201,6 +206,7 @@ export function OrdersView({
                       togglePinnedOrder={togglePinnedOrder}
                       updateOrderStatus={updateOrderStatus}
                       updateOrderProgress={updateOrderProgress}
+                      markCustomerPrioritySeen={markCustomerPrioritySeen}
                     />
                   ))}
                 </div>

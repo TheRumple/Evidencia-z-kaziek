@@ -18,6 +18,9 @@ type CustomerLookupItem = {
   public_message?: string | null
   requester_email?: string | null
   progress_percent?: number | null
+  customer_priority?: number | null
+  customer_priority_updated_at?: string | null
+  customer_priority_seen_at?: string | null
 }
 
 function formatDate(date: string | null | undefined) {
@@ -79,6 +82,14 @@ function normalizeProgress(value: number | null | undefined) {
 
 function sortCustomerItems(itemsToSort: CustomerLookupItem[]) {
   return [...itemsToSort].sort((a, b) => {
+    const aHasPriority = a.item_type === 'zakazka' && Number.isFinite(Number(a.customer_priority))
+    const bHasPriority = b.item_type === 'zakazka' && Number.isFinite(Number(b.customer_priority))
+    if (aHasPriority && bHasPriority) {
+      const priorityDiff = Number(a.customer_priority) - Number(b.customer_priority)
+      if (priorityDiff !== 0) return priorityDiff
+    }
+    if (aHasPriority !== bHasPriority) return aHasPriority ? -1 : 1
+
     const priorityDiff = getStatusPriority(a) - getStatusPriority(b)
     if (priorityDiff !== 0) return priorityDiff
     return new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime()
@@ -133,6 +144,7 @@ export default function MyRequestsPage() {
   const [updateText, setUpdateText] = useState('')
   const [updateFiles, setUpdateFiles] = useState<File[]>([])
   const [sendingUpdate, setSendingUpdate] = useState(false)
+  const [movingPriorityId, setMovingPriorityId] = useState('')
   const [expandedItemIds, setExpandedItemIds] = useState<string[]>([])
   const [galleryImages, setGalleryImages] = useState<string[]>([])
   const [galleryIndex, setGalleryIndex] = useState<number | null>(null)
@@ -268,6 +280,40 @@ export default function MyRequestsPage() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     await loadCustomerRequests(customerName, portalCode)
+  }
+
+  async function moveCustomerPriority(orderId: string, direction: 'up' | 'down' | 'top') {
+    const cleanCustomerName = customerName.trim()
+    const cleanPortalCode = portalCode.replace(/\D/g, '').slice(0, 4)
+
+    if (!cleanCustomerName || cleanPortalCode.length !== 4) {
+      setMessage('Pre zmenu priority je potrebný prihlasovací email a PIN.')
+      setMessageType('error')
+      return
+    }
+
+    setMovingPriorityId(orderId)
+    setMessage('')
+    setMessageType('error')
+
+    const { error } = await supabase.rpc('move_customer_order_priority', {
+      p_order_id: orderId,
+      p_customer_name: cleanCustomerName,
+      p_portal_code: cleanPortalCode,
+      p_direction: direction,
+    })
+
+    if (error) {
+      setMovingPriorityId('')
+      setMessage('Prioritu sa nepodarilo zmeniť. Skúste stránku obnoviť alebo nás kontaktujte.')
+      setMessageType('error')
+      return
+    }
+
+    await loadCustomerRequests(cleanCustomerName, cleanPortalCode, true)
+    setMovingPriorityId('')
+    setMessage('Poradie bolo upravené. ITspot uvidí zmenu priority.')
+    setMessageType('success')
   }
 
   async function submitOrderUpdate(orderId: string) {
@@ -840,7 +886,7 @@ export default function MyRequestsPage() {
                 </div>
               </div>
 
-              {group.items.map((item) => {
+              {group.items.map((item, itemIndex) => {
                 const statusColor = getStatusColor(item)
                 const requesterName = getRequesterName(item.popis, '')
                 const itemKey = `${item.item_type}-${item.id}`
@@ -849,6 +895,8 @@ export default function MyRequestsPage() {
                 const imageUrls = attachmentUrls.filter(isImageUrl)
                 const cleanDescription = getCustomerDescription(item.popis)
                 const canUpdate = item.item_type === 'zakazka' && item.stav !== 'hotova'
+                const canPrioritize = item.item_type === 'zakazka' && item.stav !== 'hotova'
+                const customerPriority = Number.isFinite(Number(item.customer_priority)) ? Number(item.customer_priority) : itemIndex + 1
                 const showProgress = item.item_type === 'zakazka' && (item.stav === 'rozpracovana' || item.stav === 'hotova')
                 const displayedProgress = item.stav === 'hotova' ? 100 : normalizeProgress(item.progress_percent)
                 return (
@@ -886,6 +934,7 @@ export default function MyRequestsPage() {
                     <div className="customerRequestMeta">
                       <span style={{ color: '#166534' }}>Firma: {item.customer_name || group.customerName}</span>
                       <span>Odoslané: {formatDate(item.created_at)}</span>
+                      {canPrioritize && <span style={{ color: '#0f172a' }}>Priorita: #{customerPriority}</span>}
                     </div>
                   </div>
 
@@ -917,6 +966,39 @@ export default function MyRequestsPage() {
                   </div>
 
                   <div className="customerRequestActions" style={{ gap: 6, flexWrap: 'wrap' }}>
+                    {canPrioritize && (
+                      <>
+                        <button
+                          className="customerEditButton"
+                          type="button"
+                          onClick={() => void moveCustomerPriority(item.id, 'top')}
+                          disabled={movingPriorityId === item.id || itemIndex === 0}
+                          style={{ border: '1px solid #bfdbfe', background: '#eff6ff', color: '#1e40af' }}
+                        >
+                          Navrch
+                        </button>
+                        <button
+                          className="customerEditButton"
+                          type="button"
+                          onClick={() => void moveCustomerPriority(item.id, 'up')}
+                          disabled={movingPriorityId === item.id || itemIndex === 0}
+                          style={{ border: '1px solid #cbd5e1', background: '#fff', color: '#334155' }}
+                          aria-label="Posunúť vyššie"
+                        >
+                          ↑
+                        </button>
+                        <button
+                          className="customerEditButton"
+                          type="button"
+                          onClick={() => void moveCustomerPriority(item.id, 'down')}
+                          disabled={movingPriorityId === item.id || itemIndex === group.items.length - 1}
+                          style={{ border: '1px solid #cbd5e1', background: '#fff', color: '#334155' }}
+                          aria-label="Posunúť nižšie"
+                        >
+                          ↓
+                        </button>
+                      </>
+                    )}
                     {canUpdate && updateOrderId !== item.id && (
                       <button
                         className="customerEditButton"
