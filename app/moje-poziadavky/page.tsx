@@ -82,6 +82,10 @@ function normalizeProgress(value: number | null | undefined) {
 
 function sortCustomerItems(itemsToSort: CustomerLookupItem[]) {
   return [...itemsToSort].sort((a, b) => {
+    const aDone = a.item_type === 'zakazka' && a.stav === 'hotova'
+    const bDone = b.item_type === 'zakazka' && b.stav === 'hotova'
+    if (aDone !== bDone) return aDone ? 1 : -1
+
     const aHasPriority = a.item_type === 'zakazka' && Number.isFinite(Number(a.customer_priority))
     const bHasPriority = b.item_type === 'zakazka' && Number.isFinite(Number(b.customer_priority))
     if (aHasPriority && bHasPriority) {
