@@ -192,6 +192,8 @@ export default function QuotesPage() {
   const [discountType, setDiscountType] = useState<'none' | 'percent' | 'amount'>('none')
   const [discountValue, setDiscountValue] = useState('')
   const [items, setItems] = useState<QuoteItem[]>([createQuoteItem()])
+  const [materialQuote, setMaterialQuote] = useState<Quote | null>(null)
+  const [selectedMaterialItemIds, setSelectedMaterialItemIds] = useState<string[]>([])
 
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
@@ -398,6 +400,98 @@ export default function QuotesPage() {
     setItems(normalizeItems(quote.items).map((item) => ({ ...item, id: createQuoteItem().id })))
     setNotice({ type: 'success', text: 'Ponuka je skopírovaná ako nová rozpracovaná ponuka.' })
     window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function openMaterialImport(quote: Quote) {
+    const quoteItems = normalizeItems(quote.items).filter((item) => item.name.trim())
+    setMaterialQuote(quote)
+    setSelectedMaterialItemIds(quoteItems.map((item) => item.id))
+  }
+
+  function toggleMaterialItem(itemId: string) {
+    setSelectedMaterialItemIds((current) =>
+      current.includes(itemId) ? current.filter((id) => id !== itemId) : [...current, itemId]
+    )
+  }
+
+  async function resolveQuoteCustomer(quote: Quote) {
+    if (quote.customer_id) return quote.customer_id
+    if (!quote.customer_name?.trim()) return ''
+
+    const normalizedQuoteCustomer = normalizeCustomerName(quote.customer_name)
+    const existingCustomer = customers.find((customer) => normalizeCustomerName(customer.nazov) === normalizedQuoteCustomer)
+    if (existingCustomer) return existingCustomer.id
+
+    if (!userId) return ''
+    const { data, error } = await supabase
+      .from('customers')
+      .insert([
+        {
+          user_id: userId,
+          nazov: quote.customer_name.trim(),
+          kontakt: quote.contact_name || null,
+          telefon: null,
+          email: quote.contact_email || null,
+        },
+      ])
+      .select()
+      .single()
+
+    if (error || !data) {
+      setNotice({ type: 'error', text: `Zákazník sa nevytvoril: ${error?.message || 'neznáma chyba'}` })
+      return ''
+    }
+
+    const createdCustomer = data as Customer
+    setCustomers((current) => [createdCustomer, ...current])
+    return createdCustomer.id
+  }
+
+  async function addSelectedQuoteItemsToMaterial() {
+    if (!userId || !materialQuote) return
+    const quoteItems = normalizeItems(materialQuote.items).filter((item) => selectedMaterialItemIds.includes(item.id) && item.name.trim())
+
+    if (quoteItems.length === 0) {
+      setNotice({ type: 'error', text: 'Vyber aspoň jednu položku, ktorú treba objednať.' })
+      return
+    }
+
+    setSaving(true)
+    const finalCustomerId = await resolveQuoteCustomer(materialQuote)
+    if (materialQuote.customer_name?.trim() && !finalCustomerId) {
+      setSaving(false)
+      return
+    }
+
+    const rows = quoteItems.map((item) => ({
+      user_id: userId,
+      customer_id: finalCustomerId || null,
+      target_type: finalCustomerId ? 'customer' : 'internal',
+      name: item.name.trim(),
+      quantity: item.quantity || null,
+      unit: item.unit || 'ks',
+      supplier: null,
+      status: 'to_order',
+      priority: 'normal',
+      needed_by: null,
+      note: [`Z ponuky ${materialQuote.quote_number}.`, item.note?.trim() || ''].filter(Boolean).join(' '),
+      updated_at: new Date().toISOString(),
+    }))
+
+    const { error } = await supabase.from('material_requests').insert(rows)
+    setSaving(false)
+
+    if (error) {
+      const missingTable = error.code === '42P01'
+        ? ' Chýba tabuľka material_requests. Spusť SQL skript scripts/supabase-material-requests.sql.'
+        : ''
+      setNotice({ type: 'error', text: `Materiál sa nepridal: ${error.message}${missingTable}` })
+      return
+    }
+
+    setMaterialQuote(null)
+    setSelectedMaterialItemIds([])
+    setNotice({ type: 'success', text: `${quoteItems.length} položiek z ponuky ${materialQuote.quote_number} bolo pridaných do nákupu materiálu.` })
   }
 
   async function updateQuoteStatus(quote: Quote, nextStatus: Quote['status']) {
@@ -1212,6 +1306,19 @@ export default function QuotesPage() {
                   Vytvoriť zákazku
                 </button>
               )}
+              {editingId && (
+                <button
+                  type="button"
+                  style={{ ...buttonStyle, borderColor: '#fbbf24', background: '#fef3c7', color: '#92400e' }}
+                  onClick={() => {
+                    const quote = quotes.find((item) => item.id === editingId)
+                    if (quote) openMaterialImport(quote)
+                  }}
+                  disabled={saving}
+                >
+                  Pridať do nákupu
+                </button>
+              )}
               {editingId && <button type="button" style={buttonStyle} onClick={startNewQuote}>Zrušiť úpravu</button>}
             </div>
           </div>
@@ -1279,6 +1386,7 @@ export default function QuotesPage() {
                       <button type="button" style={buttonStyle} onClick={() => duplicateQuote(quote)}>Duplikovať</button>
                       <button type="button" style={buttonStyle} onClick={() => showQuote(quote)}>PDF</button>
                       <button type="button" style={buttonStyle} onClick={() => sendQuoteEmail(quote)}>Email</button>
+                      <button type="button" style={{ ...buttonStyle, borderColor: '#fbbf24', background: '#fef3c7', color: '#92400e' }} onClick={() => openMaterialImport(quote)} disabled={saving}>Nákup</button>
                       <button type="button" style={{ ...buttonStyle, borderColor: '#bfdbfe', background: '#eff6ff', color: '#1e40af' }} onClick={() => void updateQuoteStatus(quote, 'sent')} disabled={saving}>Odoslaná</button>
                       <button type="button" style={{ ...buttonStyle, borderColor: '#86efac', background: '#dcfce7', color: '#166534' }} onClick={() => void createOrderFromQuote(quote)} disabled={saving}>Zákazka</button>
                     </div>
@@ -1299,6 +1407,7 @@ export default function QuotesPage() {
                     <button type="button" style={buttonStyle} onClick={() => duplicateQuote(quote)}>Kópia</button>
                     <button type="button" style={buttonStyle} onClick={() => showQuote(quote)}>PDF</button>
                     <button type="button" style={buttonStyle} onClick={() => sendQuoteEmail(quote)}>Email</button>
+                    <button type="button" style={{ ...buttonStyle, borderColor: '#fbbf24', background: '#fef3c7', color: '#92400e' }} onClick={() => openMaterialImport(quote)} disabled={saving}>Nákup</button>
                     <button type="button" style={{ ...buttonStyle, borderColor: '#bfdbfe', background: '#eff6ff', color: '#1e40af' }} onClick={() => void updateQuoteStatus(quote, 'sent')} disabled={saving}>Odoslaná</button>
                     <button
                       type="button"
@@ -1314,6 +1423,111 @@ export default function QuotesPage() {
             })}
           </div>
         </section>
+        )}
+
+        {materialQuote && (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 80,
+              background: 'rgba(15,23,42,0.62)',
+              display: 'grid',
+              placeItems: 'center',
+              padding: 16,
+            }}
+            role="dialog"
+            aria-modal="true"
+          >
+            <div style={{ ...boxStyle, width: 'min(880px, 100%)', maxHeight: '88vh', overflow: 'hidden', display: 'grid', gridTemplateRows: 'auto minmax(0, 1fr) auto' }}>
+              <div style={{ padding: 14, borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'start' }}>
+                <div>
+                  <div style={{ color: '#65a30d', fontSize: 12, fontWeight: 950, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Nákup materiálu</div>
+                  <h3 style={{ margin: '2px 0 0', fontSize: 22, fontWeight: 950 }}>Položky z ponuky {materialQuote.quote_number}</h3>
+                  <div style={{ marginTop: 3, color: '#64748b', fontWeight: 800, fontSize: 13 }}>
+                    Zaškrtni len to, čo treba objednať. Prácu, dopravu alebo veci skladom nechaj vypnuté.
+                  </div>
+                </div>
+                <button type="button" style={buttonStyle} onClick={() => setMaterialQuote(null)}>
+                  Zavrieť
+                </button>
+              </div>
+
+              <div style={{ padding: 14, overflowY: 'auto', display: 'grid', gap: 8 }}>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 2 }}>
+                  <button
+                    type="button"
+                    style={buttonStyle}
+                    onClick={() => setSelectedMaterialItemIds(normalizeItems(materialQuote.items).filter((item) => item.name.trim()).map((item) => item.id))}
+                  >
+                    Označiť všetko
+                  </button>
+                  <button type="button" style={buttonStyle} onClick={() => setSelectedMaterialItemIds([])}>
+                    Odznačiť všetko
+                  </button>
+                </div>
+
+                <div style={{ border: '1px solid #dbe4ef', borderRadius: 10, overflow: 'hidden' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '46px minmax(0, 1.7fr) 95px 90px', gap: 8, padding: '7px 10px', background: '#0f172a', color: '#fff', fontSize: 11, fontWeight: 950, textTransform: 'uppercase' }}>
+                    <span></span>
+                    <span>Položka</span>
+                    <span>Množstvo</span>
+                    <span>Cena</span>
+                  </div>
+                  {normalizeItems(materialQuote.items).filter((item) => item.name.trim()).map((item, index) => {
+                    const checked = selectedMaterialItemIds.includes(item.id)
+                    return (
+                      <label
+                        key={item.id}
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '46px minmax(0, 1.7fr) 95px 90px',
+                          gap: 8,
+                          alignItems: 'center',
+                          padding: '8px 10px',
+                          borderTop: index === 0 ? 'none' : '1px solid #e2e8f0',
+                          background: checked ? '#f7fee7' : index % 2 ? '#fbfdff' : '#fff',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleMaterialItem(item.id)}
+                          style={{ width: 18, height: 18 }}
+                        />
+                        <span style={{ minWidth: 0 }}>
+                          <strong style={{ display: 'block', fontSize: 13, fontWeight: 950, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</strong>
+                          {item.note && <small style={{ display: 'block', color: '#64748b', fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.note}</small>}
+                        </span>
+                        <span style={{ fontWeight: 900 }}>{item.quantity || '1'} {item.unit || 'ks'}</span>
+                        <span style={{ color: '#64748b', fontWeight: 900 }}>{formatMoney(parseMoney(item.unitPrice))}</span>
+                      </label>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div style={{ padding: 14, borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                <div style={{ color: '#64748b', fontWeight: 900 }}>
+                  Vybrané položky: {selectedMaterialItemIds.length}
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <button type="button" style={buttonStyle} onClick={() => setMaterialQuote(null)}>
+                    Zrušiť
+                  </button>
+                  <button
+                    type="button"
+                    style={{ ...primaryButtonStyle, minHeight: 34 }}
+                    onClick={addSelectedQuoteItemsToMaterial}
+                    disabled={saving}
+                  >
+                    {saving ? 'Pridávam...' : 'Pridať vybrané do nákupu'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </main>
