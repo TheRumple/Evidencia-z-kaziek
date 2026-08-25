@@ -1432,8 +1432,9 @@ export default function QuotesPage() {
               inset: 0,
               zIndex: 80,
               background: 'rgba(15,23,42,0.62)',
-              display: 'grid',
-              placeItems: 'center',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'flex-start',
               padding: isNarrow ? 8 : 16,
               overflowY: 'auto',
               overscrollBehavior: 'contain',
@@ -1442,7 +1443,7 @@ export default function QuotesPage() {
             role="dialog"
             aria-modal="true"
           >
-            <div style={{ ...boxStyle, width: 'min(880px, 100%)', height: isNarrow ? '92dvh' : 'min(760px, 88vh)', minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ ...boxStyle, width: 'min(880px, 100%)', margin: isNarrow ? '0 0 18px' : '24px 0', overflow: 'visible' }}>
               <div style={{ padding: isNarrow ? 10 : 14, borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'start' }}>
                 <div>
                   <div style={{ color: '#65a30d', fontSize: 12, fontWeight: 950, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Nákup materiálu</div>
@@ -1456,7 +1457,7 @@ export default function QuotesPage() {
                 </button>
               </div>
 
-              <div style={{ padding: isNarrow ? 10 : 14, flex: '1 1 auto', minHeight: 0, overflowY: 'scroll', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain', touchAction: 'pan-y', display: 'grid', alignContent: 'start', gap: 8 }}>
+              <div style={{ padding: isNarrow ? 10 : 14, display: 'grid', alignContent: 'start', gap: 8 }}>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 2 }}>
                   <button
                     type="button"
