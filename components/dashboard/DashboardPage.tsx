@@ -2812,6 +2812,11 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
               <span className="sideMenuIcon">›</span>
             </Link>
 
+            <Link href="/material" style={sideNavButton(false)}>
+              <span>Nákup materiálu</span>
+              <span className="sideMenuIcon">›</span>
+            </Link>
+
             <button type="button" style={sideNavButton(false)} onClick={openDeliveryProtocolModal}>
               <span>Odovzdávací protokol</span>
               <span className="sideMenuIcon">›</span>

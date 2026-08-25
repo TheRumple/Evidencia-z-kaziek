@@ -157,6 +157,23 @@ export type MaintenanceRevision = {
   updated_at?: string
 }
 
+export type MaterialRequest = {
+  id: string
+  user_id: string
+  customer_id: string | null
+  target_type: 'customer' | 'internal'
+  name: string
+  quantity: string | null
+  unit: string | null
+  supplier: string | null
+  status: 'to_order' | 'ordered' | 'delivered' | 'used' | 'cancelled'
+  priority: 'normal' | 'urgent'
+  needed_by: string | null
+  note: string | null
+  created_at?: string
+  updated_at?: string
+}
+
 export type Notice =
   | {
       type: 'success' | 'error'
