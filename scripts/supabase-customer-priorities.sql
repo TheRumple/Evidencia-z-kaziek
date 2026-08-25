@@ -235,8 +235,14 @@ begin
     update public.orders
     set
       customer_priority = i,
-      customer_priority_updated_at = now(),
-      customer_priority_seen_at = null
+      customer_priority_updated_at = case
+        when id = p_order_id then now()
+        else customer_priority_updated_at
+      end,
+      customer_priority_seen_at = case
+        when id = p_order_id then null
+        else customer_priority_seen_at
+      end
     where id = order_ids[i];
   end loop;
 end;

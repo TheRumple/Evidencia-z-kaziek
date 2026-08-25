@@ -1131,6 +1131,35 @@ export default function DashboardPage() {
     }
   }
 
+  async function markAllCustomerPrioritiesSeen() {
+    if (!userId) return
+    const orderIds = unseenCustomerPriorityOrders.map((order) => order.id)
+    if (orderIds.length === 0) return
+
+    const seenAt = new Date().toISOString()
+    setOrders((curr) =>
+      curr.map((order) => (orderIds.includes(order.id) ? { ...order, customer_priority_seen_at: seenAt } : order))
+    )
+
+    const { error } = await supabase
+      .from('orders')
+      .update({ customer_priority_seen_at: seenAt })
+      .eq('user_id', userId)
+      .in('id', orderIds)
+
+    if (error) {
+      setNotice({
+        type: 'error',
+        text: error.code === '42703'
+          ? 'Chýbajú polia priority zákazníka. Spusť SQL skript scripts/supabase-customer-priorities.sql v Supabase.'
+          : `Priority sa neoznačili ako videné: ${error.message}`,
+      })
+      return
+    }
+
+    setNotice({ type: 'success', text: 'Zmeny priorít boli označené ako videné.' })
+  }
+
   async function deleteOrder(orderId: string) {
     if (!userId) return
     if (!window.confirm('Naozaj chceš zmazať túto zákazku?')) return
@@ -2903,28 +2932,46 @@ export default function DashboardPage() {
                 </Link>
 
                 {unseenCustomerPriorityOrders.length > 0 && (
-                  <button
-                    type="button"
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      background: '#fef3c7',
-                      border: '1px solid #fbbf24',
-                      color: '#92400e',
-                      padding: '7px 11px',
-                      borderRadius: 10,
-                      fontWeight: 900,
-                      fontSize: 13,
-                      cursor: 'pointer',
-                    }}
-                    onClick={() => setActiveTab('zakazky')}
-                  >
-                    Zmeny priorít
-                    <span style={{ background: '#f59e0b', color: '#fff', padding: '2px 8px', borderRadius: 999, fontSize: 12 }}>
-                      {unseenCustomerPriorityOrders.length}
-                    </span>
-                  </button>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        background: '#fef3c7',
+                        border: '1px solid #fbbf24',
+                        color: '#92400e',
+                        padding: '7px 11px',
+                        borderRadius: 10,
+                        fontWeight: 900,
+                        fontSize: 13,
+                        cursor: 'pointer',
+                      }}
+                      onClick={() => setActiveTab('zakazky')}
+                    >
+                      Zmeny priorít
+                      <span style={{ background: '#f59e0b', color: '#fff', padding: '2px 8px', borderRadius: 999, fontSize: 12 }}>
+                        {unseenCustomerPriorityOrders.length}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      style={{
+                        border: '1px solid rgba(255,255,255,0.22)',
+                        background: 'rgba(255,255,255,0.08)',
+                        color: '#fff',
+                        padding: '7px 10px',
+                        borderRadius: 10,
+                        fontWeight: 900,
+                        fontSize: 12,
+                        cursor: 'pointer',
+                      }}
+                      onClick={markAllCustomerPrioritiesSeen}
+                    >
+                      Videné
+                    </button>
+                  </div>
                 )}
 
                 <button
