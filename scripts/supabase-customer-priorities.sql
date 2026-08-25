@@ -13,6 +13,22 @@ alter table public.orders
 create index if not exists orders_customer_priority_idx
 on public.orders (customer_id, customer_priority nulls last, created_at desc);
 
+with ranked_orders as (
+  select
+    id,
+    row_number() over (
+      partition by customer_id
+      order by coalesce(customer_priority, 999999), coalesce(created_at, prijatie_zakazky::timestamptz) desc nulls last
+    ) as new_priority
+  from public.orders
+  where customer_id is not null
+    and stav in ('nova', 'rozpracovana', 'cenova_ponuka', 'obhliadka', 'caka', 'cakame', 'hotova')
+)
+update public.orders o
+set customer_priority = ranked_orders.new_priority
+from ranked_orders
+where o.id = ranked_orders.id;
+
 drop function if exists public.lookup_customer_requests(text, text);
 
 create or replace function public.lookup_customer_requests(
@@ -100,7 +116,10 @@ as $$
       o.public_message,
       o.requester_email,
       coalesce(o.progress_percent, 0)::integer as progress_percent,
-      o.customer_priority,
+      row_number() over (
+        partition by o.customer_id
+        order by coalesce(o.customer_priority, 999999), coalesce(o.created_at, o.prijatie_zakazky::timestamptz) desc nulls last
+      )::integer as customer_priority,
       o.customer_priority_updated_at,
       o.customer_priority_seen_at
     from public.orders o

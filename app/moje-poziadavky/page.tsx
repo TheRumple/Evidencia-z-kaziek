@@ -900,7 +900,7 @@ export default function MyRequestsPage() {
                 const cleanDescription = getCustomerDescription(item.popis)
                 const canUpdate = item.item_type === 'zakazka' && item.stav !== 'hotova'
                 const canPrioritize = item.item_type === 'zakazka' && item.stav !== 'hotova'
-                const customerPriority = Number.isFinite(Number(item.customer_priority)) ? Number(item.customer_priority) : itemIndex + 1
+                const customerPriority = itemIndex + 1
                 const showProgress = item.item_type === 'zakazka' && (item.stav === 'rozpracovana' || item.stav === 'hotova')
                 const displayedProgress = item.stav === 'hotova' ? 100 : normalizeProgress(item.progress_percent)
                 return (
