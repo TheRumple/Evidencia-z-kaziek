@@ -734,6 +734,342 @@ export function DashboardStyles() {
           cursor: grabbing;
         }
 
+        .workPlannerHero {
+          padding: 18px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 14px;
+          background: linear-gradient(135deg, #0f172a 0%, #172033 52%, #18330f 100%) !important;
+          border-color: rgba(132, 204, 22, 0.25) !important;
+          color: #fff;
+        }
+
+        .workPlannerHero h2,
+        .workPlannerForm h3,
+        .workPlannerSidebarList h3,
+        .workPlannerDayTitle h3 {
+          margin: 0;
+          color: inherit;
+          font-weight: 900;
+          letter-spacing: 0;
+        }
+
+        .workPlannerHero h2 {
+          font-size: 28px;
+        }
+
+        .workPlannerHero p {
+          margin: 6px 0 0;
+          max-width: 760px;
+          color: rgba(255, 255, 255, 0.76);
+          font-size: 14px;
+        }
+
+        .workPlannerHeroActions,
+        .workPlannerActionRow {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+          justify-content: flex-end;
+        }
+
+        .workPlannerToolbar {
+          padding: 10px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .workPlannerMode {
+          display: flex;
+          gap: 6px;
+          padding: 4px;
+          border: 1px solid #dbe4ef;
+          border-radius: 12px;
+          background: #f8fafc;
+        }
+
+        .workPlannerMode button {
+          border: 0;
+          border-radius: 9px;
+          padding: 8px 12px;
+          background: transparent;
+          color: #475569;
+          font-weight: 900;
+          cursor: pointer;
+        }
+
+        .workPlannerMode button.active {
+          background: #0f172a;
+          color: #fff;
+        }
+
+        .workPlannerStats {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+          justify-content: flex-end;
+          color: #475569;
+          font-size: 13px;
+          font-weight: 800;
+        }
+
+        .workPlannerStats span {
+          border: 1px solid #dbe4ef;
+          border-radius: 999px;
+          padding: 7px 10px;
+          background: #fff;
+        }
+
+        .workPlannerLayout {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) 360px;
+          gap: 12px;
+          align-items: start;
+        }
+
+        .workPlannerBoard,
+        .workPlannerForm,
+        .workPlannerSidebarList {
+          padding: 12px;
+        }
+
+        .workPlannerWeek {
+          display: grid;
+          grid-template-columns: repeat(7, minmax(0, 1fr));
+          gap: 8px;
+        }
+
+        .workPlannerDay {
+          min-height: 560px;
+          border: 1px solid #dbe4ef;
+          border-radius: 12px;
+          padding: 8px;
+          background: #fff;
+          display: grid;
+          grid-template-rows: auto minmax(0, 1fr);
+          gap: 8px;
+          cursor: pointer;
+          transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+        }
+
+        .workPlannerDay:hover,
+        .workPlannerDay.selected {
+          border-color: #84cc16;
+          box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+        }
+
+        .workPlannerDay.today {
+          background: linear-gradient(180deg, #f7fee7 0%, #fff 42%);
+        }
+
+        .workPlannerDay.weekend {
+          background: linear-gradient(180deg, #f8fafc 0%, #fff 42%);
+        }
+
+        .workPlannerDay.dragOver {
+          border-color: #65a30d;
+          box-shadow: inset 0 0 0 2px rgba(132, 204, 22, 0.45);
+        }
+
+        .workPlannerDayHeader {
+          display: grid;
+          grid-template-columns: 1fr auto auto;
+          align-items: center;
+          gap: 6px;
+          color: #64748b;
+          font-weight: 900;
+          font-size: 12px;
+        }
+
+        .workPlannerDayHeader strong {
+          color: #0f172a;
+          font-size: 18px;
+        }
+
+        .workPlannerDayHeader em {
+          min-width: 24px;
+          height: 24px;
+          border-radius: 999px;
+          display: inline-grid;
+          place-items: center;
+          background: #0f172a;
+          color: #fff;
+          font-style: normal;
+          font-size: 12px;
+        }
+
+        .workPlannerDayItems,
+        .workPlannerDetailList,
+        .workPlannerOrderList {
+          display: grid;
+          gap: 7px;
+          align-content: start;
+        }
+
+        .workPlannerItem {
+          min-width: 0;
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) 24px;
+          gap: 4px;
+          border: 1px solid #dbe4ef;
+          border-left: 4px solid #84cc16;
+          border-radius: 10px;
+          padding: 5px;
+          cursor: grab;
+        }
+
+        .workPlannerItemMain {
+          min-width: 0;
+          border: 0;
+          background: transparent;
+          padding: 0;
+          text-align: left;
+          display: grid;
+          gap: 2px;
+          cursor: pointer;
+        }
+
+        .workPlannerItemMain span {
+          font-size: 10px;
+          line-height: 1;
+          font-weight: 900;
+          text-transform: uppercase;
+        }
+
+        .workPlannerItemMain strong {
+          min-width: 0;
+          color: #0f172a;
+          font-size: 12px;
+          line-height: 1.15;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .workPlannerItemMain em,
+        .workPlannerItemMain small {
+          min-width: 0;
+          color: #64748b;
+          font-style: normal;
+          font-size: 11px;
+          line-height: 1.2;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .workPlannerDelete {
+          border: 1px solid #fecaca;
+          background: rgba(255, 241, 242, 0.86);
+          color: #be123c;
+          border-radius: 8px;
+          cursor: pointer;
+          font-weight: 900;
+          line-height: 1;
+        }
+
+        .workPlannerEmpty,
+        .workPlannerNoData {
+          color: #94a3b8;
+          font-weight: 800;
+          font-size: 13px;
+        }
+
+        .workPlannerSide {
+          display: grid;
+          gap: 12px;
+        }
+
+        .workPlannerForm,
+        .workPlannerSidebarList {
+          display: grid;
+          gap: 12px;
+        }
+
+        .workPlannerFormGrid {
+          display: grid;
+          grid-template-columns: 1fr 1fr 1fr;
+          gap: 8px;
+        }
+
+        .workPlannerTextarea {
+          min-height: 92px;
+          resize: vertical;
+        }
+
+        .workPlannerSideHeader,
+        .workPlannerDayTitle {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .workPlannerSideHeader span {
+          min-width: 32px;
+          height: 32px;
+          border-radius: 999px;
+          display: inline-grid;
+          place-items: center;
+          background: #ecfccb;
+          color: #365314;
+          font-weight: 900;
+        }
+
+        .workPlannerOrder {
+          border: 1px solid #dbe4ef;
+          background: #fff;
+          border-radius: 12px;
+          padding: 9px;
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 4px 8px;
+          text-align: left;
+          cursor: grab;
+          box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
+        }
+
+        .workPlannerOrder strong {
+          min-width: 0;
+          color: #0f172a;
+          font-size: 13px;
+          font-weight: 900;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .workPlannerOrder span {
+          grid-column: 1;
+          color: #64748b;
+          font-size: 12px;
+          font-weight: 800;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .workPlannerOrder em {
+          grid-column: 2;
+          grid-row: 1 / span 2;
+          align-self: center;
+          border-radius: 999px;
+          padding: 4px 7px;
+          font-style: normal;
+          font-size: 10px;
+          font-weight: 900;
+          white-space: nowrap;
+        }
+
+        .workPlannerDayDetail,
+        .workPlannerUnplannedWide {
+          display: grid;
+          gap: 12px;
+        }
+
         @media (max-width: 1150px) {
           .summaryGrid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -762,6 +1098,35 @@ export function DashboardStyles() {
           }
 
           .calendarTaskForm {
+            grid-template-columns: 1fr 1fr;
+          }
+
+          .workPlannerHero,
+          .workPlannerToolbar,
+          .workPlannerDayTitle {
+            align-items: stretch;
+            flex-direction: column;
+          }
+
+          .workPlannerHeroActions,
+          .workPlannerStats,
+          .workPlannerActionRow {
+            justify-content: flex-start;
+          }
+
+          .workPlannerLayout {
+            grid-template-columns: 1fr;
+          }
+
+          .workPlannerWeek {
+            grid-template-columns: 1fr;
+          }
+
+          .workPlannerDay {
+            min-height: 130px;
+          }
+
+          .workPlannerFormGrid {
             grid-template-columns: 1fr 1fr;
           }
 
@@ -1066,6 +1431,42 @@ export function DashboardStyles() {
 
           .calendarTaskForm {
             grid-template-columns: 1fr;
+          }
+
+          .workPlannerHero {
+            padding: 14px;
+          }
+
+          .workPlannerHero h2 {
+            font-size: 22px;
+          }
+
+          .workPlannerMode {
+            width: 100%;
+            overflow-x: auto;
+          }
+
+          .workPlannerMode button {
+            white-space: nowrap;
+          }
+
+          .workPlannerStats span {
+            font-size: 12px;
+            padding: 6px 8px;
+          }
+
+          .workPlannerFormGrid {
+            grid-template-columns: 1fr;
+          }
+
+          .workPlannerOrder {
+            grid-template-columns: minmax(0, 1fr);
+          }
+
+          .workPlannerOrder em {
+            grid-column: 1;
+            grid-row: auto;
+            justify-self: start;
           }
         }
 
