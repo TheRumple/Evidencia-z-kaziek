@@ -74,24 +74,25 @@ export default function MaterialPage() {
 
   const inputStyle: CSSProperties = {
     width: '100%',
-    minHeight: 40,
+    minHeight: 34,
     border: '1px solid #cbd5e1',
-    borderRadius: 10,
-    padding: '8px 10px',
-    fontSize: 14,
+    borderRadius: 8,
+    padding: '6px 9px',
+    fontSize: 13,
     fontWeight: 800,
     color: '#0f172a',
     background: '#fff',
   }
 
   const buttonStyle: CSSProperties = {
-    minHeight: 40,
+    minHeight: 32,
     border: '1px solid #cbd5e1',
-    borderRadius: 10,
-    padding: '8px 12px',
+    borderRadius: 8,
+    padding: '6px 9px',
     background: '#fff',
     color: '#0f172a',
     fontWeight: 900,
+    fontSize: 12,
     cursor: 'pointer',
     textDecoration: 'none',
     display: 'inline-flex',
@@ -325,21 +326,21 @@ export default function MaterialPage() {
 
         .materialPage {
           min-height: 100vh;
-          padding: 18px;
+          padding: 12px;
         }
 
         .materialShell {
           max-width: 1480px;
           margin: 0 auto;
           display: grid;
-          gap: 14px;
+          gap: 10px;
         }
 
         .materialHero {
-          padding: 16px;
+          padding: 10px 12px;
           display: flex;
           justify-content: space-between;
-          gap: 14px;
+          gap: 10px;
           align-items: center;
           background: linear-gradient(135deg, #0b1120 0%, #172033 68%, #365314 100%) !important;
           color: #fff;
@@ -358,13 +359,14 @@ export default function MaterialPage() {
           margin: 4px 0 0;
           color: rgba(255,255,255,0.76);
           font-weight: 700;
+          font-size: 13px;
         }
 
         .materialActions,
         .materialFilters,
         .materialButtonRow {
           display: flex;
-          gap: 8px;
+          gap: 6px;
           flex-wrap: wrap;
           align-items: center;
         }
@@ -372,100 +374,132 @@ export default function MaterialPage() {
         .materialStats {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 10px;
+          gap: 8px;
         }
 
         .materialStat {
-          padding: 14px;
-          border-radius: 14px;
+          padding: 8px 10px;
+          border-radius: 10px;
           color: #0f172a;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
         }
 
         .materialStat span {
           color: #64748b;
           font-weight: 900;
-          font-size: 12px;
+          font-size: 11px;
           text-transform: uppercase;
         }
 
         .materialStat strong {
           display: block;
-          margin-top: 6px;
-          font-size: 34px;
+          font-size: 22px;
           line-height: 1;
           font-weight: 900;
         }
 
         .materialWorkspace {
           display: grid;
-          grid-template-columns: 420px minmax(0, 1fr);
-          gap: 14px;
+          grid-template-columns: 1fr;
+          gap: 10px;
           align-items: start;
         }
 
         .materialForm,
         .materialList {
-          padding: 14px;
+          padding: 10px;
         }
 
         .materialForm {
           display: grid;
-          gap: 12px;
-          position: sticky;
-          top: 12px;
+          gap: 8px;
         }
 
         .materialGrid {
           display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 10px;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 8px;
         }
 
         .materialField {
           display: grid;
-          gap: 5px;
+          gap: 3px;
         }
 
         .materialField label {
           color: #475569;
-          font-size: 12px;
+          font-size: 11px;
           font-weight: 900;
         }
 
         .materialItems {
           display: grid;
+          gap: 0;
+          border: 1px solid #dbe4ef;
+          border-radius: 10px;
+          overflow: hidden;
+        }
+
+        .materialTableHeader {
+          display: grid;
+          grid-template-columns: minmax(260px, 1.7fr) 110px 150px 120px 230px;
           gap: 8px;
+          align-items: center;
+          padding: 7px 9px;
+          background: #0f172a;
+          color: #fff;
+          font-size: 11px;
+          font-weight: 900;
+          text-transform: uppercase;
         }
 
         .materialRow {
           display: grid;
-          grid-template-columns: 1.6fr 130px 150px 130px 190px;
-          gap: 10px;
+          grid-template-columns: minmax(260px, 1.7fr) 110px 150px 120px 230px;
+          gap: 8px;
           align-items: center;
-          border: 1px solid #dbe4ef;
-          border-radius: 12px;
-          padding: 10px;
+          border: 0;
+          border-bottom: 1px solid #e2e8f0;
+          border-radius: 0;
+          padding: 6px 9px;
           background: #fff;
+          min-height: 42px;
         }
 
         .materialRow.urgent {
-          border-color: #f97316;
+          border-color: #e2e8f0;
           box-shadow: inset 4px 0 0 #f97316;
+        }
+
+        .materialRow:nth-child(even) {
+          background: #f8fafc;
+        }
+
+        .materialRow:last-child {
+          border-bottom: 0;
         }
 
         .materialName strong {
           display: block;
           font-weight: 900;
-          font-size: 15px;
+          font-size: 13px;
+          line-height: 1.15;
         }
 
         .materialName span,
         .materialMeta {
           display: block;
-          margin-top: 3px;
+          margin-top: 2px;
           color: #64748b;
           font-weight: 800;
-          font-size: 12px;
+          font-size: 11px;
+          line-height: 1.2;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
 
         .materialBadge {
@@ -474,8 +508,8 @@ export default function MaterialPage() {
           justify-content: center;
           border: 1px solid;
           border-radius: 999px;
-          padding: 5px 9px;
-          font-size: 12px;
+          padding: 4px 8px;
+          font-size: 11px;
           font-weight: 900;
           white-space: nowrap;
         }
@@ -485,18 +519,36 @@ export default function MaterialPage() {
           font-weight: 900;
         }
 
-        @media (max-width: 1000px) {
-          .materialWorkspace,
+        .materialInlineSelect {
+          min-height: 28px !important;
+          font-size: 12px !important;
+          padding: 4px 7px !important;
+          border-radius: 7px !important;
+        }
+
+        @media (max-width: 1100px) {
+          .materialGrid,
           .materialStats {
-            grid-template-columns: 1fr;
+            grid-template-columns: 1fr 1fr;
           }
 
-          .materialForm {
-            position: static;
+          .materialTableHeader {
+            display: none;
           }
 
           .materialRow {
-            grid-template-columns: 1fr;
+            grid-template-columns: 1fr 90px;
+            gap: 6px;
+            padding: 8px;
+            border: 1px solid #dbe4ef;
+            border-radius: 10px;
+            margin-bottom: 7px;
+          }
+
+          .materialItems {
+            border: 0;
+            border-radius: 0;
+            overflow: visible;
           }
         }
 
@@ -512,6 +564,10 @@ export default function MaterialPage() {
 
           .materialGrid {
             grid-template-columns: 1fr;
+          }
+
+          .materialStats {
+            grid-template-columns: 1fr 1fr;
           }
         }
       `}</style>
@@ -689,7 +745,7 @@ export default function MaterialPage() {
                 value={form.note}
                 onChange={(event) => setForm((current) => ({ ...current, note: event.target.value }))}
                 placeholder="Prečo to treba, kde sa použije, špecifikácia..."
-                style={{ ...inputStyle, minHeight: 92, resize: 'vertical' }}
+                style={{ ...inputStyle, minHeight: 58, resize: 'vertical' }}
               />
             </div>
 
@@ -746,6 +802,13 @@ export default function MaterialPage() {
               <div style={{ color: '#64748b', fontWeight: 900, padding: 18 }}>Zatiaľ tu nie je žiadny materiál pre zvolený filter.</div>
             ) : (
               <div className="materialItems">
+                <div className="materialTableHeader">
+                  <span>Materiál</span>
+                  <span>Množstvo</span>
+                  <span>Stav</span>
+                  <span>Termín</span>
+                  <span>Akcie</span>
+                </div>
                 {filteredItems.map((item) => (
                   <article key={item.id} className={`materialRow ${item.priority === 'urgent' ? 'urgent' : ''}`}>
                     <div className="materialName">
@@ -760,9 +823,23 @@ export default function MaterialPage() {
                     </div>
 
                     <div>
-                      <span className="materialBadge" style={STATUS_STYLES[item.status]}>
-                        {STATUS_LABELS[item.status]}
-                      </span>
+                      <select
+                        className="materialInlineSelect"
+                        value={item.status}
+                        onChange={(event) => updateStatus(item, event.target.value as MaterialRequest['status'])}
+                        style={{
+                          ...inputStyle,
+                          background: String(STATUS_STYLES[item.status].background),
+                          borderColor: String(STATUS_STYLES[item.status].borderColor),
+                          color: String(STATUS_STYLES[item.status].color),
+                        }}
+                      >
+                        {STATUS_ORDER.map((status) => (
+                          <option key={status} value={status}>
+                            {STATUS_LABELS[status]}
+                          </option>
+                        ))}
+                      </select>
                     </div>
 
                     <div>
@@ -771,21 +848,6 @@ export default function MaterialPage() {
                     </div>
 
                     <div className="materialButtonRow">
-                      {item.status === 'to_order' && (
-                        <button type="button" style={buttonStyle} onClick={() => updateStatus(item, 'ordered')}>
-                          Objednané
-                        </button>
-                      )}
-                      {item.status === 'ordered' && (
-                        <button type="button" style={buttonStyle} onClick={() => updateStatus(item, 'delivered')}>
-                          Doručené
-                        </button>
-                      )}
-                      {item.status === 'delivered' && (
-                        <button type="button" style={buttonStyle} onClick={() => updateStatus(item, 'used')}>
-                          Vybavené
-                        </button>
-                      )}
                       <button type="button" style={buttonStyle} onClick={() => startEdit(item)}>
                         Upraviť
                       </button>
