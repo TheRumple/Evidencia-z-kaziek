@@ -59,6 +59,7 @@ export default function MaterialPage() {
   const [customers, setCustomers] = useState<Customer[]>([])
   const [items, setItems] = useState<MaterialRequest[]>([])
   const [editingId, setEditingId] = useState('')
+  const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(createEmptyForm)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'active' | MaterialRequest['status'] | 'all'>('active')
@@ -221,10 +222,12 @@ export default function MaterialPage() {
   function resetForm() {
     setEditingId('')
     setForm(createEmptyForm())
+    setShowForm(false)
   }
 
   function startEdit(item: MaterialRequest) {
     setEditingId(item.id)
+    setShowForm(true)
     setForm({
       targetType: item.target_type,
       customerId: item.customer_id || '',
@@ -237,7 +240,7 @@ export default function MaterialPage() {
       neededBy: item.needed_by || '',
       note: item.note || '',
     })
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    window.scrollTo({ top: 120, behavior: 'smooth' })
   }
 
   async function saveItem() {
@@ -585,7 +588,15 @@ export default function MaterialPage() {
             <Link href="/" style={{ ...buttonStyle, background: '#fff' }}>
               Domov
             </Link>
-            <button type="button" style={{ ...buttonStyle, background: '#84cc16', borderColor: '#65a30d' }} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+            <button
+              type="button"
+              style={{ ...buttonStyle, background: '#84cc16', borderColor: '#65a30d' }}
+              onClick={() => {
+                setEditingId('')
+                setForm(createEmptyForm())
+                setShowForm(true)
+              }}
+            >
               + Pridať materiál
             </button>
           </div>
@@ -626,6 +637,7 @@ export default function MaterialPage() {
         </section>
 
         <section className="materialWorkspace">
+          {showForm && (
           <div className="materialForm" style={boxStyle}>
             <div>
               <div style={{ color: '#65a30d', fontSize: 12, fontWeight: 900, textTransform: 'uppercase' }}>
@@ -760,6 +772,7 @@ export default function MaterialPage() {
               )}
             </div>
           </div>
+          )}
 
           <div className="materialList" style={boxStyle}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginBottom: 12 }}>
