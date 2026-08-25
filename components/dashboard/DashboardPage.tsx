@@ -91,7 +91,11 @@ function createDeliveryProtocolItems(count = 1) {
   return Array.from({ length: count }, () => createDeliveryProtocolItem())
 }
 
-export default function DashboardPage() {
+type DashboardPageProps = {
+  initialTab?: 'zakazky' | 'kalendar' | 'zakaznici'
+}
+
+export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageProps) {
   const router = useRouter()
 
   const [userId, setUserId] = useState<string | null>(null)
@@ -122,7 +126,7 @@ export default function DashboardPage() {
   const [subtasks, setSubtasks] = useState<OrderSubtask[]>([])
   const [newSubtaskText, setNewSubtaskText] = useState<Record<string, string>>({})
 
-  const [activeTab, setActiveTab] = useState<'zakazky' | 'kalendar' | 'zakaznici'>('zakazky')
+  const [activeTab, setActiveTab] = useState<'zakazky' | 'kalendar' | 'zakaznici'>(initialTab)
   const [expandedOrderIds, setExpandedOrderIds] = useState<string[]>([])
   const [pinnedOrderIds, setPinnedOrderIds] = useState<string[]>([])
   const [seenCustomerUpdateIds, setSeenCustomerUpdateIds] = useState<string[]>([])
@@ -2788,10 +2792,10 @@ export default function DashboardPage() {
               </span>
             </Link>
 
-            <button type="button" style={sideNavButton(activeTab === 'kalendar')} onClick={() => setActiveTab('kalendar')}>
+            <Link href="/kalendar" style={sideNavButton(activeTab === 'kalendar')}>
               <span>Kalendár</span>
               <span className="sideMenuIcon">›</span>
-            </button>
+            </Link>
 
             <Link href="/mesacny-vykaz" style={sideNavButton(false)}>
               <span>Mesačný výkaz</span>
@@ -2891,10 +2895,12 @@ export default function DashboardPage() {
             <div className="headerCompact">
               <div>
                 <h1 style={{ margin: 0, fontSize: 22, fontWeight: 900 }}>
-                  {selectedCustomer ? selectedCustomer.nazov : 'Servisné zákazky'}
+                  {activeTab === 'kalendar' ? 'Pracovný kalendár' : selectedCustomer ? selectedCustomer.nazov : 'Servisné zákazky'}
                 </h1>
                 <div style={{ marginTop: 3, color: 'rgba(255,255,255,0.78)', fontSize: 12, fontWeight: 700 }}>
-                  {selectedCustomer
+                  {activeTab === 'kalendar'
+                    ? 'Plánovanie práce, výjazdov a interných úloh.'
+                    : selectedCustomer
                     ? 'Zákazky, poznámky a výkazy vybraného zákazníka.'
                     : 'Zoznam zákaziek, výkazy a poznámky.'}
                 </div>
@@ -3096,7 +3102,7 @@ export default function DashboardPage() {
             calendarPlans={calendarPlans}
             deleteCalendarPlan={deleteCalendarPlan}
             getCustomerName={getCustomerName}
-            onBackToOrders={() => setActiveTab('zakazky')}
+            onBackToOrders={() => router.push('/')}
             orders={orders}
             startEditOrder={startEditOrder}
             updateCalendarPlan={updateCalendarPlan}
