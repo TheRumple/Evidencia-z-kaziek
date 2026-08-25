@@ -1,7 +1,7 @@
 import { DragEvent, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
 import type { CalendarPlan, Order } from '@/lib/dashboard-types'
-import { formatDate, getStatusBadgeStyle, getStatusLabel, getTodayDate } from '@/lib/dashboard-utils'
+import { formatDate, getStatusBadgeStyle, getTodayDate } from '@/lib/dashboard-utils'
 
 type CalendarViewProps = {
   addCalendarPlan: (input: {
@@ -26,6 +26,8 @@ type CalendarViewProps = {
 const dayNames = ['Pondelok', 'Utorok', 'Streda', 'Štvrtok', 'Piatok', 'Sobota', 'Nedeľa']
 const shortDayNames = ['Po', 'Ut', 'St', 'Št', 'Pi', 'So', 'Ne']
 const inactiveStatuses = new Set(['odovzdana', 'fakturovana', 'stornovana'])
+const plannerHours = [8, 10, 12, 14, 16, 18]
+const workDayMinutes = 10 * 60
 
 function toLocalDate(dateKey: string) {
   const [year, month, day] = dateKey.split('-').map(Number)
@@ -87,6 +89,10 @@ function getPlanDurationLabel(minutes: number) {
   return `${rest} min`
 }
 
+function getDayPlannedMinutes(plans: CalendarPlan[]) {
+  return plans.reduce((sum, plan) => sum + getPlanDurationMinutes(plan), 0)
+}
+
 function getPlanAccent(order?: Order | null) {
   if (!order) return { border: '#60a5fa', bg: '#eff6ff', color: '#1d4ed8' }
   const badge = getStatusBadgeStyle(order.stav)
@@ -112,14 +118,13 @@ export function CalendarView({
   const today = getTodayDate()
   const [selectedDate, setSelectedDate] = useState(today)
   const [weekStart, setWeekStart] = useState(() => getMonday(today))
-  const [viewMode, setViewMode] = useState<'week' | 'day' | 'unplanned'>('week')
+  const [viewMode, setViewMode] = useState<'week' | 'day'>('week')
   const [planDate, setPlanDate] = useState(today)
   const [planStart, setPlanStart] = useState('')
   const [planEnd, setPlanEnd] = useState('')
   const [selectedOrderId, setSelectedOrderId] = useState('')
   const [taskTitle, setTaskTitle] = useState('')
   const [taskNote, setTaskNote] = useState('')
-  const [searchTerm, setSearchTerm] = useState('')
   const [dragOverDate, setDragOverDate] = useState('')
   const [editingPlanId, setEditingPlanId] = useState('')
 
@@ -141,13 +146,7 @@ export function CalendarView({
   }, [calendarPlans])
   const weekPlans = weekDays.flatMap((day) => plansByDate[day] || [])
   const selectedPlans = plansByDate[selectedDate] || []
-  const normalizedSearch = searchTerm.trim().toLowerCase()
-  const unplannedOrders = activeOrders
-    .filter((order) => !plannedOrderIds.has(order.id))
-    .filter((order) => {
-      if (!normalizedSearch) return true
-      return `${order.nazov} ${getCustomerName(order.customer_id)} ${order.popis || ''}`.toLowerCase().includes(normalizedSearch)
-    })
+  const plannedOrdersCount = plannedOrderIds.size
 
   async function savePlan() {
     const title = selectedOrderId ? undefined : taskTitle
@@ -185,27 +184,10 @@ export function CalendarView({
     setPlanEnd('')
   }
 
-  async function addOrderToDate(orderId: string, targetDate: string) {
-    await addCalendarPlan({
-      orderId,
-      planDate: targetDate,
-      startTime: '',
-      endTime: '',
-      note: '',
-    })
-  }
-
   function chooseDate(dateKey: string) {
     setSelectedDate(dateKey)
     setPlanDate(dateKey)
     setWeekStart(getMonday(dateKey))
-  }
-
-  function prepareOrder(orderId: string, dateKey = selectedDate) {
-    setSelectedOrderId(orderId)
-    setTaskTitle('')
-    setPlanDate(dateKey)
-    setViewMode('week')
   }
 
   function startEditPlan(plan: CalendarPlan) {
@@ -217,11 +199,6 @@ export function CalendarView({
     setPlanStart(plan.start_time || '')
     setPlanEnd(plan.end_time || '')
     setTaskNote(plan.note || '')
-  }
-
-  function onOrderDragStart(event: DragEvent<HTMLButtonElement>, orderId: string) {
-    event.dataTransfer.setData('application/x-itspot-order', orderId)
-    event.dataTransfer.effectAllowed = 'copy'
   }
 
   function onPlanDragStart(event: DragEvent<HTMLDivElement>, planId: string) {
@@ -240,11 +217,7 @@ export function CalendarView({
       return
     }
 
-    const orderId = event.dataTransfer.getData('application/x-itspot-order') || event.dataTransfer.getData('text/plain')
-    if (orderId) {
-      void addOrderToDate(orderId, dateKey)
-      chooseDate(dateKey)
-    }
+    chooseDate(dateKey)
   }
 
   function renderPlan(plan: CalendarPlan, compact = false) {
@@ -253,7 +226,7 @@ export function CalendarView({
     const accent = getPlanAccent(order)
     const durationMinutes = getPlanDurationMinutes(plan)
     const durationLabel = getPlanDurationLabel(durationMinutes)
-    const plannedBlockHeight = compact && durationMinutes ? Math.min(210, Math.max(58, 34 + durationMinutes * 0.26)) : undefined
+    const plannedBlockHeight = compact && durationMinutes ? Math.min(360, Math.max(64, 42 + durationMinutes * 0.42)) : undefined
 
     return (
       <div
@@ -312,12 +285,11 @@ export function CalendarView({
           {[
             ['week', 'Týždeň'],
             ['day', 'Deň'],
-            ['unplanned', 'Nenaplánované'],
           ].map(([mode, label]) => (
             <button
               key={mode}
               type="button"
-              onClick={() => setViewMode(mode as 'week' | 'day' | 'unplanned')}
+              onClick={() => setViewMode(mode as 'week' | 'day')}
               className={viewMode === mode ? 'active' : ''}
             >
               {label}
@@ -327,7 +299,7 @@ export function CalendarView({
         <div className="workPlannerStats">
           <span><strong>{weekPlans.length}</strong> tento týždeň</span>
           <span><strong>{selectedPlans.length}</strong> vybraný deň</span>
-          <span><strong>{unplannedOrders.length}</strong> čaká na plán</span>
+          <span><strong>{plannedOrdersCount}</strong> zákaziek v pláne</span>
         </div>
       </div>
 
@@ -341,6 +313,9 @@ export function CalendarView({
                 const isSelected = dateKey === selectedDate
                 const isWeekend = index > 4
                 const isDragOver = dragOverDate === dateKey
+                const plannedMinutes = getDayPlannedMinutes(dayPlans)
+                const busyPercent = Math.min(100, Math.round((plannedMinutes / workDayMinutes) * 100))
+                const plannedLabel = plannedMinutes ? getPlanDurationLabel(plannedMinutes) : '0 h'
 
                 return (
                   <div
@@ -358,6 +333,15 @@ export function CalendarView({
                       <span>{shortDayNames[index]}</span>
                       <strong>{getShortDate(dateKey)}</strong>
                       <em>{dayPlans.length}</em>
+                    </div>
+                    <div className="workPlannerDayLoad">
+                      <span>{plannedLabel} / 10 h</span>
+                      <b style={{ width: `${busyPercent}%` }} />
+                    </div>
+                    <div className="workPlannerTimeRail" aria-hidden="true">
+                      {plannerHours.map((hour) => (
+                        <span key={hour}>{hour}:00</span>
+                      ))}
                     </div>
                     <div className="workPlannerDayItems">
                       {dayPlans.length === 0 ? <span className="workPlannerEmpty">Voľné</span> : dayPlans.map((plan) => renderPlan(plan, true))}
@@ -385,27 +369,6 @@ export function CalendarView({
             </div>
           )}
 
-          {viewMode === 'unplanned' && (
-            <div className="workPlannerUnplannedWide">
-              <div className="workPlannerDayTitle">
-                <div>
-                  <div className="sectionKicker">Zákazky bez dátumu montáže</div>
-                  <h3>Nenaplánované zákazky</h3>
-                </div>
-                <input className="calendarPlanInput" value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder="Hľadať zákazku alebo zákazníka..." />
-              </div>
-              <div className="workPlannerOrderList">
-                {unplannedOrders.map((order) => (
-                  <button key={order.id} type="button" className="workPlannerOrder" onClick={() => prepareOrder(order.id)}>
-                    <strong>{order.nazov}</strong>
-                    <span>{getCustomerName(order.customer_id)}</span>
-                    <em style={getStatusBadgeStyle(order.stav)}>{getStatusLabel(order.stav)}</em>
-                  </button>
-                ))}
-                {unplannedOrders.length === 0 && <div className="workPlannerNoData">Všetky aktívne zákazky sú už v pláne alebo nič nespĺňa filter.</div>}
-              </div>
-            </div>
-          )}
         </div>
 
         <aside className="workPlannerSide">
@@ -465,35 +428,6 @@ export function CalendarView({
                   Vyčistiť
                 </button>
               )}
-            </div>
-          </div>
-
-          <div style={{ ...boxStyle }} className="workPlannerSidebarList">
-            <div className="workPlannerSideHeader">
-              <div>
-                <div className="sectionKicker">Na plánovanie</div>
-                <h3>Nenaplánované</h3>
-              </div>
-              <span>{unplannedOrders.length}</span>
-            </div>
-            <input className="calendarPlanInput" value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder="Hľadať..." />
-            <div className="workPlannerOrderList">
-              {unplannedOrders.slice(0, 14).map((order) => (
-                <button
-                  key={order.id}
-                  type="button"
-                  draggable
-                  onDragStart={(event) => onOrderDragStart(event, order.id)}
-                  onClick={() => prepareOrder(order.id)}
-                  onDoubleClick={() => startEditOrder(order)}
-                  className="workPlannerOrder"
-                >
-                  <strong>{order.nazov}</strong>
-                  <span>{getCustomerName(order.customer_id)}</span>
-                  <em style={getStatusBadgeStyle(order.stav)}>{getStatusLabel(order.stav)}</em>
-                </button>
-              ))}
-              {unplannedOrders.length === 0 && <div className="workPlannerNoData">Všetko je naplánované.</div>}
             </div>
           </div>
         </aside>

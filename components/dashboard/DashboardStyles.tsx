@@ -849,10 +849,12 @@ export function DashboardStyles() {
           padding: 8px;
           background: #fff;
           display: grid;
-          grid-template-rows: auto minmax(0, 1fr);
+          grid-template-rows: auto auto minmax(0, 1fr);
           gap: 8px;
           cursor: pointer;
           transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+          position: relative;
+          overflow: hidden;
         }
 
         .workPlannerDay:hover,
@@ -901,12 +903,64 @@ export function DashboardStyles() {
           font-size: 12px;
         }
 
+        .workPlannerDayLoad {
+          position: relative;
+          height: 22px;
+          border-radius: 999px;
+          background: #e2e8f0;
+          overflow: hidden;
+          display: flex;
+          align-items: center;
+          padding: 0 8px;
+          color: #334155;
+          font-size: 11px;
+          font-weight: 900;
+        }
+
+        .workPlannerDayLoad b {
+          position: absolute;
+          inset: 0 auto 0 0;
+          min-width: 0;
+          border-radius: inherit;
+          background: linear-gradient(90deg, #84cc16, #22c55e);
+          opacity: 0.9;
+        }
+
+        .workPlannerDayLoad span {
+          position: relative;
+          z-index: 1;
+          text-shadow: 0 1px 0 rgba(255,255,255,0.4);
+        }
+
+        .workPlannerTimeRail {
+          position: absolute;
+          left: 8px;
+          right: 8px;
+          top: 76px;
+          bottom: 8px;
+          pointer-events: none;
+          display: grid;
+          grid-template-rows: repeat(6, 1fr);
+          opacity: 0.58;
+        }
+
+        .workPlannerTimeRail span {
+          border-top: 1px dashed #dbe4ef;
+          color: #94a3b8;
+          font-size: 9px;
+          font-weight: 900;
+          line-height: 1;
+          padding-top: 2px;
+        }
+
         .workPlannerDayItems,
         .workPlannerDetailList,
         .workPlannerOrderList {
           display: grid;
           gap: 7px;
           align-content: start;
+          position: relative;
+          z-index: 1;
         }
 
         .workPlannerItem {
