@@ -64,6 +64,29 @@ function getTimeRange(plan: CalendarPlan) {
   return 'čas neurčený'
 }
 
+function timeToMinutes(time?: string | null) {
+  if (!time) return null
+  const [hours, minutes] = time.slice(0, 5).split(':').map(Number)
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return null
+  return hours * 60 + minutes
+}
+
+function getPlanDurationMinutes(plan: CalendarPlan) {
+  const start = timeToMinutes(plan.start_time)
+  const end = timeToMinutes(plan.end_time)
+  if (start === null || end === null || end <= start) return 0
+  return end - start
+}
+
+function getPlanDurationLabel(minutes: number) {
+  if (!minutes) return ''
+  const hours = Math.floor(minutes / 60)
+  const rest = minutes % 60
+  if (hours && rest) return `${hours} h ${rest} min`
+  if (hours) return `${hours} h`
+  return `${rest} min`
+}
+
 function getPlanAccent(order?: Order | null) {
   if (!order) return { border: '#60a5fa', bg: '#eff6ff', color: '#1d4ed8' }
   const badge = getStatusBadgeStyle(order.stav)
@@ -228,6 +251,9 @@ export function CalendarView({
     const order = plan.order_id ? orderMap.get(plan.order_id) : null
     const title = order?.nazov || plan.title || 'Úloha'
     const accent = getPlanAccent(order)
+    const durationMinutes = getPlanDurationMinutes(plan)
+    const durationLabel = getPlanDurationLabel(durationMinutes)
+    const plannedBlockHeight = compact && durationMinutes ? Math.min(210, Math.max(58, 34 + durationMinutes * 0.26)) : undefined
 
     return (
       <div
@@ -235,7 +261,7 @@ export function CalendarView({
         className="workPlannerItem"
         draggable
         onDragStart={(event) => onPlanDragStart(event, plan.id)}
-        style={{ borderLeftColor: accent.border, background: accent.bg }}
+        style={{ borderLeftColor: accent.border, background: accent.bg, minHeight: plannedBlockHeight }}
       >
         <button
           type="button"
@@ -245,9 +271,10 @@ export function CalendarView({
           title={order ? `${order.nazov} - ${getCustomerName(order.customer_id)}` : plan.note || title}
         >
           <span style={{ color: accent.color }}>{getTimeRange(plan)}</span>
+          {durationLabel && <b style={{ background: accent.border, color: '#fff' }}>{durationLabel}</b>}
           <strong>{title}</strong>
-          {!compact && order && <em>{getCustomerName(order.customer_id)}</em>}
-          {!compact && plan.note && <small>{plan.note}</small>}
+          {order && <em>{getCustomerName(order.customer_id)}</em>}
+          {(!compact || durationMinutes >= 180) && plan.note && <small>{plan.note}</small>}
         </button>
         <button type="button" className="workPlannerDelete" onClick={() => void deleteCalendarPlan(plan.id)} title="Zmazať z plánu">
           ×

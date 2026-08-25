@@ -919,6 +919,7 @@ export function DashboardStyles() {
           border-radius: 10px;
           padding: 5px;
           cursor: grab;
+          align-items: stretch;
         }
 
         .workPlannerItemMain {
@@ -930,6 +931,7 @@ export function DashboardStyles() {
           display: grid;
           gap: 2px;
           cursor: pointer;
+          align-content: start;
         }
 
         .workPlannerItemMain span {
@@ -939,10 +941,20 @@ export function DashboardStyles() {
           text-transform: uppercase;
         }
 
+        .workPlannerItemMain b {
+          justify-self: start;
+          border-radius: 999px;
+          padding: 3px 7px;
+          font-size: 10px;
+          line-height: 1;
+          font-weight: 900;
+          box-shadow: 0 4px 10px rgba(15, 23, 42, 0.14);
+        }
+
         .workPlannerItemMain strong {
           min-width: 0;
           color: #0f172a;
-          font-size: 12px;
+          font-size: 13px;
           line-height: 1.15;
           overflow: hidden;
           text-overflow: ellipsis;
