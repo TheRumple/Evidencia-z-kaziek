@@ -147,6 +147,12 @@ export function CalendarView({
   const weekPlans = weekDays.flatMap((day) => plansByDate[day] || [])
   const selectedPlans = plansByDate[selectedDate] || []
   const plannedOrdersCount = plannedOrderIds.size
+  const heroNavButtonStyle = {
+    ...buttonStyle,
+    background: '#fff',
+    borderColor: '#fff',
+    color: '#0f172a',
+  }
 
   async function savePlan() {
     const title = selectedOrderId ? undefined : taskTitle
@@ -265,13 +271,23 @@ export function CalendarView({
           <p>Sem dávaj len reálne naplánované práce. Termín dokončenia zákazky sa do kalendára nepridáva automaticky.</p>
         </div>
         <div className="workPlannerHeroActions">
-          <button type="button" onClick={() => { const week = getMonday(addDays(weekStart, -7)); setWeekStart(week); setSelectedDate(week); setPlanDate(week) }} style={buttonStyle}>
+          <button
+            type="button"
+            onClick={() => {
+              setPlanDate(selectedDate)
+              document.getElementById('calendar-plan-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            }}
+            style={{ ...buttonStyle, background: '#84cc16', borderColor: '#65a30d', color: '#111827' }}
+          >
+            + Pridať do kalendára
+          </button>
+          <button type="button" onClick={() => { const week = getMonday(addDays(weekStart, -7)); setWeekStart(week); setSelectedDate(week); setPlanDate(week) }} style={heroNavButtonStyle}>
             Predošlý týždeň
           </button>
-          <button type="button" onClick={() => { setWeekStart(getMonday(today)); setSelectedDate(today); setPlanDate(today) }} style={buttonStyle}>
+          <button type="button" onClick={() => { setWeekStart(getMonday(today)); setSelectedDate(today); setPlanDate(today) }} style={heroNavButtonStyle}>
             Dnes
           </button>
-          <button type="button" onClick={() => { const week = getMonday(addDays(weekStart, 7)); setWeekStart(week); setSelectedDate(week); setPlanDate(week) }} style={buttonStyle}>
+          <button type="button" onClick={() => { const week = getMonday(addDays(weekStart, 7)); setWeekStart(week); setSelectedDate(week); setPlanDate(week) }} style={heroNavButtonStyle}>
             Ďalší týždeň
           </button>
           <button type="button" onClick={onBackToOrders} style={{ ...buttonStyle, background: '#0f172a', color: '#fff' }}>
@@ -372,7 +388,7 @@ export function CalendarView({
         </div>
 
         <aside className="workPlannerSide">
-          <div style={{ ...boxStyle }} className="workPlannerForm">
+          <div id="calendar-plan-form" style={{ ...boxStyle }} className="workPlannerForm">
             <div>
               <div className="sectionKicker">{editingPlanId ? 'Úprava plánu' : 'Rýchle plánovanie'}</div>
               <h3>{editingPlanId ? 'Upraviť položku' : 'Pridať do kalendára'}</h3>
