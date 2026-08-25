@@ -406,6 +406,9 @@ export default function QuotesPage() {
     const quoteItems = normalizeItems(quote.items).filter((item) => item.name.trim())
     setMaterialQuote(quote)
     setSelectedMaterialItemIds(quoteItems.map((item) => item.id))
+    window.setTimeout(() => {
+      document.getElementById('quote-material-import')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 0)
   }
 
   function toggleMaterialItem(itemId: string) {
@@ -1426,24 +1429,18 @@ export default function QuotesPage() {
         )}
 
         {materialQuote && (
-          <div
+          <section
+            id="quote-material-import"
             style={{
-              position: 'fixed',
-              inset: 0,
-              zIndex: 80,
-              background: 'rgba(15,23,42,0.62)',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'flex-start',
-              padding: isNarrow ? 8 : 16,
-              overflowY: 'auto',
-              overscrollBehavior: 'contain',
-              touchAction: 'pan-y',
+              ...boxStyle,
+              padding: 0,
+              marginTop: 8,
+              overflow: 'hidden',
+              borderColor: '#fbbf24',
+              boxShadow: '0 18px 45px rgba(15, 23, 42, 0.12)',
             }}
-            role="dialog"
-            aria-modal="true"
+            aria-label="Nákup materiálu z ponuky"
           >
-            <div style={{ ...boxStyle, width: 'min(880px, 100%)', margin: isNarrow ? '0 0 18px' : '24px 0', overflow: 'visible' }}>
               <div style={{ padding: isNarrow ? 10 : 14, borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'start' }}>
                 <div>
                   <div style={{ color: '#65a30d', fontSize: 12, fontWeight: 950, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Nákup materiálu</div>
@@ -1530,8 +1527,7 @@ export default function QuotesPage() {
                   </button>
                 </div>
               </div>
-            </div>
-          </div>
+          </section>
         )}
       </div>
     </main>
