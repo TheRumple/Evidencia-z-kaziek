@@ -1434,16 +1434,18 @@ export default function QuotesPage() {
               background: 'rgba(15,23,42,0.62)',
               display: 'grid',
               placeItems: 'center',
-              padding: 16,
+              padding: isNarrow ? 8 : 16,
+              overflowY: 'auto',
+              overscrollBehavior: 'contain',
             }}
             role="dialog"
             aria-modal="true"
           >
-            <div style={{ ...boxStyle, width: 'min(880px, 100%)', maxHeight: '88vh', overflow: 'hidden', display: 'grid', gridTemplateRows: 'auto minmax(0, 1fr) auto' }}>
-              <div style={{ padding: 14, borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'start' }}>
+            <div style={{ ...boxStyle, width: 'min(880px, 100%)', maxHeight: isNarrow ? '92dvh' : '88vh', minHeight: 0, overflow: 'hidden', display: 'grid', gridTemplateRows: 'auto minmax(0, 1fr) auto' }}>
+              <div style={{ padding: isNarrow ? 10 : 14, borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'start' }}>
                 <div>
                   <div style={{ color: '#65a30d', fontSize: 12, fontWeight: 950, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Nákup materiálu</div>
-                  <h3 style={{ margin: '2px 0 0', fontSize: 22, fontWeight: 950 }}>Položky z ponuky {materialQuote.quote_number}</h3>
+                  <h3 style={{ margin: '2px 0 0', fontSize: isNarrow ? 18 : 22, fontWeight: 950 }}>Položky z ponuky {materialQuote.quote_number}</h3>
                   <div style={{ marginTop: 3, color: '#64748b', fontWeight: 800, fontSize: 13 }}>
                     Zaškrtni len to, čo treba objednať. Prácu, dopravu alebo veci skladom nechaj vypnuté.
                   </div>
@@ -1453,7 +1455,7 @@ export default function QuotesPage() {
                 </button>
               </div>
 
-              <div style={{ padding: 14, overflowY: 'auto', display: 'grid', gap: 8 }}>
+              <div style={{ padding: isNarrow ? 10 : 14, minHeight: 0, overflowY: 'auto', WebkitOverflowScrolling: 'touch', display: 'grid', alignContent: 'start', gap: 8 }}>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 2 }}>
                   <button
                     type="button"
@@ -1468,11 +1470,11 @@ export default function QuotesPage() {
                 </div>
 
                 <div style={{ border: '1px solid #dbe4ef', borderRadius: 10, overflow: 'hidden' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '46px minmax(0, 1.7fr) 95px 90px', gap: 8, padding: '7px 10px', background: '#0f172a', color: '#fff', fontSize: 11, fontWeight: 950, textTransform: 'uppercase' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '34px minmax(0, 1fr) 74px' : '46px minmax(0, 1.7fr) 95px 90px', gap: 8, padding: '7px 10px', background: '#0f172a', color: '#fff', fontSize: 11, fontWeight: 950, textTransform: 'uppercase' }}>
                     <span></span>
                     <span>Položka</span>
                     <span>Množstvo</span>
-                    <span>Cena</span>
+                    {!isNarrow && <span>Cena</span>}
                   </div>
                   {normalizeItems(materialQuote.items).filter((item) => item.name.trim()).map((item, index) => {
                     const checked = selectedMaterialItemIds.includes(item.id)
@@ -1481,7 +1483,7 @@ export default function QuotesPage() {
                         key={item.id}
                         style={{
                           display: 'grid',
-                          gridTemplateColumns: '46px minmax(0, 1.7fr) 95px 90px',
+                          gridTemplateColumns: isNarrow ? '34px minmax(0, 1fr) 74px' : '46px minmax(0, 1.7fr) 95px 90px',
                           gap: 8,
                           alignItems: 'center',
                           padding: '8px 10px',
@@ -1497,18 +1499,18 @@ export default function QuotesPage() {
                           style={{ width: 18, height: 18 }}
                         />
                         <span style={{ minWidth: 0 }}>
-                          <strong style={{ display: 'block', fontSize: 13, fontWeight: 950, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</strong>
+                          <strong style={{ display: 'block', fontSize: 13, fontWeight: 950, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: isNarrow ? 'normal' : 'nowrap' }}>{item.name}</strong>
                           {item.note && <small style={{ display: 'block', color: '#64748b', fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.note}</small>}
                         </span>
                         <span style={{ fontWeight: 900 }}>{item.quantity || '1'} {item.unit || 'ks'}</span>
-                        <span style={{ color: '#64748b', fontWeight: 900 }}>{formatMoney(parseMoney(item.unitPrice))}</span>
+                        {!isNarrow && <span style={{ color: '#64748b', fontWeight: 900 }}>{formatMoney(parseMoney(item.unitPrice))}</span>}
                       </label>
                     )
                   })}
                 </div>
               </div>
 
-              <div style={{ padding: 14, borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+              <div style={{ padding: isNarrow ? 10 : 14, borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
                 <div style={{ color: '#64748b', fontWeight: 900 }}>
                   Vybrané položky: {selectedMaterialItemIds.length}
                 </div>
