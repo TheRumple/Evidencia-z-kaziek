@@ -405,6 +405,23 @@ export default function QuotesPage() {
     setNotice({ type: 'success', text: 'Obrázok produktu bol pridaný k položke.' })
   }
 
+  function setQuoteItemImageUrl(index: number) {
+    const currentUrl = items[index]?.imageUrl || ''
+    const nextUrl = window.prompt('Vlož URL obrázka produktu:', currentUrl)
+    if (nextUrl === null) return
+    const trimmedUrl = nextUrl.trim()
+    if (!trimmedUrl) {
+      updateItem(index, 'imageUrl', '')
+      return
+    }
+    if (!/^https?:\/\//i.test(trimmedUrl)) {
+      setNotice({ type: 'error', text: 'URL obrázka musí začínať na http:// alebo https://.' })
+      return
+    }
+    updateItem(index, 'imageUrl', trimmedUrl)
+    setNotice({ type: 'success', text: 'URL obrázka bola pridaná k položke.' })
+  }
+
   function addItem() {
     setItems((current) => [...current, createQuoteItem()])
   }
@@ -1256,6 +1273,9 @@ export default function QuotesPage() {
                               }}
                             />
                           </label>
+                          <button type="button" style={{ ...buttonStyle, minHeight: 28, background: '#eef2ff', color: '#3730a3' }} onClick={() => setQuoteItemImageUrl(index)}>
+                            URL
+                          </button>
                           {item.imageUrl && (
                             <>
                               <img src={item.imageUrl} alt="" style={{ width: 34, height: 34, objectFit: 'cover', borderRadius: 6, border: '1px solid #dbe4ef' }} />
@@ -1309,6 +1329,9 @@ export default function QuotesPage() {
                             }}
                           />
                         </label>
+                        <button type="button" style={{ ...buttonStyle, minHeight: 24, padding: '0 8px', fontSize: 11, background: '#eef2ff', color: '#3730a3' }} onClick={() => setQuoteItemImageUrl(index)}>
+                          URL
+                        </button>
                         {item.imageUrl && (
                           <>
                             <img src={item.imageUrl} alt="" style={{ width: 26, height: 26, objectFit: 'cover', borderRadius: 5, border: '1px solid #dbe4ef' }} />
