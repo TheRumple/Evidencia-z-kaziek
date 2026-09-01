@@ -29,7 +29,7 @@ const STATUS_LABELS: Record<Quote['status'], string> = {
 
 const MATERIAL_DELIVERY_NOTE = 'Dodanie podľa dostupnosti tovaru. Osobný odber alebo doručenie podľa dohody.'
 const INSTALLATION_DELIVERY_NOTE = 'Termín realizácie podľa dohody.'
-const MATERIAL_TERMS_NOTE = 'Ceny sú uvedené bez nepredvídaného materiálu. Dostupnosť tovaru bude potvrdená po odsúhlasení ponuky.'
+const MATERIAL_TERMS_NOTE = 'Ceny sú uvedené bez DPH. Dostupnosť tovaru bude potvrdená po odsúhlasení ponuky.'
 const INSTALLATION_TERMS_NOTE = 'Ceny sú uvedené bez nepredvídaného materiálu. Presný termín realizácie bude dohodnutý po schválení ponuky.'
 
 type QuoteKind = 'sale' | 'installation'
