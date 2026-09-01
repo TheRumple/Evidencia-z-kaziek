@@ -4,9 +4,11 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 import { BrandLogo } from '@/components/BrandLogo'
 import type { Customer, Notice, Quote } from '@/lib/dashboard-types'
-import { formatDate, getTodayDate } from '@/lib/dashboard-utils'
+import { formatDate, getTodayDate, loadFirstAvailableImage, loadImageAsDataUrl, pdfSafeText } from '@/lib/dashboard-utils'
 import { supabase } from '@/lib/supabase'
 
 type QuoteItem = {
@@ -33,6 +35,22 @@ const MATERIAL_TERMS_NOTE = 'Ponuka je nezáväzná do jej odsúhlasenia zákazn
 const INSTALLATION_TERMS_NOTE = 'Ceny sú uvedené bez nepredvídaného materiálu. Presný termín realizácie bude dohodnutý po schválení ponuky.'
 
 type QuoteKind = 'sale' | 'installation'
+
+type QuotePrintSource = {
+  number: string
+  date: string
+  valid: string
+  title: string
+  customer: string
+  contact: string
+  email: string
+  kind: QuoteKind
+  realization: string
+  note: string
+  discountType: 'none' | 'percent' | 'amount'
+  discountValue: string
+  items: QuoteItem[]
+}
 
 const QUOTE_KIND_LABELS: Record<QuoteKind, string> = {
   sale: 'Predaj materiálu',
@@ -852,8 +870,8 @@ export default function QuotesPage() {
     setNotice({ type: 'success', text: `Zo schválenej ponuky ${quote.quote_number} vznikla nová zákazka.` })
   }
 
-  function getPrintableHtml(quoteLike?: Quote) {
-    const source = quoteLike
+  function getQuotePrintSource(quoteLike?: Quote): QuotePrintSource {
+    return quoteLike
       ? {
           number: quoteLike.quote_number,
           date: quoteLike.quote_date,
@@ -884,6 +902,10 @@ export default function QuotesPage() {
           discountValue,
           items: items.filter((item) => item.name.trim() || item.note.trim() || item.unitPrice.trim()),
         }
+  }
+
+  function getPrintableHtml(quoteLike?: Quote) {
+    const source = getQuotePrintSource(quoteLike)
 
     const sourceDiscountType = (source.discountType === 'percent' || source.discountType === 'amount') ? source.discountType : 'none'
     const quoteTotals = getQuoteTotals(source.items, sourceDiscountType, source.discountValue)
@@ -1027,18 +1049,224 @@ export default function QuotesPage() {
     win.document.close()
   }
 
-  function sendQuoteEmail(quote?: Quote) {
+  async function downloadQuotePdf(quote?: Quote) {
+    const source = getQuotePrintSource(quote)
+    const sourceDiscountType = (source.discountType === 'percent' || source.discountType === 'amount') ? source.discountType : 'none'
+    const quoteTotals = getQuoteTotals(source.items, sourceDiscountType, source.discountValue)
+    const deliveryTitle = source.kind === 'sale' ? 'Dodanie' : 'Realizácia'
+    const deliveryText = source.realization || (source.kind === 'sale' ? MATERIAL_DELIVERY_NOTE : INSTALLATION_DELIVERY_NOTE)
+    const termsText = source.note || (source.kind === 'sale' ? MATERIAL_TERMS_NOTE : INSTALLATION_TERMS_NOTE)
+    const discountLabel = source.discountType === 'percent' ? `Zľava ${source.discountValue || '0'} %` : 'Zľava'
+
+    const logoDataUrl = await loadFirstAvailableImage(['/brand-logo-light.png'])
+    const itemImages = await Promise.all(
+      source.items.map(async (item) => {
+        if (!item.imageUrl) return ''
+        try {
+          return await loadImageAsDataUrl(item.imageUrl)
+        } catch {
+          return ''
+        }
+      })
+    )
+
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+    const pageWidth = doc.internal.pageSize.getWidth()
+    const pageHeight = doc.internal.pageSize.getHeight()
+    const margin = 14
+
+    if (logoDataUrl) {
+      doc.addImage(logoDataUrl, 'PNG', margin, 14, 58, 15)
+    } else {
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(28)
+      doc.text('ITspot', margin, 25)
+    }
+
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(8.5)
+    doc.setTextColor(52, 64, 84)
+    doc.text('ITspot s. r. o.', margin, 39)
+    doc.text('Hajles 1703/6, 968 01 Nova Bana', margin, 43)
+    doc.text('ICO: 56430388 · DIC: 2122307462', margin, 47)
+    doc.text('IC DPH: SK2122307462', margin, 51)
+    doc.text('info@itspot.sk · +421 908 806 691', margin, 55)
+
+    doc.setDrawColor(17, 24, 39)
+    doc.rect(126, 14, 70, 36)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(8)
+    doc.setTextColor(102, 112, 133)
+    doc.text('CENOVA PONUKA', 130, 21)
+    doc.setFontSize(20)
+    doc.setTextColor(17, 24, 39)
+    doc.text(pdfSafeText(source.number), 130, 30)
+    doc.setDrawColor(215, 221, 231)
+    doc.line(130, 35, 192, 35)
+    doc.setFontSize(7.5)
+    doc.setTextColor(102, 112, 133)
+    doc.text('VYSTAVENE', 130, 41)
+    doc.text('PLATNOST', 162, 41)
+    doc.setFontSize(8.5)
+    doc.setTextColor(17, 24, 39)
+    doc.text(formatDate(source.date), 130, 46)
+    doc.text(source.valid ? formatDate(source.valid) : '-', 162, 46)
+
+    doc.setDrawColor(215, 221, 231)
+    doc.line(margin, 64, pageWidth - margin, 64)
+
+    doc.setDrawColor(226, 232, 240)
+    doc.rect(margin, 72, 82, 30)
+    doc.rect(114, 72, 82, 30)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(7.5)
+    doc.setTextColor(102, 112, 133)
+    doc.text('ODBERATEL', margin + 4, 79)
+    doc.text(pdfSafeText(deliveryTitle).toUpperCase(), 118, 79)
+    doc.setFontSize(11)
+    doc.setTextColor(17, 24, 39)
+    doc.text(pdfSafeText(source.customer || 'Bez zakaznika'), margin + 4, 87, { maxWidth: 74 })
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(8)
+    doc.text(pdfSafeText([source.contact ? `Kontaktna osoba: ${source.contact}` : '', source.email ? `Email: ${source.email}` : ''].filter(Boolean).join('\n')), margin + 4, 94, { maxWidth: 74 })
+    doc.text(pdfSafeText(deliveryText), 118, 87, { maxWidth: 74 })
+
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(8)
+    doc.setTextColor(119, 210, 11)
+    doc.text('NAVRH RIESENIA', margin, 114)
+    doc.setFontSize(17)
+    doc.setTextColor(17, 24, 39)
+    doc.text(pdfSafeText(source.title || 'Cenova ponuka'), margin, 122, { maxWidth: 180 })
+
+    autoTable(doc, {
+      startY: 130,
+      margin: { left: margin, right: margin, bottom: 58 },
+      head: [['C.', 'Polozka', 'Mnozstvo', 'MJ', 'Cena/MJ bez DPH', 'DPH', 'Spolu bez DPH']],
+      body: source.items.map((item, index) => {
+        const itemTotals = getItemTotals(item)
+        return [
+          String(index + 1),
+          [item.name, item.note].filter(Boolean).join('\n'),
+          item.quantity || '1',
+          item.unit || 'ks',
+          formatMoney(parseMoney(item.unitPrice)),
+          `${item.vatRate || '23'} %`,
+          formatMoney(itemTotals.net),
+        ].map((value) => pdfSafeText(value))
+      }),
+      styles: {
+        font: 'helvetica',
+        fontSize: 8.4,
+        cellPadding: 2.2,
+        textColor: [17, 24, 39],
+        lineColor: [232, 237, 243],
+        lineWidth: 0.25,
+        valign: 'top',
+        overflow: 'linebreak',
+      },
+      headStyles: {
+        fillColor: [240, 243, 247],
+        textColor: [52, 64, 84],
+        fontStyle: 'bold',
+        fontSize: 7.5,
+      },
+      columnStyles: {
+        0: { cellWidth: 9 },
+        1: { cellWidth: 72 },
+        2: { cellWidth: 18, halign: 'right' },
+        3: { cellWidth: 12 },
+        4: { cellWidth: 27, halign: 'right' },
+        5: { cellWidth: 17, halign: 'right' },
+        6: { cellWidth: 27, halign: 'right', fontStyle: 'bold' },
+      },
+      didDrawCell: (data) => {
+        if (data.section !== 'body' || data.column.index !== 1) return
+        const image = itemImages[data.row.index]
+        if (!image) return
+        try {
+          doc.addImage(image, 'JPEG', data.cell.x + 2, data.cell.y + data.cell.height - 15, 12, 12)
+        } catch {
+          try {
+            doc.addImage(image, 'PNG', data.cell.x + 2, data.cell.y + data.cell.height - 15, 12, 12)
+          } catch {}
+        }
+      },
+    })
+
+    let y = ((doc as unknown as { lastAutoTable?: { finalY?: number } }).lastAutoTable?.finalY || 150) + 10
+    if (y > pageHeight - 75) {
+      doc.addPage()
+      y = 24
+    }
+
+    doc.setDrawColor(232, 237, 243)
+    doc.setFillColor(246, 248, 251)
+    doc.rect(margin, y, 82, 28, 'FD')
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(8)
+    doc.setTextColor(17, 24, 39)
+    doc.text('Poznamka a podmienky', margin + 4, y + 7)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(8)
+    doc.setTextColor(71, 84, 103)
+    doc.text(pdfSafeText(termsText), margin + 4, y + 14, { maxWidth: 74 })
+
+    const totalsX = 116
+    doc.setDrawColor(119, 210, 11)
+    doc.setLineWidth(0.7)
+    doc.rect(totalsX, y, 80, 17)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(8)
+    doc.setTextColor(17, 24, 39)
+    doc.text('CELKOM BEZ DPH', totalsX + 4, y + 10)
+    doc.setFontSize(18)
+    doc.text(formatMoney(quoteTotals.net), totalsX + 76, y + 11, { align: 'right' })
+    doc.setDrawColor(215, 221, 231)
+    doc.setLineWidth(0.25)
+    let totalsY = y + 17
+    if (quoteTotals.discount > 0) {
+      doc.rect(totalsX, totalsY, 80, 9)
+      doc.setFontSize(8)
+      doc.text(pdfSafeText(discountLabel), totalsX + 4, totalsY + 6)
+      doc.text(`- ${formatMoney(quoteTotals.discount)}`, totalsX + 76, totalsY + 6, { align: 'right' })
+      totalsY += 9
+    }
+    doc.rect(totalsX, totalsY, 80, 9)
+    doc.setFontSize(8)
+    doc.text('DPH 23 %', totalsX + 4, totalsY + 6)
+    doc.text(formatMoney(quoteTotals.vat), totalsX + 76, totalsY + 6, { align: 'right' })
+    doc.rect(totalsX, totalsY + 9, 80, 9)
+    doc.text('Celkom s DPH', totalsX + 4, totalsY + 15)
+    doc.text(formatMoney(quoteTotals.gross), totalsX + 76, totalsY + 15, { align: 'right' })
+
+    const signY = Math.max(y + 46, pageHeight - 36)
+    doc.setDrawColor(152, 162, 179)
+    doc.line(margin, signY, 92, signY)
+    doc.setFontSize(8)
+    doc.setTextColor(102, 112, 133)
+    doc.text('Vystavil: ITspot s. r. o.', margin, signY + 6)
+
+    doc.setDrawColor(215, 221, 231)
+    doc.line(margin, pageHeight - 14, pageWidth - margin, pageHeight - 14)
+    doc.text('www.itspot.sk', margin, pageHeight - 8)
+    doc.text('info@itspot.sk', pageWidth / 2, pageHeight - 8, { align: 'center' })
+    doc.text(`Cenova ponuka ${pdfSafeText(source.number)}`, pageWidth - margin, pageHeight - 8, { align: 'right' })
+
+    const safeName = pdfSafeText(`cenova-ponuka-${source.number}-${source.customer || ''}`).replace(/[^a-zA-Z0-9\-_ ]/g, '').trim() || `cenova-ponuka-${source.number}`
+    doc.save(`${safeName}.pdf`)
+  }
+
+  async function sendQuoteEmail(quote?: Quote) {
     const target = quote || null
     const recipient = target?.contact_email || contactEmail
     const number = target?.quote_number || quoteNumber || generateQuoteNumber()
     const targetTitle = target?.title || title || 'cenová ponuka'
+    await downloadQuotePdf(quote)
     const body = [
       'Dobrý deň,',
       '',
-      `posielame cenovú ponuku ${number}: ${targetTitle}.`,
-      '',
-      'S pozdravom',
-      'ITspot s. r. o.',
+      `v prílohe posielame cenovú ponuku ${number}: ${targetTitle}.`,
     ].join('\n')
     window.location.href = `mailto:${encodeURIComponent(recipient || '')}?subject=${encodeURIComponent(`Cenová ponuka ${number}`)}&body=${encodeURIComponent(body)}`
   }
