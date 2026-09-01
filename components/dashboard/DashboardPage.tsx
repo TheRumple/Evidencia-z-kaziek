@@ -1641,7 +1641,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
     }
 
     try {
-      const protocolLogoDataUrl = await loadFirstAvailableImage(['/delivery-protocol-logo.png'])
+      const protocolLogoDataUrl = await loadFirstAvailableImage(['/quote-logo.jpg'])
       const doc = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
@@ -1659,16 +1659,13 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
 
       function drawItspotLogo(x: number, y: number) {
         if (protocolLogoDataUrl) {
-          doc.addImage(protocolLogoDataUrl, 'PNG', x, y, 24, 24)
+          doc.addImage(protocolLogoDataUrl, 'JPEG', x, y, 62, 16)
         } else {
           doc.setFont('helvetica', 'bold')
           doc.setFontSize(35)
           doc.setTextColor(0, 0, 0)
           doc.text('ITspot', x, y + 15)
         }
-        doc.setDrawColor(0, 0, 0)
-        doc.setLineWidth(0.8)
-        doc.line(margin, y + 28, pageWidth - margin, y + 28)
       }
 
       function drawHeader(pageNumber: number) {
@@ -1704,30 +1701,30 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
       doc.setTextColor(15, 23, 42)
       doc.setFont('helvetica', 'bold')
       doc.setFontSize(18)
-      doc.text('ODOVZDAVACI PROTOKOL', margin, 52)
+      doc.text('ODOVZDAVACI PROTOKOL', margin, 48)
 
       doc.setFontSize(10)
-      doc.text('Cislo protokolu:', margin, 61)
+      doc.text('Cislo protokolu:', margin, 58)
       doc.setFont('helvetica', 'normal')
-      doc.text(protocolNumber || '-', margin + 33, 61)
+      doc.text(protocolNumber || '-', margin + 33, 58)
 
       doc.setFont('helvetica', 'bold')
-      doc.text('Zakaznik:', margin, 72)
-      doc.text('Datum odovzdania:', 112, 72)
+      doc.text('Zakaznik:', margin, 70)
+      doc.text('Datum odovzdania:', 112, 70)
       doc.setFont('helvetica', 'normal')
-      doc.text(customerName, margin, 78)
-      doc.text(deliveryDate || '-', 112, 78)
+      doc.text(customerName, margin, 76)
+      doc.text(deliveryDate || '-', 112, 76)
 
       doc.setDrawColor(15, 23, 42)
       doc.setLineWidth(0.4)
-      doc.line(margin, 86, pageWidth - margin, 86)
+      doc.line(margin, 84, pageWidth - margin, 84)
 
       doc.setFont('helvetica', 'bold')
       doc.setFontSize(11)
-      doc.text('ZOZNAM ODOVZDANEJ TECHNIKY A PRISLUSENSTVA', margin, 95)
+      doc.text('ZOZNAM ODOVZDANEJ TECHNIKY A PRISLUSENSTVA', margin, 93)
 
       autoTable(doc, {
-        startY: 100,
+        startY: 98,
         margin: { left: margin, right: margin, bottom: 54 },
         head: [['P. c.', 'Zariadenie / polozka', 'Seriove cislo (S/N)', 'Ks', 'Poznamka']],
         body: filledItems.map((item, index) => [
