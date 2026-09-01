@@ -27,6 +27,18 @@ const STATUS_LABELS: Record<Quote['status'], string> = {
   rejected: 'Zamietnutá',
 }
 
+const MATERIAL_DELIVERY_NOTE = 'Dodanie podľa dostupnosti tovaru. Osobný odber alebo doručenie podľa dohody.'
+const INSTALLATION_DELIVERY_NOTE = 'Termín realizácie podľa dohody.'
+const MATERIAL_TERMS_NOTE = 'Ceny sú uvedené bez nepredvídaného materiálu. Dostupnosť tovaru bude potvrdená po odsúhlasení ponuky.'
+const INSTALLATION_TERMS_NOTE = 'Ceny sú uvedené bez nepredvídaného materiálu. Presný termín realizácie bude dohodnutý po schválení ponuky.'
+
+type QuoteKind = 'sale' | 'installation'
+
+const QUOTE_KIND_LABELS: Record<QuoteKind, string> = {
+  sale: 'Predaj materiálu',
+  installation: 'S montážou',
+}
+
 const statusStyle: Record<Quote['status'], CSSProperties> = {
   draft: { background: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d' },
   sent: { background: '#dbeafe', color: '#1e40af', border: '1px solid #93c5fd' },
@@ -87,6 +99,10 @@ function parseMoney(value: string) {
 
 function formatMoney(value: number) {
   return `${value.toLocaleString('sk-SK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`
+}
+
+function getQuoteKindFromRealization(value: string | null | undefined): QuoteKind {
+  return String(value || '').trim() === MATERIAL_DELIVERY_NOTE ? 'sale' : 'installation'
 }
 
 function normalizeCustomerName(value: string | null | undefined) {
@@ -190,7 +206,8 @@ export default function QuotesPage() {
   const [customerName, setCustomerName] = useState('')
   const [contactName, setContactName] = useState('')
   const [contactEmail, setContactEmail] = useState('')
-  const [realizationNote, setRealizationNote] = useState('')
+  const [quoteKind, setQuoteKind] = useState<QuoteKind>('sale')
+  const [realizationNote, setRealizationNote] = useState(MATERIAL_DELIVERY_NOTE)
   const [note, setNote] = useState('')
   const [discountType, setDiscountType] = useState<'none' | 'percent' | 'amount'>('none')
   const [discountValue, setDiscountValue] = useState('')
@@ -329,7 +346,8 @@ export default function QuotesPage() {
     setCustomerName('')
     setContactName('')
     setContactEmail('')
-    setRealizationNote('')
+    setQuoteKind('sale')
+    setRealizationNote(MATERIAL_DELIVERY_NOTE)
     setNote('')
     setDiscountType('none')
     setDiscountValue('')
@@ -353,6 +371,18 @@ export default function QuotesPage() {
     setContactEmail(customer?.email || '')
   }
 
+  function changeQuoteKind(nextKind: QuoteKind) {
+    setQuoteKind(nextKind)
+    const nextDefault = nextKind === 'sale' ? MATERIAL_DELIVERY_NOTE : INSTALLATION_DELIVERY_NOTE
+    setRealizationNote((current) => {
+      const trimmed = current.trim()
+      if (!trimmed || trimmed === MATERIAL_DELIVERY_NOTE || trimmed === INSTALLATION_DELIVERY_NOTE) {
+        return nextDefault
+      }
+      return current
+    })
+  }
+
   function startEdit(quote: Quote) {
     setActiveSection('create')
     setEditingId(quote.id)
@@ -365,7 +395,8 @@ export default function QuotesPage() {
     setCustomerName(quote.customer_name || '')
     setContactName(quote.contact_name || '')
     setContactEmail(quote.contact_email || '')
-    setRealizationNote(quote.realization_note || '')
+    setQuoteKind(getQuoteKindFromRealization(quote.realization_note))
+    setRealizationNote(quote.realization_note || MATERIAL_DELIVERY_NOTE)
     setNote(quote.note || '')
     setDiscountType((quote.discount_type === 'percent' || quote.discount_type === 'amount') ? quote.discount_type : 'none')
     setDiscountValue(quote.discount_value ? String(quote.discount_value).replace('.', ',') : '')
@@ -458,7 +489,8 @@ export default function QuotesPage() {
     setCustomerName(quote.customer_name || '')
     setContactName(quote.contact_name || '')
     setContactEmail(quote.contact_email || '')
-    setRealizationNote(quote.realization_note || '')
+    setQuoteKind(getQuoteKindFromRealization(quote.realization_note))
+    setRealizationNote(quote.realization_note || MATERIAL_DELIVERY_NOTE)
     setNote(quote.note || '')
     setDiscountType((quote.discount_type === 'percent' || quote.discount_type === 'amount') ? quote.discount_type : 'none')
     setDiscountValue(quote.discount_value ? String(quote.discount_value).replace('.', ',') : '')
@@ -830,6 +862,7 @@ export default function QuotesPage() {
           customer: quoteLike.customer_name || '',
           contact: quoteLike.contact_name || '',
           email: quoteLike.contact_email || '',
+          kind: getQuoteKindFromRealization(quoteLike.realization_note),
           realization: quoteLike.realization_note || '',
           note: quoteLike.note || '',
           discountType: (quoteLike.discount_type === 'percent' || quoteLike.discount_type === 'amount') ? quoteLike.discount_type : 'none',
@@ -844,6 +877,7 @@ export default function QuotesPage() {
           customer: customerName,
           contact: contactName,
           email: contactEmail,
+          kind: quoteKind,
           realization: realizationNote,
           note,
           discountType,
@@ -853,6 +887,9 @@ export default function QuotesPage() {
 
     const sourceDiscountType = (source.discountType === 'percent' || source.discountType === 'amount') ? source.discountType : 'none'
     const quoteTotals = getQuoteTotals(source.items, sourceDiscountType, source.discountValue)
+    const deliveryTitle = source.kind === 'sale' ? 'Dodanie' : 'Realizácia'
+    const deliveryText = source.realization || (source.kind === 'sale' ? MATERIAL_DELIVERY_NOTE : INSTALLATION_DELIVERY_NOTE)
+    const termsText = source.note || (source.kind === 'sale' ? MATERIAL_TERMS_NOTE : INSTALLATION_TERMS_NOTE)
     const discountLabel = source.discountType === 'percent'
       ? `Zľava ${escapeHtml(source.discountValue || '0')} %`
       : 'Zľava'
@@ -925,7 +962,7 @@ export default function QuotesPage() {
   .total-row.final span { font-size:12px; font-weight:950; text-transform:uppercase; letter-spacing:.04em; }
   .total-row.final strong { font-size:30px; color:#111827; }
   .total-row.muted { color:var(--muted); }
-  .signatures { display:grid; grid-template-columns:1fr 1fr; gap:18mm; margin-top:18mm; page-break-inside:avoid; }
+  .signatures { display:grid; grid-template-columns:1fr; gap:18mm; margin-top:18mm; page-break-inside:avoid; max-width:76mm; }
   .signature { border-top:1px solid #98a2b3; padding-top:7px; color:#667085; font-size:10px; font-weight:800; }
   .footer { margin-top:12mm; display:flex; justify-content:space-between; gap:20px; border-top:1px solid var(--line); padding-top:8px; color:var(--muted); font-size:9.5px; font-weight:800; }
   .toolbar { position:fixed; right:20px; top:20px; display:flex; gap:8px; z-index:10; }
@@ -953,7 +990,7 @@ export default function QuotesPage() {
   </section>
   <section class="customer-row">
     <div class="panel"><h2>Odberateľ</h2><div class="name">${escapeHtml(source.customer || 'Bez zákazníka')}</div><p>${source.contact ? `Kontaktná osoba: ${escapeHtml(source.contact)}<br />` : ''}${source.email ? `Email: ${escapeHtml(source.email)}` : ''}</p></div>
-    <div class="panel"><h2>Realizácia</h2><p>${escapeHtml(source.realization || 'Termín realizácie podľa dohody.')}</p></div>
+    <div class="panel"><h2>${deliveryTitle}</h2><p>${escapeHtml(deliveryText)}</p></div>
   </section>
   <section class="offer-title"><span>Návrh riešenia</span><h1>${escapeHtml(source.title || 'Cenová ponuka')}</h1></section>
   <table>
@@ -961,7 +998,7 @@ export default function QuotesPage() {
     <tbody>${rows}</tbody>
   </table>
   <section class="summary">
-    <div class="terms"><strong>Poznámka a podmienky</strong>${escapeHtml(source.note || 'Ceny sú uvedené bez nepredvídaného materiálu. Presný termín realizácie bude dohodnutý po schválení ponuky.')}</div>
+    <div class="terms"><strong>Poznámka a podmienky</strong>${escapeHtml(termsText)}</div>
     <div class="totals">
       ${quoteTotals.discount > 0 ? `<div class="total-row muted"><span>Pôvodná cena bez DPH</span><strong>${formatMoney(quoteTotals.originalNet)}</strong></div><div class="total-row"><span>${discountLabel}</span><strong>- ${formatMoney(quoteTotals.discount)}</strong></div>` : ''}
       <div class="total-row final"><span>Celkom bez DPH</span><strong>${formatMoney(quoteTotals.net)}</strong></div>
@@ -971,7 +1008,6 @@ export default function QuotesPage() {
   </section>
   <section class="signatures">
     <div class="signature">Vystavil: ITspot s. r. o.</div>
-    <div class="signature">Schválil / objednal</div>
   </section>
   <footer class="footer"><span>www.itspot.sk</span><span>info@itspot.sk</span><span>Cenová ponuka ${escapeHtml(source.number)}</span></footer>
 </main>
@@ -1205,14 +1241,29 @@ export default function QuotesPage() {
               </div>
             </div>
 
-            <div>
-              <label style={labelStyle}>Realizácia</label>
-              <textarea style={{ ...inputStyle, minHeight: 42, resize: 'vertical' }} value={realizationNote} onChange={(event) => setRealizationNote(event.target.value)} placeholder="Termín realizácie podľa dohody..." />
+            <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr' : '180px 1fr', gap: 10, alignItems: 'end' }}>
+              <div>
+                <label style={labelStyle}>Typ ponuky</label>
+                <select style={inputStyle} value={quoteKind} onChange={(event) => changeQuoteKind(event.target.value as QuoteKind)}>
+                  {Object.entries(QUOTE_KIND_LABELS).map(([value, label]) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>{quoteKind === 'sale' ? 'Dodanie' : 'Realizácia'}</label>
+                <textarea
+                  style={{ ...inputStyle, minHeight: 42, resize: 'vertical' }}
+                  value={realizationNote}
+                  onChange={(event) => setRealizationNote(event.target.value)}
+                  placeholder={quoteKind === 'sale' ? MATERIAL_DELIVERY_NOTE : INSTALLATION_DELIVERY_NOTE}
+                />
+              </div>
             </div>
 
             <div>
               <label style={labelStyle}>Poznámka a podmienky</label>
-              <textarea style={{ ...inputStyle, minHeight: 46, resize: 'vertical' }} value={note} onChange={(event) => setNote(event.target.value)} placeholder="Ceny sú uvedené bez nepredvídaného materiálu..." />
+              <textarea style={{ ...inputStyle, minHeight: 46, resize: 'vertical' }} value={note} onChange={(event) => setNote(event.target.value)} placeholder={quoteKind === 'sale' ? MATERIAL_TERMS_NOTE : INSTALLATION_TERMS_NOTE} />
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr' : '1fr 1fr', gap: 10 }}>
