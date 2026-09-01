@@ -201,7 +201,7 @@ export default function PublicRequestPage() {
           <div>
             <img
               className="requestLogo"
-              src="/logo-new.png"
+              src="/brand-logo-dark.png"
               alt="ITspot"
               style={{
                 width: 500,

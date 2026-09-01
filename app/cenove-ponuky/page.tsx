@@ -939,7 +939,7 @@ export default function QuotesPage() {
   <div class="topline"></div>
   <section class="header">
     <div>
-      <img class="brand-logo" src="/quote-logo.jpg" alt="ITspot" />
+      <img class="brand-logo" src="/brand-logo-light.png" alt="ITspot" />
       <div class="company"><strong>ITspot s. r. o.</strong><br />Hájles 1703/6, 968 01 Nová Baňa<br />IČO: 56430388 · DIČ: 2122307462<br />IČ DPH: SK2122307462<br />info@itspot.sk · +421 908 806 691</div>
     </div>
     <div class="quote-box">

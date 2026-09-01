@@ -1641,7 +1641,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
     }
 
     try {
-      const protocolLogoDataUrl = await loadFirstAvailableImage(['/quote-logo.jpg'])
+      const protocolLogoDataUrl = await loadFirstAvailableImage(['/brand-logo-light.png'])
       const doc = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
@@ -1659,7 +1659,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
 
       function drawItspotLogo(x: number, y: number) {
         if (protocolLogoDataUrl) {
-          doc.addImage(protocolLogoDataUrl, 'JPEG', x, y, 62, 16)
+          doc.addImage(protocolLogoDataUrl, 'PNG', x, y, 62, 16)
         } else {
           doc.setFont('helvetica', 'bold')
           doc.setFontSize(35)
@@ -1864,10 +1864,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
   try {
     const [logoDataUrl, stampDataUrl] = await Promise.all([
       loadFirstAvailableImage([
-        '/logo.png',
-        '/logo.jpg',
-        '/logo.jpeg',
-        '/logo.webp',
+        '/brand-logo-light.png',
       ]),
       loadFirstAvailableImage([
         '/stamp.png',
@@ -1880,7 +1877,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
     if (!logoDataUrl) {
       setNotice({
         type: 'error',
-        text: 'Chýba logo v public/logo.png (alebo .jpg/.jpeg/.webp).',
+        text: 'Chýba logo v public/brand-logo-light.png.',
       })
       return
     }
@@ -1977,7 +1974,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
 
         if (pageNum === 1) {
           try {
-            doc.addImage(logoDataUrl, 'PNG', margin, 12, 18, 18)
+            doc.addImage(logoDataUrl, 'PNG', margin, 12, 46, 13)
           } catch {}
 
           doc.setFont('helvetica', 'bold')
@@ -2172,7 +2169,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
     setNotice({
       type: 'error',
       text:
-        'Nepodarilo sa vygenerovať PDF. Skontroluj súbory v public/logo.png a public/stamp.png.',
+        'Nepodarilo sa vygenerovať PDF. Skontroluj súbory v public/brand-logo-light.png a public/stamp.png.',
     })
   }
 }

@@ -34,7 +34,7 @@ export function BrandLogo({ size = 'md', tone = 'light', label = false, style }:
         }}
       >
         <img
-          src="/logo.png"
+          src="/brand-logo-light.png"
           alt="ITspot"
           style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
         />

@@ -712,7 +712,7 @@ export default function MyRequestsPage() {
         >
           <div className="customerHeroInner">
             <img
-              src="/logo-new.png"
+              src="/brand-logo-dark.png"
               alt="ITspot"
               style={{
                 width: 560,
