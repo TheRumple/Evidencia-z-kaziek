@@ -13,6 +13,7 @@ type QuoteItem = {
   id: string
   name: string
   note: string
+  imageUrl?: string
   quantity: string
   unit: string
   unitPrice: string
@@ -64,6 +65,7 @@ function createQuoteItem(): QuoteItem {
     id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
     name: '',
     note: '',
+    imageUrl: '',
     quantity: '1',
     unit: 'ks',
     unitPrice: '',
@@ -113,13 +115,14 @@ function normalizeItems(items: unknown): QuoteItem[] {
         id: raw.id || createQuoteItem().id,
         name: raw.name || '',
         note: raw.note || '',
+        imageUrl: (raw as Partial<QuoteItem>).imageUrl || '',
         quantity: raw.quantity || '1',
         unit: raw.unit || 'ks',
         unitPrice: raw.unitPrice || '',
         vatRate: raw.vatRate || '23',
       }
     })
-    .filter((item) => item.name.trim() || item.note.trim() || item.unitPrice.trim())
+    .filter((item) => item.name.trim() || item.note.trim() || item.imageUrl.trim() || item.unitPrice.trim())
   return normalized.length > 0 ? normalized : [createQuoteItem()]
 }
 
@@ -364,6 +367,42 @@ export default function QuotesPage() {
 
   function updateItem(index: number, field: keyof Omit<QuoteItem, 'id'>, value: string) {
     setItems((current) => current.map((item, itemIndex) => (itemIndex === index ? { ...item, [field]: value } : item)))
+  }
+
+  async function uploadQuoteItemImage(index: number, file: File | null | undefined) {
+    if (!file) return
+    if (!userId) {
+      setNotice({ type: 'error', text: 'Najprv sa prihlás.' })
+      return
+    }
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
+    if (!allowedTypes.includes(file.type) || file.size > 8 * 1024 * 1024) {
+      setNotice({ type: 'error', text: 'Obrázok môže byť JPG, PNG alebo WEBP, maximálne 8 MB.' })
+      return
+    }
+
+    const extension = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+    const filePath = `ponuky/${userId}/${Date.now()}-${crypto.randomUUID()}.${extension}`
+    setSaving(true)
+    const { error } = await supabase.storage
+      .from('customer-request-files')
+      .upload(filePath, file, { cacheControl: '3600', upsert: false })
+    setSaving(false)
+
+    if (error) {
+      setNotice({ type: 'error', text: `Obrázok sa nenahral: ${error.message}` })
+      return
+    }
+
+    const { data } = supabase.storage.from('customer-request-files').getPublicUrl(filePath)
+    if (!data.publicUrl) {
+      setNotice({ type: 'error', text: 'Obrázok sa nahral, ale nepodarilo sa získať verejný odkaz.' })
+      return
+    }
+
+    updateItem(index, 'imageUrl', data.publicUrl)
+    setNotice({ type: 'success', text: 'Obrázok produktu bol pridaný k položke.' })
   }
 
   function addItem() {
@@ -801,6 +840,7 @@ export default function QuotesPage() {
             <td>
               <div class="item-name">${escapeHtml(item.name || '-')}</div>
               ${item.note.trim() ? `<div class="item-note">${escapeHtml(item.note)}</div>` : ''}
+              ${item.imageUrl ? `<img class="item-image" src="${escapeHtml(item.imageUrl)}" alt="" />` : ''}
             </td>
             <td class="num">${escapeHtml(item.quantity || '1')}</td>
             <td>${escapeHtml(item.unit || 'ks')}</td>
@@ -848,6 +888,7 @@ export default function QuotesPage() {
   .strong { font-weight:950; color:var(--ink); }
   .item-name { font-weight:850; }
   .item-note { margin-top:3px; color:var(--muted); font-size:10px; }
+  .item-image { display:block; width:18mm; max-height:18mm; object-fit:contain; margin-top:5px; border:1px solid #e8edf3; border-radius:3px; padding:2px; background:white; }
   .summary { display:grid; grid-template-columns:1fr 76mm; gap:10mm; margin-top:9mm; align-items:start; }
   .terms { background:var(--soft); border:1px solid #e8edf3; padding:12px; color:#475467; font-size:10.5px; line-height:1.5; white-space:pre-line; }
   .terms strong { display:block; color:var(--ink); margin-bottom:6px; }
@@ -1202,6 +1243,26 @@ export default function QuotesPage() {
                         <label style={labelStyle}>Položka</label>
                         <input style={inputStyle} value={item.name} onChange={(event) => updateItem(index, 'name', event.target.value)} placeholder="Názov položky" />
                         <input style={{ ...inputStyle, minHeight: 26, marginTop: 3, fontSize: 11 }} value={item.note} onChange={(event) => updateItem(index, 'note', event.target.value)} placeholder="Poznámka k položke" />
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginTop: 4 }}>
+                          <label style={{ ...buttonStyle, minHeight: 28, background: '#f8fafc', color: '#334155', cursor: 'pointer' }}>
+                            Obrázok
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp"
+                              style={{ display: 'none' }}
+                              onChange={(event) => {
+                                void uploadQuoteItemImage(index, event.target.files?.[0])
+                                event.currentTarget.value = ''
+                              }}
+                            />
+                          </label>
+                          {item.imageUrl && (
+                            <>
+                              <img src={item.imageUrl} alt="" style={{ width: 34, height: 34, objectFit: 'cover', borderRadius: 6, border: '1px solid #dbe4ef' }} />
+                              <button type="button" style={{ ...buttonStyle, minHeight: 28, color: '#991b1b' }} onClick={() => updateItem(index, 'imageUrl', '')}>Odstrániť</button>
+                            </>
+                          )}
+                        </div>
                       </div>
                       <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr 1fr' : '0.75fr 0.55fr 0.9fr 0.65fr 1fr 30px', gap: 5, alignItems: 'end' }}>
                         <div>
@@ -1235,6 +1296,26 @@ export default function QuotesPage() {
                       {index === 0 && <label style={labelStyle}>Položka</label>}
                       <input style={inputStyle} value={item.name} onChange={(event) => updateItem(index, 'name', event.target.value)} placeholder="Názov položky" />
                       <input style={{ ...inputStyle, minHeight: 24, marginTop: 2, fontSize: 11 }} value={item.note} onChange={(event) => updateItem(index, 'note', event.target.value)} placeholder="Poznámka k položke" />
+                      <div style={{ display: 'flex', gap: 5, alignItems: 'center', flexWrap: 'wrap', marginTop: 3 }}>
+                        <label style={{ ...buttonStyle, minHeight: 24, padding: '0 8px', fontSize: 11, background: '#f8fafc', color: '#334155', cursor: 'pointer' }}>
+                          Obrázok
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            style={{ display: 'none' }}
+                            onChange={(event) => {
+                              void uploadQuoteItemImage(index, event.target.files?.[0])
+                              event.currentTarget.value = ''
+                            }}
+                          />
+                        </label>
+                        {item.imageUrl && (
+                          <>
+                            <img src={item.imageUrl} alt="" style={{ width: 26, height: 26, objectFit: 'cover', borderRadius: 5, border: '1px solid #dbe4ef' }} />
+                            <button type="button" style={{ ...buttonStyle, minHeight: 24, padding: '0 8px', fontSize: 11, color: '#991b1b' }} onClick={() => updateItem(index, 'imageUrl', '')}>Preč</button>
+                          </>
+                        )}
+                      </div>
                     </div>
                     <div>
                       {index === 0 && <label style={labelStyle}>Množstvo</label>}
