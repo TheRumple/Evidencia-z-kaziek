@@ -302,18 +302,26 @@ export default function QuotesPage() {
     }
   }
 
-  function generateQuoteNumber() {
-    const year = new Date().getFullYear()
-    const currentYearQuotes = quotes.filter((quote) => quote.quote_number.includes(`CP-${year}-`))
-    const nextNumber = currentYearQuotes.length + 1
-    return `CP-${year}-${String(nextNumber).padStart(3, '0')}`
+  function generateQuoteNumber(dateValue = quoteDate || getTodayDate()) {
+    const date = new Date(dateValue)
+    const safeDate = Number.isNaN(date.getTime()) ? new Date() : date
+    const year = String(safeDate.getFullYear()).slice(-2)
+    const month = String(safeDate.getMonth() + 1).padStart(2, '0')
+    const prefix = `${year}${month}`
+    const lastNumberInMonth = quotes.reduce((highest, quote) => {
+      const match = quote.quote_number.match(new RegExp(`^${prefix}(\\d{2,})$`))
+      if (!match) return highest
+      const order = Number(match[1])
+      return Number.isFinite(order) ? Math.max(highest, order) : highest
+    }, 0)
+    return `${prefix}${String(lastNumberInMonth + 1).padStart(2, '0')}`
   }
 
   function resetForm() {
     const today = getTodayDate()
     setEditingId('')
     setCustomerId('')
-    setQuoteNumber(generateQuoteNumber())
+    setQuoteNumber(generateQuoteNumber(today))
     setQuoteDate(today)
     setValidUntil(addDays(today, 14))
     setStatus('draft')
@@ -438,12 +446,13 @@ export default function QuotesPage() {
   }
 
   function duplicateQuote(quote: Quote) {
+    const today = getTodayDate()
     setActiveSection('create')
     setEditingId('')
     setCustomerId(quote.customer_id || '')
-    setQuoteNumber(generateQuoteNumber())
-    setQuoteDate(getTodayDate())
-    setValidUntil(addDays(getTodayDate(), 14))
+    setQuoteNumber(generateQuoteNumber(today))
+    setQuoteDate(today)
+    setValidUntil(addDays(today, 14))
     setStatus('draft')
     setTitle(quote.title || '')
     setCustomerName(quote.customer_name || '')
@@ -1119,7 +1128,7 @@ export default function QuotesPage() {
             <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr' : 'repeat(4, minmax(140px, 1fr))', gap: 6 }}>
               <div>
                 <label style={labelStyle}>Číslo ponuky</label>
-                <input style={inputStyle} value={quoteNumber} onChange={(event) => setQuoteNumber(event.target.value)} placeholder="CP-2026-001" />
+                <input style={inputStyle} value={quoteNumber} onChange={(event) => setQuoteNumber(event.target.value)} placeholder="260901" />
               </div>
               <div>
                 <label style={labelStyle}>Stav</label>
