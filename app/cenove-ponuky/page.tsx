@@ -1192,6 +1192,11 @@ export default function QuotesPage() {
           } catch {}
         }
       },
+      didParseCell: (data) => {
+        if (data.section === 'body' && data.column.index === 1 && itemImages[data.row.index]) {
+          data.cell.styles.minCellHeight = Math.max(Number(data.cell.styles.minCellHeight || 0), 18)
+        }
+      },
     })
 
     let y = ((doc as unknown as { lastAutoTable?: { finalY?: number } }).lastAutoTable?.finalY || 150) + 10
@@ -1687,6 +1692,7 @@ export default function QuotesPage() {
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
               <button type="button" style={primaryButtonStyle} onClick={saveQuote} disabled={saving}>{saving ? 'Ukladám...' : 'Uložiť ponuku'}</button>
               <button type="button" style={buttonStyle} onClick={() => showQuote()}>Ukáž ponuku</button>
+              <button type="button" style={buttonStyle} onClick={() => void downloadQuotePdf()}>Ulož PDF</button>
               <button type="button" style={buttonStyle} onClick={() => sendQuoteEmail()}>Odoslať mailom</button>
               {editingId && (
                 <button
@@ -1750,7 +1756,7 @@ export default function QuotesPage() {
 
           <div style={{ border: '1px solid #e2e8f0', borderRadius: 8, overflow: 'hidden', background: '#fff' }}>
             {!isCompact && filteredQuotes.length > 0 && (
-              <div style={{ display: 'grid', gridTemplateColumns: '105px 1.05fr 1.6fr 128px 118px 88px 360px', gap: 8, alignItems: 'center', background: '#f8fafc', color: '#475569', fontSize: 10, fontWeight: 950, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '7px 8px', borderBottom: '1px solid #e2e8f0' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '105px 1.05fr 1.6fr 142px 118px 88px 350px', gap: 8, alignItems: 'center', background: '#f8fafc', color: '#475569', fontSize: 10, fontWeight: 950, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '7px 8px', borderBottom: '1px solid #e2e8f0' }}>
                 <span>Číslo</span>
                 <span>Zákazník</span>
                 <span>Názov</span>
@@ -1774,15 +1780,24 @@ export default function QuotesPage() {
                         <div style={{ fontWeight: 950 }}>{quote.title}</div>
                         <div style={{ color: '#64748b', fontWeight: 800, fontSize: 12 }}>{quote.customer_name || 'Bez zákazníka'} · {formatMoney(quoteTotals.net)} bez DPH</div>
                       </div>
-                      <span style={{ ...statusStyle[quote.status], borderRadius: 999, padding: '4px 8px', fontWeight: 900, textAlign: 'center', width: 'fit-content', fontSize: 12 }}>{STATUS_LABELS[quote.status]}</span>
+                      <select
+                        style={{ ...inputStyle, ...statusStyle[quote.status], minHeight: 34, width: 142, padding: '4px 8px', fontWeight: 950, fontSize: 12 }}
+                        value={quote.status}
+                        onChange={(event) => void updateQuoteStatus(quote, event.target.value as Quote['status'])}
+                        disabled={saving}
+                      >
+                        {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                          <option key={value} value={value}>{label}</option>
+                        ))}
+                      </select>
                     </div>
                     <div style={{ display: 'flex', gap: 5, justifyContent: 'flex-start', flexWrap: 'wrap' }}>
                       <button type="button" style={buttonStyle} onClick={() => startEdit(quote)}>Upraviť</button>
                       <button type="button" style={buttonStyle} onClick={() => duplicateQuote(quote)}>Duplikovať</button>
-                      <button type="button" style={buttonStyle} onClick={() => showQuote(quote)}>PDF</button>
+                      <button type="button" style={buttonStyle} onClick={() => showQuote(quote)}>Ukáž ponuku</button>
+                      <button type="button" style={buttonStyle} onClick={() => void downloadQuotePdf(quote)}>Ulož</button>
                       <button type="button" style={buttonStyle} onClick={() => sendQuoteEmail(quote)}>Email</button>
                       <button type="button" style={{ ...buttonStyle, borderColor: '#fbbf24', background: '#fef3c7', color: '#92400e' }} onClick={() => openMaterialImport(quote)} disabled={saving}>Nákup</button>
-                      <button type="button" style={{ ...buttonStyle, borderColor: '#bfdbfe', background: '#eff6ff', color: '#1e40af' }} onClick={() => void updateQuoteStatus(quote, 'sent')} disabled={saving}>Odoslaná</button>
                       <button type="button" style={{ ...buttonStyle, borderColor: '#86efac', background: '#dcfce7', color: '#166534' }} onClick={() => void createOrderFromQuote(quote)} disabled={saving}>Zákazka</button>
                     </div>
                   </div>
@@ -1790,20 +1805,29 @@ export default function QuotesPage() {
               }
 
               return (
-                <div key={quote.id} style={{ display: 'grid', gridTemplateColumns: '105px 1.05fr 1.6fr 128px 118px 88px 360px', gap: 8, alignItems: 'center', padding: '6px 8px', borderTop: index === 0 ? 'none' : '1px solid #e2e8f0', background: index % 2 ? '#fbfdff' : '#fff' }}>
+                <div key={quote.id} style={{ display: 'grid', gridTemplateColumns: '105px 1.05fr 1.6fr 142px 118px 88px 350px', gap: 8, alignItems: 'center', padding: '6px 8px', borderTop: index === 0 ? 'none' : '1px solid #e2e8f0', background: index % 2 ? '#fbfdff' : '#fff' }}>
                   <strong style={{ fontSize: 13 }}>{quote.quote_number}</strong>
                   <div style={{ color: '#334155', fontWeight: 900, fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{quote.customer_name || 'Bez zákazníka'}</div>
                   <div style={{ fontWeight: 950, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{quote.title}</div>
-                  <span style={{ ...statusStyle[quote.status], borderRadius: 999, padding: '4px 8px', fontWeight: 900, textAlign: 'center', width: 'fit-content', fontSize: 12 }}>{STATUS_LABELS[quote.status]}</span>
+                  <select
+                    style={{ ...inputStyle, ...statusStyle[quote.status], minHeight: 34, padding: '4px 8px', fontWeight: 950, fontSize: 12 }}
+                    value={quote.status}
+                    onChange={(event) => void updateQuoteStatus(quote, event.target.value as Quote['status'])}
+                    disabled={saving}
+                  >
+                    {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </select>
                   <strong style={{ textAlign: 'right', fontSize: 13 }}>{formatMoney(quoteTotals.net)}</strong>
                   <div style={{ color: '#64748b', fontWeight: 800, fontSize: 12 }}>{formatDate(quote.quote_date)}</div>
                   <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                     <button type="button" style={buttonStyle} onClick={() => startEdit(quote)}>Upraviť</button>
                     <button type="button" style={buttonStyle} onClick={() => duplicateQuote(quote)}>Kópia</button>
-                    <button type="button" style={buttonStyle} onClick={() => showQuote(quote)}>PDF</button>
+                    <button type="button" style={buttonStyle} onClick={() => showQuote(quote)}>Ukáž ponuku</button>
+                    <button type="button" style={buttonStyle} onClick={() => void downloadQuotePdf(quote)}>Ulož</button>
                     <button type="button" style={buttonStyle} onClick={() => sendQuoteEmail(quote)}>Email</button>
                     <button type="button" style={{ ...buttonStyle, borderColor: '#fbbf24', background: '#fef3c7', color: '#92400e' }} onClick={() => openMaterialImport(quote)} disabled={saving}>Nákup</button>
-                    <button type="button" style={{ ...buttonStyle, borderColor: '#bfdbfe', background: '#eff6ff', color: '#1e40af' }} onClick={() => void updateQuoteStatus(quote, 'sent')} disabled={saving}>Odoslaná</button>
                     <button
                       type="button"
                       style={{ ...buttonStyle, borderColor: '#86efac', background: '#dcfce7', color: '#166534' }}
