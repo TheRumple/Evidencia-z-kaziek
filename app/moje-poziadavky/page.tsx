@@ -584,10 +584,10 @@ export default function MyRequestsPage() {
             }
 
             .customerHero img {
-              width: min(320px, 100%) !important;
-              max-width: 100% !important;
-              height: 112px !important;
-              margin: -8px auto -10px !important;
+              width: 145px !important;
+              max-width: 54vw !important;
+              height: 40px !important;
+              margin: 0 auto 9px !important;
             }
 
             .customerHero h1 {
@@ -705,7 +705,7 @@ export default function MyRequestsPage() {
               'linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(15, 23, 42, 0.78)), radial-gradient(circle at 82% 18%, rgba(132, 204, 22, 0.14), transparent 24%)',
             border: '1px solid rgba(148, 163, 184, 0.24)',
             borderRadius: 18,
-            padding: '14px clamp(18px, 3vw, 30px) 20px',
+            padding: '16px clamp(18px, 3vw, 30px) 18px',
             marginBottom: 12,
             boxShadow: '0 22px 48px rgba(0, 0, 0, 0.34)',
           }}
@@ -715,13 +715,13 @@ export default function MyRequestsPage() {
               src="/brand-logo-dark.png"
               alt="ITspot"
               style={{
-                width: 560,
-                maxWidth: '88vw',
-                height: 180,
+                width: 190,
+                maxWidth: '58vw',
+                height: 52,
                 objectFit: 'contain',
                 display: 'block',
-                margin: '0 auto -12px',
-                filter: 'drop-shadow(0 0 18px rgba(132, 204, 22, 0.24)) drop-shadow(0 12px 28px rgba(0, 0, 0, 0.3))',
+                margin: '0 auto 10px',
+                filter: 'drop-shadow(0 0 14px rgba(132, 204, 22, 0.18)) drop-shadow(0 8px 18px rgba(0, 0, 0, 0.24))',
               }}
             />
             <div>

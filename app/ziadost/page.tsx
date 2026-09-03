@@ -190,7 +190,7 @@ export default function PublicRequestPage() {
             color: '#fff',
             border: '1px solid rgba(148, 163, 184, 0.22)',
             borderRadius: 18,
-            padding: '24px clamp(18px, 4vw, 34px)',
+            padding: '18px clamp(18px, 4vw, 30px)',
             marginBottom: 14,
             display: 'block',
             alignItems: 'center',
@@ -204,13 +204,13 @@ export default function PublicRequestPage() {
               src="/brand-logo-dark.png"
               alt="ITspot"
               style={{
-                width: 500,
-                maxWidth: '92vw',
-                height: 190,
+                width: 210,
+                maxWidth: '62vw',
+                height: 58,
                 objectFit: 'contain',
                 objectPosition: 'center',
                 display: 'block',
-                margin: '0 auto 8px',
+                margin: '0 auto 12px',
               }}
             />
             <h1 className="requestTitle" style={{ margin: 0, fontSize: 30, fontWeight: 900, lineHeight: 1.18 }}>
@@ -415,9 +415,10 @@ export default function PublicRequestPage() {
           }
 
           .requestLogo {
-            width: 270px !important;
-            height: 100px !important;
-            margin-bottom: 4px !important;
+            width: 150px !important;
+            max-width: 54vw !important;
+            height: 42px !important;
+            margin-bottom: 10px !important;
           }
 
           .requestTitle {
