@@ -8,7 +8,7 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { BrandLogo } from '@/components/BrandLogo'
 import type { Customer, Notice, Quote } from '@/lib/dashboard-types'
-import { formatDate, getTodayDate, loadFirstAvailableImage, loadImageAsDataUrl, pdfSafeText } from '@/lib/dashboard-utils'
+import { formatDate, getTodayDate, loadFirstAvailableImage, pdfSafeText } from '@/lib/dashboard-utils'
 import { supabase } from '@/lib/supabase'
 
 type QuoteItem = {
@@ -16,6 +16,7 @@ type QuoteItem = {
   name: string
   note: string
   imageUrl?: string
+  imageDataUrl?: string
   quantity: string
   unit: string
   unitPrice: string
@@ -96,6 +97,7 @@ function createQuoteItem(): QuoteItem {
     name: '',
     note: '',
     imageUrl: '',
+    imageDataUrl: '',
     quantity: '1',
     unit: 'ks',
     unitPrice: '',
@@ -140,6 +142,49 @@ function escapeHtml(value: string | null | undefined) {
     .replace(/'/g, '&#039;')
 }
 
+function readFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      if (typeof reader.result === 'string') resolve(reader.result)
+      else reject(new Error('Nepodarilo sa spracovať obrázok.'))
+    }
+    reader.onerror = () => reject(new Error('Nepodarilo sa načítať obrázok.'))
+    reader.readAsDataURL(file)
+  })
+}
+
+function imageToJpegDataUrl(src: string) {
+  return new Promise<string>((resolve, reject) => {
+    const image = new Image()
+    image.crossOrigin = 'anonymous'
+    image.onload = () => {
+      const maxSide = 900
+      const scale = Math.min(1, maxSide / Math.max(image.naturalWidth || image.width, image.naturalHeight || image.height))
+      const width = Math.max(1, Math.round((image.naturalWidth || image.width) * scale))
+      const height = Math.max(1, Math.round((image.naturalHeight || image.height) * scale))
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      const context = canvas.getContext('2d')
+      if (!context) {
+        reject(new Error('Nepodarilo sa pripraviť obrázok pre PDF.'))
+        return
+      }
+      context.fillStyle = '#ffffff'
+      context.fillRect(0, 0, width, height)
+      context.drawImage(image, 0, 0, width, height)
+      resolve(canvas.toDataURL('image/jpeg', 0.86))
+    }
+    image.onerror = () => reject(new Error('Obrázok sa nepodarilo načítať pre PDF.'))
+    image.src = src
+  })
+}
+
+function getPdfImageFormat(dataUrl: string): 'JPEG' | 'PNG' {
+  return dataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG'
+}
+
 function normalizeItems(items: unknown): QuoteItem[] {
   if (!Array.isArray(items)) return [createQuoteItem()]
   const normalized = items
@@ -150,13 +195,14 @@ function normalizeItems(items: unknown): QuoteItem[] {
         name: raw.name || '',
         note: raw.note || '',
         imageUrl: (raw as Partial<QuoteItem>).imageUrl || '',
+        imageDataUrl: (raw as Partial<QuoteItem>).imageDataUrl || '',
         quantity: raw.quantity || '1',
         unit: raw.unit || 'ks',
         unitPrice: raw.unitPrice || '',
         vatRate: raw.vatRate || '23',
       }
     })
-    .filter((item) => item.name.trim() || item.note.trim() || item.imageUrl.trim() || item.unitPrice.trim())
+    .filter((item) => item.name.trim() || item.note.trim() || item.imageUrl.trim() || item.imageDataUrl.trim() || item.unitPrice.trim())
   return normalized.length > 0 ? normalized : [createQuoteItem()]
 }
 
@@ -428,6 +474,10 @@ export default function QuotesPage() {
     setItems((current) => current.map((item, itemIndex) => (itemIndex === index ? { ...item, [field]: value } : item)))
   }
 
+  function updateItemImage(index: number, imageUrl: string, imageDataUrl = '') {
+    setItems((current) => current.map((item, itemIndex) => (itemIndex === index ? { ...item, imageUrl, imageDataUrl } : item)))
+  }
+
   async function uploadQuoteItemImage(index: number, file: File | null | undefined) {
     if (!file) return
     if (!userId) {
@@ -443,6 +493,12 @@ export default function QuotesPage() {
 
     const extension = file.name.split('.').pop()?.toLowerCase() || 'jpg'
     const filePath = `ponuky/${userId}/${Date.now()}-${crypto.randomUUID()}.${extension}`
+    let imageDataUrl = ''
+    try {
+      imageDataUrl = await imageToJpegDataUrl(await readFileAsDataUrl(file))
+    } catch {
+      imageDataUrl = ''
+    }
     setSaving(true)
     const { error } = await supabase.storage
       .from('customer-request-files')
@@ -460,25 +516,31 @@ export default function QuotesPage() {
       return
     }
 
-    updateItem(index, 'imageUrl', data.publicUrl)
+    updateItemImage(index, data.publicUrl, imageDataUrl)
     setNotice({ type: 'success', text: 'Obrázok produktu bol pridaný k položke.' })
   }
 
-  function setQuoteItemImageUrl(index: number) {
+  async function setQuoteItemImageUrl(index: number) {
     const currentUrl = items[index]?.imageUrl || ''
     const nextUrl = window.prompt('Vlož URL obrázka produktu:', currentUrl)
     if (nextUrl === null) return
     const trimmedUrl = nextUrl.trim()
     if (!trimmedUrl) {
-      updateItem(index, 'imageUrl', '')
+      updateItemImage(index, '', '')
       return
     }
     if (!/^https?:\/\//i.test(trimmedUrl)) {
       setNotice({ type: 'error', text: 'URL obrázka musí začínať na http:// alebo https://.' })
       return
     }
-    updateItem(index, 'imageUrl', trimmedUrl)
-    setNotice({ type: 'success', text: 'URL obrázka bola pridaná k položke.' })
+    try {
+      const imageDataUrl = await imageToJpegDataUrl(trimmedUrl)
+      updateItemImage(index, trimmedUrl, imageDataUrl)
+      setNotice({ type: 'success', text: 'URL obrázka bola pridaná k položke aj pre PDF.' })
+    } catch {
+      updateItemImage(index, trimmedUrl, '')
+      setNotice({ type: 'error', text: 'Obrázok sa zobrazí v náhľade, ale stránka blokuje jeho vloženie do PDF. Pre PDF ho nahraj zo zariadenia.' })
+    }
   }
 
   function addItem() {
@@ -927,7 +989,7 @@ export default function QuotesPage() {
             <td>
               <div class="item-name">${escapeHtml(item.name || '-')}</div>
               ${item.note.trim() ? `<div class="item-note">${escapeHtml(item.note)}</div>` : ''}
-              ${item.imageUrl ? `<img class="item-image" src="${escapeHtml(item.imageUrl)}" alt="" />` : ''}
+              ${item.imageUrl || item.imageDataUrl ? `<img class="item-image" src="${escapeHtml(item.imageUrl || item.imageDataUrl)}" alt="" />` : ''}
             </td>
             <td class="num">${escapeHtml(item.quantity || '1')}</td>
             <td>${escapeHtml(item.unit || 'ks')}</td>
@@ -1063,14 +1125,23 @@ export default function QuotesPage() {
     const logoDataUrl = await loadFirstAvailableImage(['/brand-logo-light.png'])
     const itemImages = await Promise.all(
       source.items.map(async (item) => {
+        if (item.imageDataUrl) return item.imageDataUrl
         if (!item.imageUrl) return ''
         try {
-          return await loadImageAsDataUrl(item.imageUrl)
+          return await imageToJpegDataUrl(item.imageUrl)
         } catch {
           return ''
         }
       })
     )
+    const missingImages = source.items.filter((item, index) => (item.imageUrl || item.imageDataUrl) && !itemImages[index]).length
+    if (missingImages > 0) {
+      setNotice({
+        type: 'error',
+        text: 'Niektoré obrázky sa nepodarilo vložiť do PDF. Ak sú z cudzej URL, nahraj ich radšej zo zariadenia.',
+      })
+      return false
+    }
 
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
     const pageWidth = doc.internal.pageSize.getWidth()
@@ -1187,12 +1258,8 @@ export default function QuotesPage() {
         const image = itemImages[data.row.index]
         if (!image) return
         try {
-          doc.addImage(image, 'JPEG', data.cell.x + 2, data.cell.y + data.cell.height - 15, 12, 12)
-        } catch {
-          try {
-            doc.addImage(image, 'PNG', data.cell.x + 2, data.cell.y + data.cell.height - 15, 12, 12)
-          } catch {}
-        }
+          doc.addImage(image, getPdfImageFormat(image), data.cell.x + 2, data.cell.y + data.cell.height - 15, 12, 12)
+        } catch {}
       },
       didParseCell: (data) => {
         if (data.section === 'body' && data.column.index === 1 && itemImages[data.row.index]) {
@@ -1262,6 +1329,7 @@ export default function QuotesPage() {
 
     const safeName = pdfSafeText(`cenova-ponuka-${source.number}-${source.customer || ''}`).replace(/[^a-zA-Z0-9\-_ ]/g, '').trim() || `cenova-ponuka-${source.number}`
     doc.save(`${safeName}.pdf`)
+    return true
   }
 
   async function sendQuoteEmail(quote?: Quote) {
@@ -1269,7 +1337,8 @@ export default function QuotesPage() {
     const recipient = target?.contact_email || contactEmail
     const number = target?.quote_number || quoteNumber || generateQuoteNumber()
     const targetTitle = target?.title || title || 'cenová ponuka'
-    await downloadQuotePdf(quote)
+    const pdfDownloaded = await downloadQuotePdf(quote)
+    if (!pdfDownloaded) return
     const body = [
       'Dobrý deň,',
       '',
@@ -1568,13 +1637,13 @@ export default function QuotesPage() {
                               }}
                             />
                           </label>
-                          <button type="button" style={{ ...buttonStyle, minHeight: 28, background: '#eef2ff', color: '#3730a3' }} onClick={() => setQuoteItemImageUrl(index)}>
+                          <button type="button" style={{ ...buttonStyle, minHeight: 28, background: '#eef2ff', color: '#3730a3' }} onClick={() => void setQuoteItemImageUrl(index)}>
                             URL
                           </button>
-                          {item.imageUrl && (
+                          {(item.imageUrl || item.imageDataUrl) && (
                             <>
-                              <img src={item.imageUrl} alt="" style={{ width: 34, height: 34, objectFit: 'cover', borderRadius: 6, border: '1px solid #dbe4ef' }} />
-                              <button type="button" style={{ ...buttonStyle, minHeight: 28, color: '#991b1b' }} onClick={() => updateItem(index, 'imageUrl', '')}>Odstrániť</button>
+                              <img src={item.imageUrl || item.imageDataUrl} alt="" style={{ width: 34, height: 34, objectFit: 'cover', borderRadius: 6, border: '1px solid #dbe4ef' }} />
+                              <button type="button" style={{ ...buttonStyle, minHeight: 28, color: '#991b1b' }} onClick={() => updateItemImage(index, '', '')}>Odstrániť</button>
                             </>
                           )}
                         </div>
@@ -1624,13 +1693,13 @@ export default function QuotesPage() {
                             }}
                           />
                         </label>
-                        <button type="button" style={{ ...buttonStyle, minHeight: 24, padding: '0 8px', fontSize: 11, background: '#eef2ff', color: '#3730a3' }} onClick={() => setQuoteItemImageUrl(index)}>
+                        <button type="button" style={{ ...buttonStyle, minHeight: 24, padding: '0 8px', fontSize: 11, background: '#eef2ff', color: '#3730a3' }} onClick={() => void setQuoteItemImageUrl(index)}>
                           URL
                         </button>
-                        {item.imageUrl && (
+                        {(item.imageUrl || item.imageDataUrl) && (
                           <>
-                            <img src={item.imageUrl} alt="" style={{ width: 26, height: 26, objectFit: 'cover', borderRadius: 5, border: '1px solid #dbe4ef' }} />
-                            <button type="button" style={{ ...buttonStyle, minHeight: 24, padding: '0 8px', fontSize: 11, color: '#991b1b' }} onClick={() => updateItem(index, 'imageUrl', '')}>Preč</button>
+                            <img src={item.imageUrl || item.imageDataUrl} alt="" style={{ width: 26, height: 26, objectFit: 'cover', borderRadius: 5, border: '1px solid #dbe4ef' }} />
+                            <button type="button" style={{ ...buttonStyle, minHeight: 24, padding: '0 8px', fontSize: 11, color: '#991b1b' }} onClick={() => updateItemImage(index, '', '')}>Preč</button>
                           </>
                         )}
                       </div>
