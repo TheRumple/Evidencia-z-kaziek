@@ -295,15 +295,17 @@ export default function QuotesPage() {
 
   const filteredQuotes = useMemo(() => {
     const term = search.trim().toLowerCase()
-    return quotes.filter((quote) => {
-      const matchesStatus = statusFilter === 'all' || quote.status === statusFilter
-      const matchesSearch =
-        !term ||
-        quote.quote_number.toLowerCase().includes(term) ||
-        quote.title.toLowerCase().includes(term) ||
-        (quote.customer_name || '').toLowerCase().includes(term)
-      return matchesStatus && matchesSearch
-    })
+    return quotes
+      .filter((quote) => {
+        const matchesStatus = statusFilter === 'all' || quote.status === statusFilter
+        const matchesSearch =
+          !term ||
+          quote.quote_number.toLowerCase().includes(term) ||
+          quote.title.toLowerCase().includes(term) ||
+          (quote.customer_name || '').toLowerCase().includes(term)
+        return matchesStatus && matchesSearch
+      })
+      .sort((a, b) => b.quote_number.localeCompare(a.quote_number, 'sk', { numeric: true }))
   }, [quotes, search, statusFilter])
 
   async function loadData(currentUserId: string) {
