@@ -206,6 +206,13 @@ function normalizeItems(items: unknown): QuoteItem[] {
   return normalized.length > 0 ? normalized : [createQuoteItem()]
 }
 
+function prepareQuoteItemsForStorage(items: QuoteItem[]) {
+  return items.map((item) => ({
+    ...item,
+    imageDataUrl: '',
+  }))
+}
+
 function getItemTotals(item: QuoteItem) {
   const quantity = parseMoney(item.quantity)
   const unitPrice = parseMoney(item.unitPrice)
@@ -533,14 +540,8 @@ export default function QuotesPage() {
       setNotice({ type: 'error', text: 'URL obrázka musí začínať na http:// alebo https://.' })
       return
     }
-    try {
-      const imageDataUrl = await imageToJpegDataUrl(trimmedUrl)
-      updateItemImage(index, trimmedUrl, imageDataUrl)
-      setNotice({ type: 'success', text: 'URL obrázka bola pridaná k položke aj pre PDF.' })
-    } catch {
-      updateItemImage(index, trimmedUrl, '')
-      setNotice({ type: 'error', text: 'Obrázok sa zobrazí v náhľade, ale stránka blokuje jeho vloženie do PDF. Pre PDF ho nahraj zo zariadenia.' })
-    }
+    updateItemImage(index, trimmedUrl, '')
+    setNotice({ type: 'success', text: 'URL obrázka bola pridaná k položke. Do PDF sa načíta pri vytvorení ponuky.' })
   }
 
   function addItem() {
@@ -735,7 +736,7 @@ export default function QuotesPage() {
       note: note.trim() || null,
       discount_type: discountType,
       discount_value: discountType === 'none' ? 0 : parseMoney(discountValue),
-      items: cleanItems,
+      items: prepareQuoteItemsForStorage(cleanItems),
       updated_at: new Date().toISOString(),
     }
 
