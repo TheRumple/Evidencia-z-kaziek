@@ -264,6 +264,7 @@ export function DashboardModals(props: DashboardModalsProps) {
     deliveryProtocolDeliveredBy,
     deliveryProtocolItems,
     deliveryProtocolNumber,
+    deliveryProtocolCustomerOrderNumber,
     deliveryProtocols,
     deliveryProtocolReceivedBy,
     deliveryProtocolTested,
@@ -366,6 +367,7 @@ export function DashboardModals(props: DashboardModalsProps) {
     setDeliveryProtocolDate,
     setDeliveryProtocolDeliveredBy,
     setDeliveryProtocolNumber,
+    setDeliveryProtocolCustomerOrderNumber,
     setDeliveryProtocolReceivedBy,
     setDeliveryProtocolTested,
     setDeliveryProtocolBriefed,
@@ -1101,7 +1103,7 @@ export function DashboardModals(props: DashboardModalsProps) {
                   <option value="">Nový protokol</option>
                   {deliveryProtocols.map((protocol: any) => (
                     <option key={protocol.id} value={protocol.id}>
-                      {protocol.protocol_number} - {protocol.customer_name || 'Bez zákazníka'} ({formatDate(protocol.protocol_date)})
+                      {protocol.protocol_number || 'Bez čísla'} - {protocol.customer_name || 'Bez zákazníka'} ({formatDate(protocol.protocol_date)})
                     </option>
                   ))}
                 </select>
@@ -1131,6 +1133,19 @@ export function DashboardModals(props: DashboardModalsProps) {
                   style={inputStyle}
                   value={deliveryProtocolDate}
                   onChange={(event) => setDeliveryProtocolDate(event.target.value)}
+                />
+              </div>
+
+              <div>
+                <label style={labelStyle} htmlFor="delivery-protocol-customer-order-number">
+                  Číslo objednávky zákazníka
+                </label>
+                <input
+                  id="delivery-protocol-customer-order-number"
+                  style={inputStyle}
+                  placeholder="Napr. PO-2026-015"
+                  value={deliveryProtocolCustomerOrderNumber}
+                  onChange={(event) => setDeliveryProtocolCustomerOrderNumber(event.target.value)}
                 />
               </div>
 

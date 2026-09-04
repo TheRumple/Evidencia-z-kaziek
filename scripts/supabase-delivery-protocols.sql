@@ -6,6 +6,7 @@ create table if not exists public.delivery_protocols (
   user_id uuid not null references auth.users(id) on delete cascade,
   customer_id uuid references public.customers(id) on delete set null,
   protocol_number text not null,
+  customer_order_number text,
   protocol_date date not null default current_date,
   customer_name text,
   delivered_by text,
@@ -22,6 +23,9 @@ alter table public.delivery_protocols
 
 alter table public.delivery_protocols
   add column if not exists customer_name text;
+
+alter table public.delivery_protocols
+  add column if not exists customer_order_number text;
 
 alter table public.delivery_protocols
   add column if not exists delivered_by text;

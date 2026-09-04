@@ -203,6 +203,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
   const [deliveryProtocolId, setDeliveryProtocolId] = useState('')
   const [deliveryProtocolCustomerId, setDeliveryProtocolCustomerId] = useState('')
   const [deliveryProtocolNumber, setDeliveryProtocolNumber] = useState('')
+  const [deliveryProtocolCustomerOrderNumber, setDeliveryProtocolCustomerOrderNumber] = useState('')
   const [deliveryProtocolDate, setDeliveryProtocolDate] = useState(getTodayDate())
   const [deliveryProtocolCustomer, setDeliveryProtocolCustomer] = useState('')
   const [deliveryProtocolDeliveredBy, setDeliveryProtocolDeliveredBy] = useState('')
@@ -749,6 +750,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
     setDeliveryProtocolId('')
     setDeliveryProtocolCustomerId('')
     setDeliveryProtocolNumber('')
+    setDeliveryProtocolCustomerOrderNumber('')
     setDeliveryProtocolDate(getTodayDate())
     setDeliveryProtocolCustomer('')
     setDeliveryProtocolDeliveredBy(DEFAULT_DELIVERY_PROTOCOL_TECHNICIAN)
@@ -1490,7 +1492,8 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
     const today = getTodayDate()
     setDeliveryProtocolId('')
     setDeliveryProtocolCustomerId('')
-    setDeliveryProtocolNumber(`OP-${today.replaceAll('-', '')}`)
+    setDeliveryProtocolNumber('')
+    setDeliveryProtocolCustomerOrderNumber('')
     setDeliveryProtocolDate(today)
     setDeliveryProtocolCustomer('')
     setDeliveryProtocolDeliveredBy(DEFAULT_DELIVERY_PROTOCOL_TECHNICIAN)
@@ -1538,6 +1541,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
     setDeliveryProtocolId(protocol.id)
     setDeliveryProtocolCustomerId(protocol.customer_id || '')
     setDeliveryProtocolNumber(protocol.protocol_number || '')
+    setDeliveryProtocolCustomerOrderNumber(protocol.customer_order_number || '')
     setDeliveryProtocolDate(protocol.protocol_date || getTodayDate())
     setDeliveryProtocolCustomer(protocol.customer_name || '')
     setDeliveryProtocolDeliveredBy(protocol.delivered_by || DEFAULT_DELIVERY_PROTOCOL_TECHNICIAN)
@@ -1563,7 +1567,8 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
     const payload = {
       user_id: userId,
       customer_id: deliveryProtocolCustomerId || null,
-      protocol_number: deliveryProtocolNumber.trim() || `OP-${deliveryProtocolDate.replaceAll('-', '')}`,
+      protocol_number: deliveryProtocolNumber.trim(),
+      customer_order_number: deliveryProtocolCustomerOrderNumber.trim() || null,
       protocol_date: deliveryProtocolDate,
       customer_name: deliveryProtocolCustomer.trim() || null,
       delivered_by: deliveryProtocolDeliveredBy.trim() || null,
@@ -1651,7 +1656,8 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
       const pageWidth = doc.internal.pageSize.getWidth()
       const pageHeight = doc.internal.pageSize.getHeight()
       const margin = 14
-      const protocolNumber = pdfSafeText(deliveryProtocolNumber || `OP-${deliveryProtocolDate.replaceAll('-', '')}`)
+      const protocolNumber = pdfSafeText(deliveryProtocolNumber)
+      const customerOrderNumber = pdfSafeText(deliveryProtocolCustomerOrderNumber)
       const customerName = pdfSafeText(deliveryProtocolCustomer)
       const deliveryDate = formatDate(deliveryProtocolDate)
       const deliveredBy = pdfSafeText(deliveryProtocolDeliveredBy)
@@ -1706,25 +1712,37 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
       doc.setFontSize(10)
       doc.text('Cislo protokolu:', margin, 58)
       doc.setFont('helvetica', 'normal')
-      doc.text(protocolNumber || '-', margin + 33, 58)
+      doc.text(protocolNumber, margin + 33, 58)
+
+      const customerInfoY = customerOrderNumber ? 76 : 70
+      const separatorY = customerOrderNumber ? 90 : 84
+      const tableTitleY = customerOrderNumber ? 99 : 93
+      const tableStartY = customerOrderNumber ? 104 : 98
+
+      if (customerOrderNumber) {
+        doc.setFont('helvetica', 'bold')
+        doc.text('Cislo objednavky:', margin, 64)
+        doc.setFont('helvetica', 'normal')
+        doc.text(customerOrderNumber, margin + 36, 64)
+      }
 
       doc.setFont('helvetica', 'bold')
-      doc.text('Zakaznik:', margin, 70)
-      doc.text('Datum odovzdania:', 112, 70)
+      doc.text('Zakaznik:', margin, customerInfoY)
+      doc.text('Datum odovzdania:', 112, customerInfoY)
       doc.setFont('helvetica', 'normal')
-      doc.text(customerName, margin, 76)
-      doc.text(deliveryDate || '-', 112, 76)
+      doc.text(customerName, margin, customerInfoY + 6)
+      doc.text(deliveryDate || '-', 112, customerInfoY + 6)
 
       doc.setDrawColor(15, 23, 42)
       doc.setLineWidth(0.4)
-      doc.line(margin, 84, pageWidth - margin, 84)
+      doc.line(margin, separatorY, pageWidth - margin, separatorY)
 
       doc.setFont('helvetica', 'bold')
       doc.setFontSize(11)
-      doc.text('ZOZNAM ODOVZDANEJ TECHNIKY A PRISLUSENSTVA', margin, 93)
+      doc.text('ZOZNAM ODOVZDANEJ TECHNIKY A PRISLUSENSTVA', margin, tableTitleY)
 
       autoTable(doc, {
-        startY: 98,
+        startY: tableStartY,
         margin: { left: margin, right: margin, bottom: 54 },
         head: [['P. c.', 'Zariadenie / polozka', 'Seriove cislo (S/N)', 'Ks', 'Poznamka']],
         body: filledItems.map((item, index) => [
@@ -3137,6 +3155,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
             deliveryProtocolDeliveredBy={deliveryProtocolDeliveredBy}
             deliveryProtocolItems={deliveryProtocolItems}
             deliveryProtocolNumber={deliveryProtocolNumber}
+            deliveryProtocolCustomerOrderNumber={deliveryProtocolCustomerOrderNumber}
             deliveryProtocols={deliveryProtocols}
             deliveryProtocolReceivedBy={deliveryProtocolReceivedBy}
             deliveryProtocolTested={deliveryProtocolTested}
@@ -3239,6 +3258,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
             setDeliveryProtocolDate={setDeliveryProtocolDate}
             setDeliveryProtocolDeliveredBy={setDeliveryProtocolDeliveredBy}
             setDeliveryProtocolNumber={setDeliveryProtocolNumber}
+            setDeliveryProtocolCustomerOrderNumber={setDeliveryProtocolCustomerOrderNumber}
             setDeliveryProtocolReceivedBy={setDeliveryProtocolReceivedBy}
             setDeliveryProtocolTested={setDeliveryProtocolTested}
             setDeliveryProtocolBriefed={setDeliveryProtocolBriefed}

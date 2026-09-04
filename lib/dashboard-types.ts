@@ -109,6 +109,7 @@ export type DeliveryProtocol = {
   user_id: string
   customer_id: string | null
   protocol_number: string
+  customer_order_number: string | null
   protocol_date: string
   customer_name: string | null
   delivered_by: string | null
