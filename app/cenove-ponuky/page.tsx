@@ -1013,8 +1013,8 @@ export default function QuotesPage() {
   .page { width:210mm; min-height:297mm; margin:0 auto; background:white; box-shadow:0 24px 70px rgba(15,23,42,.16); padding:15mm 16mm 13mm; position:relative; }
   .topline { height:4px; background:linear-gradient(90deg,var(--deep),var(--deep) 78%,var(--lime)); margin:-15mm -16mm 12mm; }
   .header { display:grid; grid-template-columns:1.1fr .9fr; gap:16mm; align-items:start; padding-bottom:9mm; border-bottom:1px solid var(--line); }
-  .brand-logo { display:block; width:64mm; max-width:100%; height:auto; }
-  .company { margin-top:8mm; font-size:10.5px; line-height:1.55; color:#344054; }
+  .brand-logo { display:block; width:22mm; height:22mm; object-fit:contain; }
+  .company { margin-top:3mm; font-size:10.5px; line-height:1.55; color:#344054; }
   .quote-box { border:1px solid var(--deep); padding:14px 16px; background:#fff; }
   .quote-label { font-size:10px; color:var(--muted); text-transform:uppercase; font-weight:900; letter-spacing:.09em; }
   .quote-number { margin-top:6px; font-size:29px; font-weight:950; color:var(--deep); }
@@ -1063,7 +1063,7 @@ export default function QuotesPage() {
   <div class="topline"></div>
   <section class="header">
     <div>
-      <img class="brand-logo" src="/brand-logo-light.png" alt="ITspot" />
+      <img class="brand-logo" src="/delivery-protocol-logo.png" alt="ITspot" />
       <div class="company"><strong>ITspot s. r. o.</strong><br />Hájles 1703/6, 968 01 Nová Baňa<br />IČO: 56430388 · DIČ: 2122307462<br />IČ DPH: SK2122307462<br />info@itspot.sk · +421 908 806 691</div>
     </div>
     <div class="quote-box">
@@ -1123,7 +1123,7 @@ export default function QuotesPage() {
     const termsText = source.note || (source.kind === 'sale' ? MATERIAL_TERMS_NOTE : INSTALLATION_TERMS_NOTE)
     const discountLabel = source.discountType === 'percent' ? `Zľava ${source.discountValue || '0'} %` : 'Zľava'
 
-    const logoDataUrl = await loadFirstAvailableImage(['/brand-logo-light.png'])
+    const logoDataUrl = await loadFirstAvailableImage(['/delivery-protocol-logo.png'])
     const itemImages = await Promise.all(
       source.items.map(async (item) => {
         if (item.imageDataUrl) return item.imageDataUrl
@@ -1151,7 +1151,7 @@ export default function QuotesPage() {
     const margin = 14
 
     if (logoDataUrl) {
-      doc.addImage(logoDataUrl, 'PNG', margin, 14, 58, 15)
+      doc.addImage(logoDataUrl, 'PNG', margin, 14, 22, 22)
     } else {
       doc.setFont(PDF_FONT_NAME, 'bold')
       doc.setFontSize(28)
@@ -1161,11 +1161,11 @@ export default function QuotesPage() {
     doc.setFont(PDF_FONT_NAME, 'normal')
     doc.setFontSize(8.5)
     doc.setTextColor(52, 64, 84)
-    doc.text('ITspot s. r. o.', margin, 39)
-    doc.text('Hájles 1703/6, 968 01 Nová Baňa', margin, 43)
-    doc.text('IČO: 56430388 · DIČ: 2122307462', margin, 47)
-    doc.text('IČ DPH: SK2122307462', margin, 51)
-    doc.text('info@itspot.sk · +421 908 806 691', margin, 55)
+    doc.text('ITspot s. r. o.', margin, 43)
+    doc.text('Hájles 1703/6, 968 01 Nová Baňa', margin, 47)
+    doc.text('IČO: 56430388 · DIČ: 2122307462', margin, 51)
+    doc.text('IČ DPH: SK2122307462', margin, 55)
+    doc.text('info@itspot.sk · +421 908 806 691', margin, 59)
 
     doc.setDrawColor(17, 24, 39)
     doc.rect(126, 14, 70, 36)
