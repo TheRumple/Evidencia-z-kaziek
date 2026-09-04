@@ -1648,7 +1648,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
     }
 
     try {
-      const protocolLogoDataUrl = await loadFirstAvailableImage(['/brand-logo-light.png'])
+      const protocolLogoDataUrl = await loadFirstAvailableImage(['/delivery-protocol-logo.png'])
       const doc = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
@@ -1668,7 +1668,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
 
       function drawItspotLogo(x: number, y: number) {
         if (protocolLogoDataUrl) {
-          doc.addImage(protocolLogoDataUrl, 'PNG', x, y, 62, 16)
+          doc.addImage(protocolLogoDataUrl, 'PNG', x, y, 22, 22)
         } else {
           doc.setFont(PDF_FONT_NAME, 'bold')
           doc.setFontSize(35)

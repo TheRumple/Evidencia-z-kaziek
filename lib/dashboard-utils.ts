@@ -125,7 +125,7 @@ export function pdfSafeText(value: string | null | undefined) {
     .trim()
 }
 
-export const PDF_FONT_NAME = 'NotoSans'
+export const PDF_FONT_NAME = 'Roboto'
 
 let pdfFontBase64Promise: Promise<string> | null = null
 
@@ -141,7 +141,7 @@ function arrayBufferToBase64(buffer: ArrayBuffer) {
 
 async function loadPdfFontBase64() {
   if (!pdfFontBase64Promise) {
-    pdfFontBase64Promise = fetch('/fonts/noto-sans.ttf')
+    pdfFontBase64Promise = fetch('/fonts/roboto-regular.ttf')
       .then((response) => {
         if (!response.ok) throw new Error('Nepodarilo sa načítať PDF font.')
         return response.arrayBuffer()
@@ -153,9 +153,9 @@ async function loadPdfFontBase64() {
 
 export async function registerPdfFont(doc: jsPDF) {
   const fontBase64 = await loadPdfFontBase64()
-  doc.addFileToVFS('noto-sans.ttf', fontBase64)
-  doc.addFont('noto-sans.ttf', PDF_FONT_NAME, 'normal')
-  doc.addFont('noto-sans.ttf', PDF_FONT_NAME, 'bold')
+  doc.addFileToVFS('roboto-regular.ttf', fontBase64)
+  doc.addFont('roboto-regular.ttf', PDF_FONT_NAME, 'normal')
+  doc.addFont('roboto-regular.ttf', PDF_FONT_NAME, 'bold')
   doc.setFont(PDF_FONT_NAME, 'normal')
   return PDF_FONT_NAME
 }
