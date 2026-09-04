@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react'
+import type { jsPDF } from 'jspdf'
 
 export const STATUSY = [
   { value: 'nova', label: 'Nová' },
@@ -120,16 +121,43 @@ export function calculateHoursFromTimes(startValue: string, endValue: string) {
 
 export function pdfSafeText(value: string | null | undefined) {
   return String(value ?? '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/ł/g, 'l')
-    .replace(/Ł/g, 'L')
-    .replace(/đ/g, 'd')
-    .replace(/Đ/g, 'D')
-    .replace(/ß/g, 'ss')
-    .replace(/[^\x20-\x7E]/g, ' ')
     .replace(/\s{2,}/g, ' ')
     .trim()
+}
+
+export const PDF_FONT_NAME = 'NotoSans'
+
+let pdfFontBase64Promise: Promise<string> | null = null
+
+function arrayBufferToBase64(buffer: ArrayBuffer) {
+  const bytes = new Uint8Array(buffer)
+  const chunkSize = 0x8000
+  let binary = ''
+  for (let index = 0; index < bytes.length; index += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(index, index + chunkSize))
+  }
+  return btoa(binary)
+}
+
+async function loadPdfFontBase64() {
+  if (!pdfFontBase64Promise) {
+    pdfFontBase64Promise = fetch('/fonts/noto-sans.ttf')
+      .then((response) => {
+        if (!response.ok) throw new Error('Nepodarilo sa načítať PDF font.')
+        return response.arrayBuffer()
+      })
+      .then(arrayBufferToBase64)
+  }
+  return pdfFontBase64Promise
+}
+
+export async function registerPdfFont(doc: jsPDF) {
+  const fontBase64 = await loadPdfFontBase64()
+  doc.addFileToVFS('noto-sans.ttf', fontBase64)
+  doc.addFont('noto-sans.ttf', PDF_FONT_NAME, 'normal')
+  doc.addFont('noto-sans.ttf', PDF_FONT_NAME, 'bold')
+  doc.setFont(PDF_FONT_NAME, 'normal')
+  return PDF_FONT_NAME
 }
 
 export async function loadImageAsDataUrl(src: string) {

@@ -8,7 +8,7 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { BrandLogo } from '@/components/BrandLogo'
 import type { Customer, Notice, Quote } from '@/lib/dashboard-types'
-import { formatDate, getTodayDate, loadFirstAvailableImage, pdfSafeText } from '@/lib/dashboard-utils'
+import { PDF_FONT_NAME, formatDate, getTodayDate, loadFirstAvailableImage, pdfSafeText, registerPdfFont } from '@/lib/dashboard-utils'
 import { supabase } from '@/lib/supabase'
 
 type QuoteItem = {
@@ -1145,6 +1145,7 @@ export default function QuotesPage() {
     }
 
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+    await registerPdfFont(doc)
     const pageWidth = doc.internal.pageSize.getWidth()
     const pageHeight = doc.internal.pageSize.getHeight()
     const margin = 14
@@ -1152,26 +1153,26 @@ export default function QuotesPage() {
     if (logoDataUrl) {
       doc.addImage(logoDataUrl, 'PNG', margin, 14, 58, 15)
     } else {
-      doc.setFont('helvetica', 'bold')
+      doc.setFont(PDF_FONT_NAME, 'bold')
       doc.setFontSize(28)
       doc.text('ITspot', margin, 25)
     }
 
-    doc.setFont('helvetica', 'normal')
+    doc.setFont(PDF_FONT_NAME, 'normal')
     doc.setFontSize(8.5)
     doc.setTextColor(52, 64, 84)
     doc.text('ITspot s. r. o.', margin, 39)
-    doc.text('Hajles 1703/6, 968 01 Nova Bana', margin, 43)
-    doc.text('ICO: 56430388 · DIC: 2122307462', margin, 47)
-    doc.text('IC DPH: SK2122307462', margin, 51)
+    doc.text('Hájles 1703/6, 968 01 Nová Baňa', margin, 43)
+    doc.text('IČO: 56430388 · DIČ: 2122307462', margin, 47)
+    doc.text('IČ DPH: SK2122307462', margin, 51)
     doc.text('info@itspot.sk · +421 908 806 691', margin, 55)
 
     doc.setDrawColor(17, 24, 39)
     doc.rect(126, 14, 70, 36)
-    doc.setFont('helvetica', 'bold')
+    doc.setFont(PDF_FONT_NAME, 'bold')
     doc.setFontSize(8)
     doc.setTextColor(102, 112, 133)
-    doc.text('CENOVA PONUKA', 130, 21)
+    doc.text('CENOVÁ PONUKA', 130, 21)
     doc.setFontSize(20)
     doc.setTextColor(17, 24, 39)
     doc.text(pdfSafeText(source.number), 130, 30)
@@ -1179,8 +1180,8 @@ export default function QuotesPage() {
     doc.line(130, 35, 192, 35)
     doc.setFontSize(7.5)
     doc.setTextColor(102, 112, 133)
-    doc.text('VYSTAVENE', 130, 41)
-    doc.text('PLATNOST', 162, 41)
+    doc.text('VYSTAVENÉ', 130, 41)
+    doc.text('PLATNOSŤ', 162, 41)
     doc.setFontSize(8.5)
     doc.setTextColor(17, 24, 39)
     doc.text(formatDate(source.date), 130, 46)
@@ -1192,31 +1193,31 @@ export default function QuotesPage() {
     doc.setDrawColor(226, 232, 240)
     doc.rect(margin, 72, 82, 30)
     doc.rect(114, 72, 82, 30)
-    doc.setFont('helvetica', 'bold')
+    doc.setFont(PDF_FONT_NAME, 'bold')
     doc.setFontSize(7.5)
     doc.setTextColor(102, 112, 133)
-    doc.text('ODBERATEL', margin + 4, 79)
+    doc.text('ODBERATEĽ', margin + 4, 79)
     doc.text(pdfSafeText(deliveryTitle).toUpperCase(), 118, 79)
     doc.setFontSize(11)
     doc.setTextColor(17, 24, 39)
-    doc.text(pdfSafeText(source.customer || 'Bez zakaznika'), margin + 4, 87, { maxWidth: 74 })
-    doc.setFont('helvetica', 'normal')
+    doc.text(pdfSafeText(source.customer || 'Bez zákazníka'), margin + 4, 87, { maxWidth: 74 })
+    doc.setFont(PDF_FONT_NAME, 'normal')
     doc.setFontSize(8)
     doc.text(pdfSafeText([source.contact ? `Kontaktna osoba: ${source.contact}` : '', source.email ? `Email: ${source.email}` : ''].filter(Boolean).join('\n')), margin + 4, 94, { maxWidth: 74 })
     doc.text(pdfSafeText(deliveryText), 118, 87, { maxWidth: 74 })
 
-    doc.setFont('helvetica', 'bold')
+    doc.setFont(PDF_FONT_NAME, 'bold')
     doc.setFontSize(8)
     doc.setTextColor(119, 210, 11)
-    doc.text('NAVRH RIESENIA', margin, 114)
+    doc.text('NÁVRH RIEŠENIA', margin, 114)
     doc.setFontSize(17)
     doc.setTextColor(17, 24, 39)
-    doc.text(pdfSafeText(source.title || 'Cenova ponuka'), margin, 122, { maxWidth: 180 })
+    doc.text(pdfSafeText(source.title || 'Cenová ponuka'), margin, 122, { maxWidth: 180 })
 
     autoTable(doc, {
       startY: 130,
       margin: { left: margin, right: margin, bottom: 58 },
-      head: [['C.', 'Polozka', 'Mnozstvo', 'MJ', 'Cena/MJ bez DPH', 'DPH', 'Spolu bez DPH']],
+      head: [['Č.', 'Položka', 'Množstvo', 'MJ', 'Cena/MJ bez DPH', 'DPH', 'Spolu bez DPH']],
       body: source.items.map((item, index) => {
         const itemTotals = getItemTotals(item)
         return [
@@ -1230,7 +1231,7 @@ export default function QuotesPage() {
         ].map((value) => pdfSafeText(value))
       }),
       styles: {
-        font: 'helvetica',
+        font: PDF_FONT_NAME,
         fontSize: 8.4,
         cellPadding: 2.2,
         textColor: [17, 24, 39],
@@ -1278,11 +1279,11 @@ export default function QuotesPage() {
     doc.setDrawColor(232, 237, 243)
     doc.setFillColor(246, 248, 251)
     doc.rect(margin, y, 82, 28, 'FD')
-    doc.setFont('helvetica', 'bold')
+    doc.setFont(PDF_FONT_NAME, 'bold')
     doc.setFontSize(8)
     doc.setTextColor(17, 24, 39)
-    doc.text('Poznamka a podmienky', margin + 4, y + 7)
-    doc.setFont('helvetica', 'normal')
+    doc.text('Poznámka a podmienky', margin + 4, y + 7)
+    doc.setFont(PDF_FONT_NAME, 'normal')
     doc.setFontSize(8)
     doc.setTextColor(71, 84, 103)
     doc.text(pdfSafeText(termsText), margin + 4, y + 14, { maxWidth: 74 })
@@ -1291,7 +1292,7 @@ export default function QuotesPage() {
     doc.setDrawColor(119, 210, 11)
     doc.setLineWidth(0.7)
     doc.rect(totalsX, y, 80, 17)
-    doc.setFont('helvetica', 'bold')
+    doc.setFont(PDF_FONT_NAME, 'bold')
     doc.setFontSize(8)
     doc.setTextColor(17, 24, 39)
     doc.text('CELKOM BEZ DPH', totalsX + 4, y + 10)
@@ -1326,7 +1327,7 @@ export default function QuotesPage() {
     doc.line(margin, pageHeight - 14, pageWidth - margin, pageHeight - 14)
     doc.text('www.itspot.sk', margin, pageHeight - 8)
     doc.text('info@itspot.sk', pageWidth / 2, pageHeight - 8, { align: 'center' })
-    doc.text(`Cenova ponuka ${pdfSafeText(source.number)}`, pageWidth - margin, pageHeight - 8, { align: 'right' })
+    doc.text(`Cenová ponuka ${pdfSafeText(source.number)}`, pageWidth - margin, pageHeight - 8, { align: 'right' })
 
     const safeName = pdfSafeText(`cenova-ponuka-${source.number}-${source.customer || ''}`).replace(/[^a-zA-Z0-9\-_ ]/g, '').trim() || `cenova-ponuka-${source.number}`
     doc.save(`${safeName}.pdf`)

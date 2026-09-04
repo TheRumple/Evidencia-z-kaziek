@@ -26,8 +26,10 @@ import {
   getTodayDate,
   isoToLocalInputValue,
   loadFirstAvailableImage,
+  PDF_FONT_NAME,
   parseHoursInput,
   pdfSafeText,
+  registerPdfFont,
 } from '@/lib/dashboard-utils'
 import { supabase } from '@/lib/supabase'
 
@@ -1652,6 +1654,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
         unit: 'mm',
         format: 'a4',
       })
+      await registerPdfFont(doc)
 
       const pageWidth = doc.internal.pageSize.getWidth()
       const pageHeight = doc.internal.pageSize.getHeight()
@@ -1667,7 +1670,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
         if (protocolLogoDataUrl) {
           doc.addImage(protocolLogoDataUrl, 'PNG', x, y, 62, 16)
         } else {
-          doc.setFont('helvetica', 'bold')
+          doc.setFont(PDF_FONT_NAME, 'bold')
           doc.setFontSize(35)
           doc.setTextColor(0, 0, 0)
           doc.text('ITspot', x, y + 15)
@@ -1676,42 +1679,42 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
 
       function drawHeader(pageNumber: number) {
         doc.setTextColor(15, 23, 42)
-        doc.setFont('helvetica', 'normal')
+        doc.setFont(PDF_FONT_NAME, 'normal')
         doc.setCharSpace(0)
 
         if (pageNumber === 1) {
           drawItspotLogo(margin, 14)
 
-          doc.setFont('helvetica', 'bold')
+          doc.setFont(PDF_FONT_NAME, 'bold')
           doc.setFontSize(11)
           doc.text('ITspot s. r. o.', pageWidth - margin, 16, { align: 'right' })
-          doc.setFont('helvetica', 'normal')
+          doc.setFont(PDF_FONT_NAME, 'normal')
           doc.setFontSize(8.5)
-          doc.text('Hajles 1703/6, 968 01 Nova Bana', pageWidth - margin, 20.5, { align: 'right' })
-          doc.text('ICO: 56430388', pageWidth - margin, 25, { align: 'right' })
-          doc.text('IC DPH: SK2122307462', pageWidth - margin, 29.5, { align: 'right' })
+          doc.text('Hájles 1703/6, 968 01 Nová Baňa', pageWidth - margin, 20.5, { align: 'right' })
+          doc.text('IČO: 56430388', pageWidth - margin, 25, { align: 'right' })
+          doc.text('IČ DPH: SK2122307462', pageWidth - margin, 29.5, { align: 'right' })
         }
       }
 
       function drawFooter(pageNumber: number, totalPages: number) {
         doc.setTextColor(100, 116, 139)
-        doc.setFont('helvetica', 'normal')
+        doc.setFont(PDF_FONT_NAME, 'normal')
         doc.setFontSize(8)
         doc.text('info@itspot.sk | +421 908 806 691 | www.itspot.sk', margin, pageHeight - 5)
-        doc.text('Vygenerovane z aplikacie ITspot', pageWidth / 2, pageHeight - 5, { align: 'center' })
+        doc.text('Vygenerované z aplikácie ITspot', pageWidth / 2, pageHeight - 5, { align: 'center' })
         doc.text(`Strana ${pageNumber} z ${totalPages}`, pageWidth - margin, pageHeight - 5, { align: 'right' })
       }
 
       drawHeader(1)
 
       doc.setTextColor(15, 23, 42)
-      doc.setFont('helvetica', 'bold')
+      doc.setFont(PDF_FONT_NAME, 'bold')
       doc.setFontSize(18)
-      doc.text('ODOVZDAVACI PROTOKOL', margin, 48)
+      doc.text('ODOVZDÁVACÍ PROTOKOL', margin, 48)
 
       doc.setFontSize(10)
-      doc.text('Cislo protokolu:', margin, 58)
-      doc.setFont('helvetica', 'normal')
+      doc.text('Číslo protokolu:', margin, 58)
+      doc.setFont(PDF_FONT_NAME, 'normal')
       doc.text(protocolNumber, margin + 33, 58)
 
       const customerInfoY = customerOrderNumber ? 76 : 70
@@ -1720,16 +1723,16 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
       const tableStartY = customerOrderNumber ? 104 : 98
 
       if (customerOrderNumber) {
-        doc.setFont('helvetica', 'bold')
-        doc.text('Cislo objednavky:', margin, 64)
-        doc.setFont('helvetica', 'normal')
+        doc.setFont(PDF_FONT_NAME, 'bold')
+        doc.text('Číslo objednávky:', margin, 64)
+        doc.setFont(PDF_FONT_NAME, 'normal')
         doc.text(customerOrderNumber, margin + 36, 64)
       }
 
-      doc.setFont('helvetica', 'bold')
-      doc.text('Zakaznik:', margin, customerInfoY)
-      doc.text('Datum odovzdania:', 112, customerInfoY)
-      doc.setFont('helvetica', 'normal')
+      doc.setFont(PDF_FONT_NAME, 'bold')
+      doc.text('Zákazník:', margin, customerInfoY)
+      doc.text('Dátum odovzdania:', 112, customerInfoY)
+      doc.setFont(PDF_FONT_NAME, 'normal')
       doc.text(customerName, margin, customerInfoY + 6)
       doc.text(deliveryDate || '-', 112, customerInfoY + 6)
 
@@ -1737,14 +1740,14 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
       doc.setLineWidth(0.4)
       doc.line(margin, separatorY, pageWidth - margin, separatorY)
 
-      doc.setFont('helvetica', 'bold')
+      doc.setFont(PDF_FONT_NAME, 'bold')
       doc.setFontSize(11)
-      doc.text('ZOZNAM ODOVZDANEJ TECHNIKY A PRISLUSENSTVA', margin, tableTitleY)
+      doc.text('ZOZNAM ODOVZDANEJ TECHNIKY A PRÍSLUŠENSTVA', margin, tableTitleY)
 
       autoTable(doc, {
         startY: tableStartY,
         margin: { left: margin, right: margin, bottom: 54 },
-        head: [['P. c.', 'Zariadenie / polozka', 'Seriove cislo (S/N)', 'Ks', 'Poznamka']],
+        head: [['P. č.', 'Zariadenie / položka', 'Sériové číslo (S/N)', 'Ks', 'Poznámka']],
         body: filledItems.map((item, index) => [
           String(index + 1),
           pdfSafeText(item.name || '-'),
@@ -1753,7 +1756,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
           pdfSafeText(item.note || ''),
         ]),
         styles: {
-          font: 'helvetica',
+          font: PDF_FONT_NAME,
           fontSize: 9,
           cellPadding: 2.2,
           textColor: [15, 23, 42],
@@ -1785,19 +1788,19 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
 
       const footerStartY = doc.getCurrentPageInfo().pageNumber === 1 ? confirmationY : 28
       doc.setTextColor(15, 23, 42)
-      doc.setFont('helvetica', 'bold')
+      doc.setFont(PDF_FONT_NAME, 'bold')
       doc.setFontSize(11)
       doc.text('POTVRDENIE', margin, footerStartY)
-      doc.setFont('helvetica', 'normal')
+      doc.setFont(PDF_FONT_NAME, 'normal')
       doc.setFontSize(10)
-      doc.text(`${deliveryProtocolTested ? '[x]' : '[ ]'} Zariadenie bolo odskusane a je funkcne.`, margin, footerStartY + 8)
-      doc.text(`${deliveryProtocolBriefed ? '[x]' : '[ ]'} Zakaznik bol oboznameny so zakladnou obsluhou.`, margin, footerStartY + 15)
+      doc.text(`${deliveryProtocolTested ? '[x]' : '[ ]'} Zariadenie bolo odskúšané a je funkčné.`, margin, footerStartY + 8)
+      doc.text(`${deliveryProtocolBriefed ? '[x]' : '[ ]'} Zákazník bol oboznámený so základnou obsluhou.`, margin, footerStartY + 15)
 
       const signatureY = footerStartY + 34
-      doc.setFont('helvetica', 'bold')
+      doc.setFont(PDF_FONT_NAME, 'bold')
       doc.text('ODOVZDAL', margin, signatureY)
       doc.text('PREVZAL', 112, signatureY)
-      doc.setFont('helvetica', 'normal')
+      doc.setFont(PDF_FONT_NAME, 'normal')
       doc.text(`Meno: ${deliveredBy}`, margin, signatureY + 10)
       doc.text(`Meno: ${receivedBy}`, 112, signatureY + 10)
       if (deliveryProtocolReceivedSignature) {
@@ -1909,6 +1912,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
       unit: 'mm',
       format: 'a4',
     })
+    await registerPdfFont(doc)
 
     const pageWidth = doc.internal.pageSize.getWidth()
     const pageHeight = doc.internal.pageSize.getHeight()
@@ -1949,7 +1953,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
       ]),
 
       styles: {
-        font: 'helvetica',
+        font: PDF_FONT_NAME,
         fontSize: 9,
         cellPadding: 2.2,
         textColor: [15, 23, 42],
@@ -1983,7 +1987,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
         const isLastPage = pageNum === totalPages
 
         doc.setTextColor(15, 23, 42)
-        doc.setFont('helvetica', 'normal')
+        doc.setFont(PDF_FONT_NAME, 'normal')
         doc.setCharSpace(0)
 
         // =====================================================
@@ -1995,63 +1999,63 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
             doc.addImage(logoDataUrl, 'PNG', margin, 12, 46, 13)
           } catch {}
 
-          doc.setFont('helvetica', 'bold')
+          doc.setFont(PDF_FONT_NAME, 'bold')
           doc.setFontSize(10.5)
 
           doc.text('ITspot s. r. o.', pageWidth - margin, 16, {
             align: 'right',
           })
 
-          doc.setFont('helvetica', 'normal')
+          doc.setFont(PDF_FONT_NAME, 'normal')
           doc.setFontSize(9)
 
           doc.text(
-            'Hajles 1703/6, 968 01 Nova Bana',
+            'Hájles 1703/6, 968 01 Nová Baňa',
             pageWidth - margin,
             20.5,
             { align: 'right' }
           )
 
           doc.text(
-            'ICO: 56430388   DIC: 2122307462',
+            'IČO: 56430388   DIČ: 2122307462',
             pageWidth - margin,
             24.8,
             { align: 'right' }
           )
 
           doc.text(
-            'IC DPH: SK2122307462',
+            'IČ DPH: SK2122307462',
             pageWidth - margin,
             29.1,
             { align: 'right' }
           )
 
-          doc.setFont('helvetica', 'bold')
+          doc.setFont(PDF_FONT_NAME, 'bold')
           doc.setFontSize(18)
 
-          doc.text('Servisny vykaz', margin, 38)
+          doc.text('Servisný výkaz', margin, 38)
 
           doc.setFontSize(11)
 
-          doc.text('Zakazka:', margin, 44)
+          doc.text('Zákazka:', margin, 44)
 
-          doc.setFont('helvetica', 'normal')
+          doc.setFont(PDF_FONT_NAME, 'normal')
 
           doc.text(safeOrderName, margin + 20, 44)
 
-          doc.setFont('helvetica', 'bold')
+          doc.setFont(PDF_FONT_NAME, 'bold')
 
-          doc.text('Zakaznik:', 105, 44)
+          doc.text('Zákazník:', 105, 44)
 
-          doc.setFont('helvetica', 'normal')
+          doc.setFont(PDF_FONT_NAME, 'normal')
 
           doc.text(customerName || '-', 128, 44)
 
-          doc.setFont('helvetica', 'bold')
+          doc.setFont(PDF_FONT_NAME, 'bold')
 
-          doc.text('Prijatie zakazky:', margin, 51)
+          doc.text('Prijatie zákazky:', margin, 51)
 
-          doc.setFont('helvetica', 'normal')
+          doc.setFont(PDF_FONT_NAME, 'normal')
 
           doc.text(formatDate(order.prijatie_zakazky), margin + 33, 51)
 
@@ -2071,10 +2075,10 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
             2
           )
 
-          doc.setFont('helvetica', 'bold')
+          doc.setFont(PDF_FONT_NAME, 'bold')
           doc.setFontSize(10)
 
-          doc.text(`Pocet zaznamov: ${logs.length}`, margin + 4, 67.5)
+          doc.text(`Počet záznamov: ${logs.length}`, margin + 4, 67.5)
 
           doc.text('|', 56, 67.5)
 
@@ -2094,14 +2098,14 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
           const stampY = pageHeight - 33
           const lineY = pageHeight - 16
 
-          doc.setFont('helvetica', 'bold')
+          doc.setFont(PDF_FONT_NAME, 'bold')
           doc.setFontSize(11)
 
           doc.text('Vystavil:', 52, signTitleY, {
             align: 'center',
           })
 
-          doc.text('Prevzal zakaznik:', pageWidth - 52, signTitleY, {
+          doc.text('Prevzal zákazník:', pageWidth - 52, signTitleY, {
             align: 'center',
           })
 
@@ -2141,11 +2145,11 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
         // FOOTER NA VŠETKÝCH STRANÁCH
         // =====================================================
 
-        doc.setFont('helvetica', 'normal')
+        doc.setFont(PDF_FONT_NAME, 'normal')
         doc.setFontSize(9)
 
         doc.text(
-          'Vygenerovane z aplikacie ITspot',
+          'Vygenerované z aplikácie ITspot',
           margin,
           pageHeight - 4
         )
