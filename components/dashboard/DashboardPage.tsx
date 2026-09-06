@@ -2823,6 +2823,11 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
               <span className="sideMenuIcon">›</span>
             </Link>
 
+            <Link href="/obhliadky" style={sideNavButton(false)}>
+              <span>Obhliadky</span>
+              <span className="sideMenuIcon">›</span>
+            </Link>
+
             <Link href="/cenove-ponuky" style={sideNavButton(false)}>
               <span>Cenové ponuky</span>
               <span className="sideMenuIcon">›</span>

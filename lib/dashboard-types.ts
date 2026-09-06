@@ -175,6 +175,28 @@ export type MaterialRequest = {
   updated_at?: string
 }
 
+export type Inspection = {
+  id: string
+  user_id: string
+  customer_id: string | null
+  inspection_date: string
+  inspection_type: string
+  site_address: string | null
+  customer_name: string | null
+  contact_name: string | null
+  contact_phone: string | null
+  contact_email: string | null
+  request_summary: string | null
+  current_state: string | null
+  verification_notes: string | null
+  quote_note: string | null
+  sketch_data_url: string | null
+  materials: unknown
+  status: 'draft' | 'done' | 'quoted'
+  created_at?: string
+  updated_at?: string
+}
+
 export type Notice =
   | {
       type: 'success' | 'error'
