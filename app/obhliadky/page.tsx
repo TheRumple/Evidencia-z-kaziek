@@ -9,14 +9,6 @@ import type { Customer, Inspection, Notice } from '@/lib/dashboard-types'
 import { formatDate, getTodayDate } from '@/lib/dashboard-utils'
 import { supabase } from '@/lib/supabase'
 
-type InspectionMaterial = {
-  id: string
-  name: string
-  quantity: string
-  unit: string
-  note: string
-}
-
 type InspectionForm = {
   customerId: string
   customerName: string
@@ -32,7 +24,6 @@ type InspectionForm = {
   quoteNote: string
   status: Inspection['status']
   sketchDataUrl: string
-  materials: InspectionMaterial[]
 }
 
 const INSPECTION_TYPES = [
@@ -52,18 +43,6 @@ const STATUS_LABELS: Record<Inspection['status'], string> = {
   quoted: 'V ponuke',
 }
 
-const UNIT_OPTIONS = ['ks', 'm', 'bal', 'sada', 'hod', 'l', 'kg']
-
-function createMaterial(): InspectionMaterial {
-  return {
-    id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-    name: '',
-    quantity: '1',
-    unit: 'ks',
-    note: '',
-  }
-}
-
 function createForm(): InspectionForm {
   return {
     customerId: '',
@@ -80,25 +59,7 @@ function createForm(): InspectionForm {
     quoteNote: '',
     status: 'draft',
     sketchDataUrl: '',
-    materials: [createMaterial()],
   }
-}
-
-function normalizeMaterials(value: unknown): InspectionMaterial[] {
-  if (!Array.isArray(value)) return [createMaterial()]
-  const materials = value
-    .map((item) => {
-      const raw = item as Partial<InspectionMaterial>
-      return {
-        id: raw.id || createMaterial().id,
-        name: raw.name || '',
-        quantity: raw.quantity || '1',
-        unit: raw.unit || 'ks',
-        note: raw.note || '',
-      }
-    })
-    .filter((item) => item.name.trim() || item.quantity.trim() || item.note.trim())
-  return materials.length > 0 ? materials : [createMaterial()]
 }
 
 function getInspectionTypeLabel(value: string) {
@@ -246,7 +207,6 @@ export default function InspectionsPage() {
       all: inspections.length,
       active: inspections.filter((item) => item.status !== 'quoted').length,
       done: inspections.filter((item) => item.status === 'done').length,
-      materials: inspections.reduce((count, item) => count + normalizeMaterials(item.materials).filter((material) => material.name.trim()).length, 0),
     }
   }, [inspections])
 
@@ -311,28 +271,9 @@ export default function InspectionsPage() {
       quoteNote: inspection.quote_note || '',
       status: inspection.status || 'draft',
       sketchDataUrl: inspection.sketch_data_url || '',
-      materials: normalizeMaterials(inspection.materials),
     })
     setShowForm(true)
     window.setTimeout(() => document.getElementById('inspection-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0)
-  }
-
-  function updateMaterial(index: number, field: keyof Omit<InspectionMaterial, 'id'>, value: string) {
-    setForm((current) => ({
-      ...current,
-      materials: current.materials.map((item, itemIndex) => (itemIndex === index ? { ...item, [field]: value } : item)),
-    }))
-  }
-
-  function addMaterialRow() {
-    setForm((current) => ({ ...current, materials: [...current.materials, createMaterial()] }))
-  }
-
-  function removeMaterialRow(index: number) {
-    setForm((current) => ({
-      ...current,
-      materials: current.materials.length <= 1 ? current.materials : current.materials.filter((_item, itemIndex) => itemIndex !== index),
-    }))
   }
 
   function getCanvasPoint(event: PointerEvent<HTMLCanvasElement>) {
@@ -397,7 +338,6 @@ export default function InspectionsPage() {
       return
     }
 
-    const cleanMaterials = form.materials.filter((item) => item.name.trim() || item.quantity.trim() || item.note.trim())
     const payload = {
       user_id: userId,
       customer_id: form.customerId || null,
@@ -413,7 +353,7 @@ export default function InspectionsPage() {
       verification_notes: form.verificationNotes.trim() || null,
       quote_note: form.quoteNote.trim() || null,
       sketch_data_url: form.sketchDataUrl || null,
-      materials: cleanMaterials,
+      materials: [],
       status: form.status,
       updated_at: new Date().toISOString(),
     }
@@ -434,41 +374,6 @@ export default function InspectionsPage() {
     setEditingId(saved.id)
     setInspections((current) => [saved, ...current.filter((item) => item.id !== saved.id)])
     setNotice({ type: 'success', text: 'Obhliadka je uložená.' })
-  }
-
-  async function addMaterialsToPurchaseList(inspection: Inspection) {
-    if (!userId) return
-    const materials = normalizeMaterials(inspection.materials).filter((item) => item.name.trim())
-    if (materials.length === 0) {
-      setNotice({ type: 'error', text: 'Táto obhliadka nemá vyplnený materiál.' })
-      return
-    }
-
-    const rows = materials.map((item) => ({
-      user_id: userId,
-      customer_id: inspection.customer_id || null,
-      target_type: inspection.customer_id ? 'customer' : 'internal',
-      name: item.name.trim(),
-      quantity: item.quantity || null,
-      unit: item.unit || 'ks',
-      supplier: null,
-      status: 'to_order',
-      priority: 'normal',
-      needed_by: null,
-      note: [`Z obhliadky ${formatDate(inspection.inspection_date)}.`, item.note?.trim() || ''].filter(Boolean).join(' '),
-      updated_at: new Date().toISOString(),
-    }))
-
-    setSaving(true)
-    const { error } = await supabase.from('material_requests').insert(rows)
-    setSaving(false)
-
-    if (error) {
-      setNotice({ type: 'error', text: `Materiál sa nepridal: ${error.message}` })
-      return
-    }
-
-    setNotice({ type: 'success', text: `${materials.length} položiek bolo pridaných do nákupu materiálu.` })
   }
 
   async function deleteInspection(inspectionId: string) {
@@ -553,7 +458,7 @@ export default function InspectionsPage() {
 
         .inspectionStats {
           display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
+          grid-template-columns: repeat(3, minmax(0, 1fr));
           gap: 8px;
         }
 
@@ -608,8 +513,7 @@ export default function InspectionsPage() {
           gap: 3px;
         }
 
-        .inspectionField label,
-        .materialRow label {
+        .inspectionField label {
           color: #475569;
           font-size: 11px;
           font-weight: 900;
@@ -624,22 +528,6 @@ export default function InspectionsPage() {
         .inspectionTextarea {
           min-height: 82px;
           resize: vertical;
-        }
-
-        .materialsBox {
-          display: grid;
-          gap: 6px;
-          border: 1px solid #dbe4ef;
-          border-radius: 10px;
-          padding: 8px;
-          background: #f8fafc;
-        }
-
-        .materialRow {
-          display: grid;
-          grid-template-columns: minmax(240px, 1fr) 80px 82px minmax(180px, 0.8fr) 38px;
-          gap: 6px;
-          align-items: end;
         }
 
         .sketchPanel {
@@ -736,10 +624,6 @@ export default function InspectionsPage() {
             grid-template-columns: 1fr;
             gap: 5px;
           }
-
-          .materialRow {
-            grid-template-columns: 1fr 74px 74px 1fr 36px;
-          }
         }
 
         @media (max-width: 680px) {
@@ -754,8 +638,7 @@ export default function InspectionsPage() {
 
           .inspectionGrid,
           .inspectionStats,
-          .inspectionTextGrid,
-          .materialRow {
+          .inspectionTextGrid {
             grid-template-columns: 1fr;
           }
 
@@ -771,7 +654,7 @@ export default function InspectionsPage() {
             <BrandLogo size="sm" tone="dark" />
             <div>
               <h1>Obhliadky</h1>
-              <p>Poznámky z tabletu, kresby perom a materiál, ktorý treba objednať.</p>
+              <p>Poznámky z tabletu, údaje zákazníka a kresby perom z obhliadky.</p>
             </div>
           </div>
           <div className="inspectionActions">
@@ -811,10 +694,6 @@ export default function InspectionsPage() {
           <div className="inspectionStat" style={{ ...boxStyle, borderLeft: '5px solid #22c55e' }}>
             <span>Hotové</span>
             <strong>{summary.done}</strong>
-          </div>
-          <div className="inspectionStat" style={{ ...boxStyle, borderLeft: '5px solid #38bdf8' }}>
-            <span>Materiál</span>
-            <strong>{summary.materials}</strong>
           </div>
         </section>
 
@@ -932,44 +811,6 @@ export default function InspectionsPage() {
                 </div>
               </div>
 
-              <div className="materialsBox">
-                <div className="inspectionButtonRow" style={{ justifyContent: 'space-between' }}>
-                  <strong>Materiál / veci na objednanie</strong>
-                  <button type="button" style={buttonStyle} onClick={addMaterialRow}>
-                    + Položka
-                  </button>
-                </div>
-                {form.materials.map((material, index) => (
-                  <div key={material.id} className="materialRow">
-                    <div>
-                      {index === 0 && <label>Názov</label>}
-                      <input style={inputStyle} value={material.name} onChange={(event) => updateMaterial(index, 'name', event.target.value)} />
-                    </div>
-                    <div>
-                      {index === 0 && <label>Množstvo</label>}
-                      <input style={inputStyle} value={material.quantity} onChange={(event) => updateMaterial(index, 'quantity', event.target.value)} />
-                    </div>
-                    <div>
-                      {index === 0 && <label>MJ</label>}
-                      <select style={inputStyle} value={material.unit} onChange={(event) => updateMaterial(index, 'unit', event.target.value)}>
-                        {UNIT_OPTIONS.map((unit) => (
-                          <option key={unit} value={unit}>
-                            {unit}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      {index === 0 && <label>Poznámka</label>}
-                      <input style={inputStyle} value={material.note} onChange={(event) => updateMaterial(index, 'note', event.target.value)} />
-                    </div>
-                    <button type="button" style={{ ...buttonStyle, minWidth: 34, padding: 0 }} onClick={() => removeMaterialRow(index)}>
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
-
               <div className="sketchPanel">
                 <div className="sketchHeader">
                   <strong>Kreslená poznámka</strong>
@@ -1063,7 +904,6 @@ export default function InspectionsPage() {
                   <div>Akcie</div>
                 </div>
                 {filteredInspections.map((inspection) => {
-                  const materialCount = normalizeMaterials(inspection.materials).filter((item) => item.name.trim()).length
                   return (
                     <article key={inspection.id} className="inspectionRow">
                       <div>
@@ -1077,10 +917,7 @@ export default function InspectionsPage() {
                       </div>
                       <div>
                         <strong>{inspection.request_summary || inspection.quote_note || '-'}</strong>
-                        <div className="muted">
-                          {materialCount > 0 ? `${materialCount} položiek materiálu` : 'Bez materiálu'}
-                          {inspection.sketch_data_url ? ' · kresba uložená' : ''}
-                        </div>
+                        {inspection.sketch_data_url ? <div className="muted">Kresba uložená</div> : null}
                       </div>
                       <div>
                         <span className="statusBadge">{STATUS_LABELS[inspection.status] || inspection.status}</span>
@@ -1088,9 +925,6 @@ export default function InspectionsPage() {
                       <div className="inspectionButtonRow">
                         <button type="button" style={buttonStyle} onClick={() => editInspection(inspection)}>
                           Upraviť
-                        </button>
-                        <button type="button" style={buttonStyle} onClick={() => void addMaterialsToPurchaseList(inspection)}>
-                          Do nákupu
                         </button>
                         <button type="button" style={buttonStyle} onClick={() => void deleteInspection(inspection.id)}>
                           Zmazať
