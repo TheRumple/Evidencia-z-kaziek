@@ -72,6 +72,8 @@ export default function InspectionsPage() {
   const drawingRef = useRef(false)
   const lastPointRef = useRef<{ x: number; y: number } | null>(null)
   const activePointersRef = useRef(new Set<number>())
+  const multiTouchRef = useRef(false)
+  const sketchSnapshotRef = useRef<ImageData | null>(null)
   const [checkingAuth, setCheckingAuth] = useState(true)
   const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -295,10 +297,14 @@ export default function InspectionsPage() {
     if (!canvas || !ctx) return
     activePointersRef.current.add(event.pointerId)
     if (activePointersRef.current.size > 1) {
+      multiTouchRef.current = true
       drawingRef.current = false
       lastPointRef.current = null
+      if (sketchSnapshotRef.current) ctx.putImageData(sketchSnapshotRef.current, 0, 0)
       return
     }
+    multiTouchRef.current = false
+    sketchSnapshotRef.current = ctx.getImageData(0, 0, canvas.width, canvas.height)
     drawingRef.current = true
     canvas.setPointerCapture(event.pointerId)
     lastPointRef.current = getCanvasPoint(event)
@@ -307,8 +313,12 @@ export default function InspectionsPage() {
   function draw(event: PointerEvent<HTMLCanvasElement>) {
     if (!drawingRef.current) return
     if (activePointersRef.current.size > 1) {
+      const canvas = canvasRef.current
+      const ctx = canvas?.getContext('2d')
+      multiTouchRef.current = true
       drawingRef.current = false
       lastPointRef.current = null
+      if (ctx && sketchSnapshotRef.current) ctx.putImageData(sketchSnapshotRef.current, 0, 0)
       return
     }
     const canvas = canvasRef.current
@@ -329,11 +339,16 @@ export default function InspectionsPage() {
 
   function stopDrawing(event: PointerEvent<HTMLCanvasElement>) {
     const canvas = canvasRef.current
+    const wasDrawing = drawingRef.current
     activePointersRef.current.delete(event.pointerId)
     drawingRef.current = false
     lastPointRef.current = null
     if (canvas?.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId)
-    if (canvas) updateForm('sketchDataUrl', canvas.toDataURL('image/png'))
+    if (canvas && wasDrawing && !multiTouchRef.current) updateForm('sketchDataUrl', canvas.toDataURL('image/png'))
+    if (activePointersRef.current.size === 0) {
+      multiTouchRef.current = false
+      sketchSnapshotRef.current = null
+    }
   }
 
   function clearSketch() {
@@ -582,7 +597,7 @@ export default function InspectionsPage() {
           width: 100%;
           height: min(54vh, 520px);
           background: #fff;
-          touch-action: none;
+          touch-action: pinch-zoom;
           cursor: crosshair;
         }
 
