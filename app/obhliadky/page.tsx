@@ -85,6 +85,7 @@ export default function InspectionsPage() {
   const [statusFilter, setStatusFilter] = useState<'active' | Inspection['status'] | 'all'>('active')
   const [penColor, setPenColor] = useState('#0f172a')
   const [penWidth, setPenWidth] = useState(4)
+  const [sketchTool, setSketchTool] = useState<'pen' | 'eraser'>('pen')
 
   const boxStyle: CSSProperties = {
     background: '#fff',
@@ -305,8 +306,8 @@ export default function InspectionsPage() {
     ctx.beginPath()
     ctx.moveTo(lastPoint.x, lastPoint.y)
     ctx.lineTo(point.x, point.y)
-    ctx.strokeStyle = penColor
-    ctx.lineWidth = penWidth
+    ctx.strokeStyle = sketchTool === 'eraser' ? '#ffffff' : penColor
+    ctx.lineWidth = sketchTool === 'eraser' ? penWidth * 4 : penWidth
     ctx.lineCap = 'round'
     ctx.lineJoin = 'round'
     ctx.stroke()
@@ -815,6 +816,30 @@ export default function InspectionsPage() {
                 <div className="sketchHeader">
                   <strong>Kreslená poznámka</strong>
                   <div className="sketchTools">
+                    <button
+                      type="button"
+                      style={{
+                        ...buttonStyle,
+                        background: sketchTool === 'pen' ? '#0f172a' : '#fff',
+                        borderColor: sketchTool === 'pen' ? '#0f172a' : '#cbd5e1',
+                        color: sketchTool === 'pen' ? '#fff' : '#0f172a',
+                      }}
+                      onClick={() => setSketchTool('pen')}
+                    >
+                      Pero
+                    </button>
+                    <button
+                      type="button"
+                      style={{
+                        ...buttonStyle,
+                        background: sketchTool === 'eraser' ? '#0f172a' : '#fff',
+                        borderColor: sketchTool === 'eraser' ? '#0f172a' : '#cbd5e1',
+                        color: sketchTool === 'eraser' ? '#fff' : '#0f172a',
+                      }}
+                      onClick={() => setSketchTool('eraser')}
+                    >
+                      Guma
+                    </button>
                     {['#0f172a', '#dc2626', '#16a34a', '#2563eb'].map((color) => (
                       <button
                         key={color}
@@ -827,8 +852,12 @@ export default function InspectionsPage() {
                           border: penColor === color ? '3px solid #0f172a' : '1px solid #cbd5e1',
                           background: color,
                           cursor: 'pointer',
+                          opacity: sketchTool === 'eraser' ? 0.45 : 1,
                         }}
-                        onClick={() => setPenColor(color)}
+                        onClick={() => {
+                          setPenColor(color)
+                          setSketchTool('pen')
+                        }}
                       />
                     ))}
                     <select style={{ ...inputStyle, width: 96 }} value={penWidth} onChange={(event) => setPenWidth(Number(event.target.value))}>
