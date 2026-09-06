@@ -71,6 +71,7 @@ export default function InspectionsPage() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const drawingRef = useRef(false)
   const lastPointRef = useRef<{ x: number; y: number } | null>(null)
+  const activePointersRef = useRef(new Set<number>())
   const [checkingAuth, setCheckingAuth] = useState(true)
   const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -86,6 +87,7 @@ export default function InspectionsPage() {
   const [penColor, setPenColor] = useState('#0f172a')
   const [penWidth, setPenWidth] = useState(4)
   const [sketchTool, setSketchTool] = useState<'pen' | 'eraser'>('pen')
+  const [isSketchFullscreen, setIsSketchFullscreen] = useState(false)
 
   const boxStyle: CSSProperties = {
     background: '#fff',
@@ -291,6 +293,12 @@ export default function InspectionsPage() {
     const canvas = canvasRef.current
     const ctx = canvas?.getContext('2d')
     if (!canvas || !ctx) return
+    activePointersRef.current.add(event.pointerId)
+    if (activePointersRef.current.size > 1) {
+      drawingRef.current = false
+      lastPointRef.current = null
+      return
+    }
     drawingRef.current = true
     canvas.setPointerCapture(event.pointerId)
     lastPointRef.current = getCanvasPoint(event)
@@ -298,6 +306,11 @@ export default function InspectionsPage() {
 
   function draw(event: PointerEvent<HTMLCanvasElement>) {
     if (!drawingRef.current) return
+    if (activePointersRef.current.size > 1) {
+      drawingRef.current = false
+      lastPointRef.current = null
+      return
+    }
     const canvas = canvasRef.current
     const ctx = canvas?.getContext('2d')
     const lastPoint = lastPointRef.current
@@ -316,9 +329,10 @@ export default function InspectionsPage() {
 
   function stopDrawing(event: PointerEvent<HTMLCanvasElement>) {
     const canvas = canvasRef.current
+    activePointersRef.current.delete(event.pointerId)
     drawingRef.current = false
     lastPointRef.current = null
-    canvas?.releasePointerCapture(event.pointerId)
+    if (canvas?.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId)
     if (canvas) updateForm('sketchDataUrl', canvas.toDataURL('image/png'))
   }
 
@@ -538,6 +552,17 @@ export default function InspectionsPage() {
           background: #f8fafc;
         }
 
+        .sketchPanelFullscreen {
+          position: fixed;
+          inset: 0;
+          z-index: 80;
+          border: 0;
+          border-radius: 0;
+          background: #eaf0f7;
+          display: flex;
+          flex-direction: column;
+        }
+
         .sketchHeader {
           display: flex;
           justify-content: space-between;
@@ -547,6 +572,11 @@ export default function InspectionsPage() {
           border-bottom: 1px solid #dbe4ef;
         }
 
+        .sketchPanelFullscreen .sketchHeader {
+          background: #fff;
+          flex: 0 0 auto;
+        }
+
         .sketchCanvas {
           display: block;
           width: 100%;
@@ -554,6 +584,12 @@ export default function InspectionsPage() {
           background: #fff;
           touch-action: none;
           cursor: crosshair;
+        }
+
+        .sketchPanelFullscreen .sketchCanvas {
+          flex: 1 1 auto;
+          height: auto;
+          min-height: 0;
         }
 
         .inspectionItems {
@@ -812,7 +848,7 @@ export default function InspectionsPage() {
                 </div>
               </div>
 
-              <div className="sketchPanel">
+              <div className={isSketchFullscreen ? 'sketchPanel sketchPanelFullscreen' : 'sketchPanel'}>
                 <div className="sketchHeader">
                   <strong>Kreslená poznámka</strong>
                   <div className="sketchTools">
@@ -867,6 +903,9 @@ export default function InspectionsPage() {
                     </select>
                     <button type="button" style={buttonStyle} onClick={clearSketch}>
                       Vymazať
+                    </button>
+                    <button type="button" style={buttonStyle} onClick={() => setIsSketchFullscreen((current) => !current)}>
+                      {isSketchFullscreen ? 'Zavrieť' : 'Celá obrazovka'}
                     </button>
                   </div>
                 </div>
