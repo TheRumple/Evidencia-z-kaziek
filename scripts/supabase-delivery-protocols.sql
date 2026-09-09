@@ -11,6 +11,7 @@ create table if not exists public.delivery_protocols (
   customer_name text,
   delivered_by text,
   received_by text,
+  received_signature text,
   tested boolean not null default true,
   briefed boolean not null default true,
   items jsonb not null default '[]'::jsonb,
@@ -32,6 +33,9 @@ alter table public.delivery_protocols
 
 alter table public.delivery_protocols
   add column if not exists received_by text;
+
+alter table public.delivery_protocols
+  add column if not exists received_signature text;
 
 alter table public.delivery_protocols
   add column if not exists tested boolean not null default true;
