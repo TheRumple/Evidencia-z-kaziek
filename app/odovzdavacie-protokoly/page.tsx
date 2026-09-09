@@ -29,6 +29,24 @@ type DeliveryProtocolItem = {
 
 const DEFAULT_TECHNICIAN = 'Ľuboš Ivanič'
 
+function getProtocolMonthPrefix(dateValue: string) {
+  const [year, month] = (dateValue || getTodayDate()).split('-')
+  return `OP-${year}${month}`
+}
+
+function getNextProtocolNumber(protocols: DeliveryProtocol[], dateValue: string) {
+  const prefix = getProtocolMonthPrefix(dateValue)
+  const nextSequence =
+    protocols.reduce((maxSequence, protocol) => {
+      const number = protocol.protocol_number || ''
+      if (!number.startsWith(prefix)) return maxSequence
+      const sequence = Number.parseInt(number.slice(prefix.length), 10)
+      return Number.isFinite(sequence) ? Math.max(maxSequence, sequence) : maxSequence
+    }, 0) + 1
+
+  return `${prefix}${String(nextSequence).padStart(2, '0')}`
+}
+
 function createDeliveryProtocolItem(): DeliveryProtocolItem {
   return {
     id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -175,7 +193,7 @@ export default function DeliveryProtocolsPage() {
 
   const [protocolId, setProtocolId] = useState('')
   const [customerId, setCustomerId] = useState('')
-  const [protocolNumber, setProtocolNumber] = useState('')
+  const [protocolNumber, setProtocolNumber] = useState(() => getNextProtocolNumber([], getTodayDate()))
   const [customerOrderNumber, setCustomerOrderNumber] = useState('')
   const [protocolDate, setProtocolDate] = useState(getTodayDate())
   const [customerName, setCustomerName] = useState('')
@@ -261,6 +279,12 @@ export default function DeliveryProtocolsPage() {
     void loadData(userId)
   }, [userId])
 
+  useEffect(() => {
+    if (protocolId) return
+    if (protocolNumber && protocolNumber !== getNextProtocolNumber([], protocolDate)) return
+    setProtocolNumber(getNextProtocolNumber(protocols, protocolDate))
+  }, [protocolId, protocolNumber, protocolDate, protocols])
+
   async function loadData(currentUserId: string) {
     setLoading(true)
     const [customersResult, protocolsResult] = await Promise.all([
@@ -313,7 +337,7 @@ export default function DeliveryProtocolsPage() {
   function resetForm() {
     setProtocolId('')
     setCustomerId('')
-    setProtocolNumber('')
+    setProtocolNumber(getNextProtocolNumber(protocols, getTodayDate()))
     setCustomerOrderNumber('')
     setProtocolDate(getTodayDate())
     setCustomerName('')
