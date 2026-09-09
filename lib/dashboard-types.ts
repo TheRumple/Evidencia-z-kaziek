@@ -114,7 +114,7 @@ export type DeliveryProtocol = {
   customer_name: string | null
   delivered_by: string | null
   received_by: string | null
-  received_signature: string | null
+  received_signature?: string | null
   tested: boolean
   briefed: boolean
   items: unknown
