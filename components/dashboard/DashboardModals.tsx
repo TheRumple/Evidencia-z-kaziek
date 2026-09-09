@@ -1090,23 +1090,80 @@ export function DashboardModals(props: DashboardModalsProps) {
             </div>
 
             {deliveryProtocols.length > 0 && (
-              <div>
-                <label style={labelStyle} htmlFor="delivery-protocol-saved">
-                  Pripravené protokoly
-                </label>
-                <select
-                  id="delivery-protocol-saved"
-                  style={inputStyle}
-                  value={deliveryProtocolId}
-                  onChange={(event) => openSavedDeliveryProtocol(event.target.value)}
+              <div
+                style={{
+                  border: '1px solid #e2e8f0',
+                  borderRadius: 12,
+                  overflow: 'auto',
+                }}
+              >
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '100px minmax(150px, 1fr) minmax(120px, 0.8fr) 105px 118px 86px',
+                    gap: 8,
+                    minWidth: 760,
+                    padding: '7px 10px',
+                    background: '#0f172a',
+                    color: '#fff',
+                    fontSize: 11,
+                    fontWeight: 900,
+                    textTransform: 'uppercase',
+                  }}
                 >
-                  <option value="">Nový protokol</option>
-                  {deliveryProtocols.map((protocol: any) => (
-                    <option key={protocol.id} value={protocol.id}>
-                      {protocol.protocol_number || 'Bez čísla'} - {protocol.customer_name || 'Bez zákazníka'} ({formatDate(protocol.protocol_date)})
-                    </option>
-                  ))}
-                </select>
+                  <div>Číslo</div>
+                  <div>Zákazník</div>
+                  <div>Objednávka</div>
+                  <div>Dátum</div>
+                  <div>Podpis</div>
+                  <div>Akcie</div>
+                </div>
+                {deliveryProtocols.map((protocol: any) => {
+                  const isSigned = Boolean(protocol.received_signature)
+                  return (
+                    <div
+                      key={protocol.id}
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: '100px minmax(150px, 1fr) minmax(120px, 0.8fr) 105px 118px 86px',
+                        gap: 8,
+                        minWidth: 760,
+                        alignItems: 'center',
+                        padding: '7px 10px',
+                        borderTop: '1px solid #e2e8f0',
+                        background: protocol.id === deliveryProtocolId ? '#f7fee7' : '#fff',
+                        fontSize: 12,
+                        fontWeight: 900,
+                      }}
+                    >
+                      <div>{protocol.protocol_number || 'Bez čísla'}</div>
+                      <div>{protocol.customer_name || 'Bez zákazníka'}</div>
+                      <div style={{ color: '#64748b' }}>{protocol.customer_order_number || '-'}</div>
+                      <div>{formatDate(protocol.protocol_date)}</div>
+                      <div>
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            borderRadius: 999,
+                            border: `1px solid ${isSigned ? '#86efac' : '#fecaca'}`,
+                            background: isSigned ? '#dcfce7' : '#fee2e2',
+                            color: isSigned ? '#166534' : '#991b1b',
+                            padding: '4px 8px',
+                            fontSize: 11,
+                            fontWeight: 900,
+                          }}
+                        >
+                          {isSigned ? 'Podpísané' : 'Nepodpísané'}
+                        </span>
+                      </div>
+                      <button type="button" style={buttonStyle} onClick={() => openSavedDeliveryProtocol(protocol.id)}>
+                        Upraviť
+                      </button>
+                    </div>
+                  )
+                })}
               </div>
             )}
 
@@ -1320,7 +1377,7 @@ export function DashboardModals(props: DashboardModalsProps) {
                 + Pridať položku
               </button>
               <button type="button" style={buttonStyle} onClick={saveDeliveryProtocol} disabled={savingDeliveryProtocol}>
-                {savingDeliveryProtocol ? 'Ukladám...' : 'Uložiť prípravu'}
+                {savingDeliveryProtocol ? 'Ukladám...' : 'Uložiť protokol'}
               </button>
               <button type="button" style={primaryButtonStyle} onClick={() => exportDeliveryProtocolPdf('show')}>
                 Ukáž PDF
