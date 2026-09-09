@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { CSSProperties } from 'react'
+import type { CSSProperties, PointerEvent } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import jsPDF from 'jspdf'
@@ -101,15 +101,7 @@ function isProtocolSigned(protocol: DeliveryProtocol) {
   return Boolean(getDeliveryProtocolSignature(protocol))
 }
 
-function SignaturePad({
-  label,
-  value,
-  onChange,
-}: {
-  label: string
-  value: string
-  onChange: (value: string) => void
-}) {
+function SignaturePad({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const drawingRef = useRef(false)
   const lastPointRef = useRef<{ x: number; y: number } | null>(null)
@@ -132,111 +124,98 @@ function SignaturePad({
     image.src = value
   }, [value])
 
-  useEffect(() => {
+  function getPoint(event: PointerEvent<HTMLCanvasElement>) {
+    const canvas = canvasRef.current
+    if (!canvas) return { x: 0, y: 0 }
+    const rect = canvas.getBoundingClientRect()
+    return {
+      x: ((event.clientX - rect.left) / rect.width) * canvas.width,
+      y: ((event.clientY - rect.top) / rect.height) * canvas.height,
+    }
+  }
+
+  function startDrawing(event: PointerEvent<HTMLCanvasElement>) {
     const canvas = canvasRef.current
     const ctx = canvas?.getContext('2d')
     if (!canvas || !ctx) return
-    const signatureCanvas = canvas
-    const signatureCtx = ctx
-
-    function getPoint(event: globalThis.PointerEvent) {
-      const rect = signatureCanvas.getBoundingClientRect()
-      return {
-        x: ((event.clientX - rect.left) / rect.width) * signatureCanvas.width,
-        y: ((event.clientY - rect.top) / rect.height) * signatureCanvas.height,
-      }
-    }
-
-    function startDrawing(event: globalThis.PointerEvent) {
-      event.preventDefault()
-      activePointersRef.current.add(event.pointerId)
-      if (activePointersRef.current.size > 1) {
-        multiTouchRef.current = true
-        drawingRef.current = false
-        lastPointRef.current = null
-        if (signatureSnapshotRef.current) signatureCtx.putImageData(signatureSnapshotRef.current, 0, 0)
-        return
-      }
-      multiTouchRef.current = false
-      signatureSnapshotRef.current = signatureCtx.getImageData(0, 0, signatureCanvas.width, signatureCanvas.height)
-      drawingRef.current = true
-      signatureCanvas.setPointerCapture(event.pointerId)
-      lastPointRef.current = getPoint(event)
-    }
-
-    function draw(event: globalThis.PointerEvent) {
-      event.preventDefault()
-      if (!drawingRef.current) return
-      if (activePointersRef.current.size > 1) {
-        multiTouchRef.current = true
-        drawingRef.current = false
-        lastPointRef.current = null
-        if (signatureSnapshotRef.current) signatureCtx.putImageData(signatureSnapshotRef.current, 0, 0)
-        return
-      }
-      const lastPoint = lastPointRef.current
-      if (!lastPoint) return
-      const point = getPoint(event)
-      signatureCtx.beginPath()
-      signatureCtx.moveTo(lastPoint.x, lastPoint.y)
-      signatureCtx.lineTo(point.x, point.y)
-      signatureCtx.strokeStyle = '#020617'
-      signatureCtx.lineWidth = 3
-      signatureCtx.lineCap = 'round'
-      signatureCtx.lineJoin = 'round'
-      signatureCtx.stroke()
-      lastPointRef.current = point
-    }
-
-    function stopDrawing(event: globalThis.PointerEvent) {
-      event.preventDefault()
-      const wasDrawing = drawingRef.current
-      activePointersRef.current.delete(event.pointerId)
+    event.preventDefault()
+    activePointersRef.current.add(event.pointerId)
+    if (activePointersRef.current.size > 1) {
+      multiTouchRef.current = true
       drawingRef.current = false
       lastPointRef.current = null
-      if (signatureCanvas.hasPointerCapture(event.pointerId)) signatureCanvas.releasePointerCapture(event.pointerId)
-      if (wasDrawing && !multiTouchRef.current) onChange(signatureCanvas.toDataURL('image/png'))
-      if (activePointersRef.current.size === 0) {
-        multiTouchRef.current = false
-        signatureSnapshotRef.current = null
-      }
+      if (signatureSnapshotRef.current) ctx.putImageData(signatureSnapshotRef.current, 0, 0)
+      return
+    }
+    multiTouchRef.current = false
+    signatureSnapshotRef.current = ctx.getImageData(0, 0, canvas.width, canvas.height)
+    drawingRef.current = true
+    canvas.setPointerCapture(event.pointerId)
+    lastPointRef.current = getPoint(event)
+  }
+
+  function draw(event: PointerEvent<HTMLCanvasElement>) {
+    if (!drawingRef.current) return
+    event.preventDefault()
+    if (activePointersRef.current.size > 1) {
+      const canvas = canvasRef.current
+      const ctx = canvas?.getContext('2d')
+      multiTouchRef.current = true
+      drawingRef.current = false
+      lastPointRef.current = null
+      if (ctx && signatureSnapshotRef.current) ctx.putImageData(signatureSnapshotRef.current, 0, 0)
+      return
     }
 
-    signatureCanvas.addEventListener('pointerdown', startDrawing)
-    signatureCanvas.addEventListener('pointermove', draw)
-    signatureCanvas.addEventListener('pointerup', stopDrawing)
-    signatureCanvas.addEventListener('pointercancel', stopDrawing)
-    signatureCanvas.addEventListener('pointerleave', stopDrawing)
-
-    return () => {
-      signatureCanvas.removeEventListener('pointerdown', startDrawing)
-      signatureCanvas.removeEventListener('pointermove', draw)
-      signatureCanvas.removeEventListener('pointerup', stopDrawing)
-      signatureCanvas.removeEventListener('pointercancel', stopDrawing)
-      signatureCanvas.removeEventListener('pointerleave', stopDrawing)
-    }
-  }, [onChange])
-
-  function clearSignature() {
     const canvas = canvasRef.current
     const ctx = canvas?.getContext('2d')
-    if (!canvas || !ctx) return
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-    onChange('')
+    const lastPoint = lastPointRef.current
+    if (!canvas || !ctx || !lastPoint) return
+    const point = getPoint(event)
+    ctx.beginPath()
+    ctx.moveTo(lastPoint.x, lastPoint.y)
+    ctx.lineTo(point.x, point.y)
+    ctx.strokeStyle = '#020617'
+    ctx.lineWidth = 3
+    ctx.lineCap = 'round'
+    ctx.lineJoin = 'round'
+    ctx.stroke()
+    lastPointRef.current = point
+  }
+
+  function stopDrawing(event: PointerEvent<HTMLCanvasElement>) {
+    const canvas = canvasRef.current
+    const wasDrawing = drawingRef.current
+    activePointersRef.current.delete(event.pointerId)
+    drawingRef.current = false
+    lastPointRef.current = null
+    if (canvas?.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId)
+    if (canvas && wasDrawing && !multiTouchRef.current) onChange(canvas.toDataURL('image/png'))
+    if (activePointersRef.current.size === 0) {
+      multiTouchRef.current = false
+      signatureSnapshotRef.current = null
+    }
   }
 
   return (
     <div className="signatureBox">
-      <div className="signatureHeader">
-        <span>{label}</span>
-        <button type="button" onClick={clearSignature} disabled={!value}>
-          Vymazať
-        </button>
-      </div>
       <canvas
         ref={canvasRef}
         width={520}
         height={150}
+        onPointerDown={startDrawing}
+        onPointerMove={draw}
+        onPointerUp={stopDrawing}
+        onPointerCancel={stopDrawing}
+        style={{
+          width: '100%',
+          height: 160,
+          background: '#fff',
+          border: '1px dashed #94a3b8',
+          borderRadius: 12,
+          cursor: 'crosshair',
+          touchAction: 'none',
+        }}
       />
     </div>
   )
@@ -767,15 +746,13 @@ export default function DeliveryProtocolsPage() {
         .badge.unsigned { background:#fee2e2; color:#991b1b; border-color:#fca5a5; }
         .rowActions { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
         .signatureBox { display:grid; gap:8px; }
-        .signatureHeader { display:flex; justify-content:space-between; align-items:center; gap:10px; color:#0f172a; font-weight:900; }
-        .signatureHeader button { border:1px solid #cbd5e1; background:#fff; border-radius:8px; padding:6px 9px; color:#334155; font-weight:900; }
-        .signatureHeader button:disabled { opacity:.45; }
         canvas { width:100%; height:130px; background:#fff; border:1px dashed #94a3b8; border-radius:12px; cursor:crosshair; touch-action:none; }
         .modalBackdrop { position:fixed; inset:0; z-index:50; background:rgba(15,23,42,.58); display:flex; align-items:center; justify-content:center; padding:14px; }
         .signatureModal { width:min(680px,100%); background:#fff; border-radius:16px; border:1px solid #dbe4ef; box-shadow:0 24px 70px rgba(15,23,42,.3); padding:14px; display:grid; gap:12px; }
         .signatureModalHeader { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; }
         .signatureModalHeader h2 { margin:0; font-size:22px; }
         .signatureModalHeader p { margin:4px 0 0; color:#64748b; font-weight:800; }
+        .signatureModalActions { display:flex; align-items:center; justify-content:space-between; gap:10px; }
         .signatureStatusButton { border:0; background:transparent; padding:0; cursor:pointer; text-align:left; }
         .signatureStatusButton:focus-visible { outline:2px solid #65a30d; outline-offset:2px; border-radius:999px; }
         .loadingPage { min-height:100vh; padding:28px; background:#020617; color:#fff; font-weight:900; }
@@ -859,7 +836,7 @@ export default function DeliveryProtocolsPage() {
                   </label>
                 </div>
                 <div className="full">
-                  <SignaturePad label="Podpis prevzal" value={receivedSignature} onChange={setReceivedSignature} />
+                  <SignaturePad value={receivedSignature} onChange={setReceivedSignature} />
                 </div>
               </div>
             </div>
@@ -979,14 +956,14 @@ export default function DeliveryProtocolsPage() {
                 </button>
               </div>
 
-              <SignaturePad label="Podpis prevzal" value={signatureDraft} onChange={setSignatureDraft} />
+              <SignaturePad value={signatureDraft} onChange={setSignatureDraft} />
 
-              <div className="actions">
-                <button type="button" style={primaryButtonStyle} onClick={saveProtocolSignature} disabled={saving}>
-                  {saving ? 'Ukladám...' : 'Uložiť podpis'}
+              <div className="signatureModalActions">
+                <button type="button" style={buttonStyle} onClick={() => setSignatureDraft('')} disabled={!signatureDraft}>
+                  Zmazať
                 </button>
-                <button type="button" style={buttonStyle} onClick={() => setSignatureProtocol(null)}>
-                  Zrušiť
+                <button type="button" style={primaryButtonStyle} onClick={saveProtocolSignature} disabled={saving}>
+                  {saving ? 'Ukladám...' : 'Uložiť'}
                 </button>
               </div>
             </div>
