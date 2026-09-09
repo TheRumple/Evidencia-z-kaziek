@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { getSessionWithTimeout } from '@/lib/auth-timeout'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 
@@ -41,8 +42,8 @@ export default function AdminRequestsPage() {
   const [editCustomerId, setEditCustomerId] = useState('')
 
   useEffect(() => {
-    void supabase.auth.getSession().then(({ data }) => {
-      setUserId(data.session?.user.id || null)
+    void getSessionWithTimeout().then((session) => {
+      setUserId(session?.user.id || null)
     })
     void loadPendingRequests()
   }, [])

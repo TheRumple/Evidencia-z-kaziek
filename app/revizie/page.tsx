@@ -5,6 +5,7 @@ import type { CSSProperties } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { BrandLogo } from '@/components/BrandLogo'
+import { getSessionWithTimeout } from '@/lib/auth-timeout'
 import { supabase } from '@/lib/supabase'
 import type { Customer, MaintenanceRevision, Notice } from '@/lib/dashboard-types'
 import { formatDate, getTodayDate } from '@/lib/dashboard-utils'
@@ -79,9 +80,7 @@ export default function RevisionsPage() {
     let mounted = true
 
     async function initAuth() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      const session = await getSessionWithTimeout()
 
       if (!mounted) return
       if (!session?.user) {

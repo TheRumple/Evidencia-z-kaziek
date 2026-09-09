@@ -5,6 +5,7 @@ import type { CSSProperties } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { BrandLogo } from '@/components/BrandLogo'
+import { getSessionWithTimeout } from '@/lib/auth-timeout'
 import type { Customer, MaterialRequest, Notice } from '@/lib/dashboard-types'
 import { formatDate, getTodayDate } from '@/lib/dashboard-utils'
 import { supabase } from '@/lib/supabase'
@@ -106,9 +107,7 @@ export default function MaterialPage() {
     let mounted = true
 
     async function initAuth() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      const session = await getSessionWithTimeout()
 
       if (!mounted) return
       if (!session?.user) {

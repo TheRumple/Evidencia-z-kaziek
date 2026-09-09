@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { BrandLogo } from '@/components/BrandLogo'
+import { getSessionWithTimeout } from '@/lib/auth-timeout'
 import type { Customer, Notice, Quote } from '@/lib/dashboard-types'
 import { PDF_FONT_NAME, formatDate, getTodayDate, loadFirstAvailableImage, pdfSafeText, registerPdfFont } from '@/lib/dashboard-utils'
 import { supabase } from '@/lib/supabase'
@@ -296,9 +297,7 @@ export default function QuotesPage() {
     let mounted = true
 
     async function initAuth() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      const session = await getSessionWithTimeout()
 
       if (!mounted) return
       if (!session?.user) {

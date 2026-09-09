@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
 import Link from 'next/link'
 import { BrandLogo } from '@/components/BrandLogo'
+import { getSessionWithTimeout } from '@/lib/auth-timeout'
 import { supabase } from '@/lib/supabase'
 
 type Customer = {
@@ -117,9 +118,7 @@ export default function FakturovanePage() {
   }, [userId])
 
   async function checkUser() {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
+    const session = await getSessionWithTimeout()
 
     if (!session?.user) {
       window.location.href = '/login'

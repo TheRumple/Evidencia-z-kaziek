@@ -31,6 +31,7 @@ import {
   pdfSafeText,
   registerPdfFont,
 } from '@/lib/dashboard-utils'
+import { getSessionWithTimeout } from '@/lib/auth-timeout'
 import { supabase } from '@/lib/supabase'
 
 function getRequesterFromDescription(description: string | null | undefined) {
@@ -228,9 +229,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
     let mounted = true
 
     async function initAuth() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      const session = await getSessionWithTimeout()
 
       if (!mounted) return
 

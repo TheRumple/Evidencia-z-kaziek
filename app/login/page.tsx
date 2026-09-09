@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { BrandLogo } from '@/components/BrandLogo'
+import { getSessionWithTimeout, signInWithTimeout } from '@/lib/auth-timeout'
 import { supabase } from '@/lib/supabase'
 
 export default function LoginPage() {
@@ -41,9 +42,7 @@ export default function LoginPage() {
 
   async function checkUser() {
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      const session = await getSessionWithTimeout()
 
       if (session?.user) {
         router.replace('/')
@@ -66,13 +65,10 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
+      const { error } = await signInWithTimeout(email, password)
 
       if (error) {
-        setMessage('Nesprávny email alebo heslo.')
+        setMessage(error.message.includes('trvá príliš dlho') ? error.message : 'Nesprávny email alebo heslo.')
         return
       }
 

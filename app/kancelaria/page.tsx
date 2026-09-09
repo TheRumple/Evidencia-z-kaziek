@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
 import type { MaintenanceRevision, Order } from '@/lib/dashboard-types'
+import { getSessionWithTimeout } from '@/lib/auth-timeout'
 import { supabase } from '@/lib/supabase'
 
 type WeatherState = {
@@ -55,9 +56,7 @@ export default function OfficeDashboardPage() {
     let mounted = true
 
     async function checkSession() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      const session = await getSessionWithTimeout()
 
       if (!mounted) return
 
