@@ -1550,12 +1550,12 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
     setDeliveryProtocolReceivedBy(protocol.received_by || '')
     setDeliveryProtocolTested(Boolean(protocol.tested))
     setDeliveryProtocolBriefed(Boolean(protocol.briefed))
-    setDeliveryProtocolReceivedSignature(protocol.received_signature || '')
+    setDeliveryProtocolReceivedSignature('')
     setDeliveryProtocolItems(normalizeDeliveryProtocolItems(protocol.items))
   }
 
   async function saveDeliveryProtocol() {
-    if (!userId) return null
+    if (!userId) return
 
     const cleanItems = deliveryProtocolItems.filter(
       (item) => item.name.trim() || item.serialNumber.trim() || item.quantity.trim() || item.note.trim()
@@ -1563,7 +1563,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
 
     if (cleanItems.length === 0) {
       setNotice({ type: 'error', text: 'Doplň aspoň jednu odovzdávanú položku.' })
-      return null
+      return
     }
 
     const payload = {
@@ -1575,7 +1575,6 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
       customer_name: deliveryProtocolCustomer.trim() || null,
       delivered_by: deliveryProtocolDeliveredBy.trim() || null,
       received_by: deliveryProtocolReceivedBy.trim() || null,
-      received_signature: deliveryProtocolReceivedSignature || null,
       tested: deliveryProtocolTested,
       briefed: deliveryProtocolBriefed,
       items: cleanItems,
@@ -1592,7 +1591,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
 
     if (error) {
       setNotice({ type: 'error', text: `Protokol sa neuložil: ${error.message}` })
-      return null
+      return
     }
 
     const saved = data as DeliveryProtocol
@@ -1602,7 +1601,6 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
       return [saved, ...withoutSaved]
     })
     setNotice({ type: 'success', text: 'Odovzdávací protokol je uložený.' })
-    return saved
   }
 
   function updateDeliveryProtocolItem(index: number, field: keyof Omit<DeliveryProtocolItem, 'id'>, value: string) {
@@ -1650,9 +1648,6 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
     }
 
     try {
-      const savedProtocol = await saveDeliveryProtocol()
-      if (!savedProtocol) return
-
       const protocolLogoDataUrl = await loadFirstAvailableImage(['/delivery-protocol-logo.png'])
       const doc = new jsPDF({
         orientation: 'portrait',
