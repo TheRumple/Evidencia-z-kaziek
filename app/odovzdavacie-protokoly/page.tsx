@@ -508,16 +508,19 @@ export default function DeliveryProtocolsPage() {
     setItems((current) => current.map((item, itemIndex) => (itemIndex === index ? { ...item, [field]: value } : item)))
   }
 
-  async function exportPdf(action: 'show' | 'mail' = 'show') {
-    const filledItems = items.filter((item) => item.name.trim() || item.serialNumber.trim() || item.quantity.trim() || item.note.trim())
+  async function exportPdf(action: 'show' | 'mail' = 'show', sourceProtocol?: DeliveryProtocol) {
+    const sourceItems = sourceProtocol ? normalizeDeliveryProtocolItems(sourceProtocol.items) : items
+    const filledItems = sourceItems.filter((item) => item.name.trim() || item.serialNumber.trim() || item.quantity.trim() || item.note.trim())
     if (filledItems.length === 0) {
       setNotice({ type: 'error', text: 'Doplň aspoň jednu odovzdávanú položku.' })
       return
     }
 
     try {
-      const saved = await saveProtocol()
-      if (!saved) return
+      if (!sourceProtocol) {
+        const saved = await saveProtocol()
+        if (!saved) return
+      }
 
       const logoDataUrl = await loadFirstAvailableImage(['/delivery-protocol-logo.png'])
       const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
@@ -526,11 +529,20 @@ export default function DeliveryProtocolsPage() {
       const pageWidth = doc.internal.pageSize.getWidth()
       const pageHeight = doc.internal.pageSize.getHeight()
       const margin = 14
-      const safeProtocolNumber = pdfSafeText(protocolNumber)
-      const safeCustomerOrderNumber = pdfSafeText(customerOrderNumber)
-      const safeCustomerName = pdfSafeText(customerName)
-      const safeDeliveredBy = pdfSafeText(deliveredBy)
-      const safeReceivedBy = pdfSafeText(receivedBy)
+      const sourceProtocolNumber = sourceProtocol?.protocol_number || protocolNumber
+      const sourceCustomerOrderNumber = sourceProtocol?.customer_order_number || customerOrderNumber
+      const sourceCustomerName = sourceProtocol?.customer_name || customerName
+      const sourceProtocolDate = sourceProtocol?.protocol_date || protocolDate
+      const sourceDeliveredBy = sourceProtocol?.delivered_by || deliveredBy
+      const sourceReceivedBy = sourceProtocol?.received_by || receivedBy
+      const sourceSignature = sourceProtocol ? getDeliveryProtocolSignature(sourceProtocol) : receivedSignature
+      const sourceTested = sourceProtocol ? Boolean(sourceProtocol.tested) : tested
+      const sourceBriefed = sourceProtocol ? Boolean(sourceProtocol.briefed) : briefed
+      const safeProtocolNumber = pdfSafeText(sourceProtocolNumber)
+      const safeCustomerOrderNumber = pdfSafeText(sourceCustomerOrderNumber)
+      const safeCustomerName = pdfSafeText(sourceCustomerName)
+      const safeDeliveredBy = pdfSafeText(sourceDeliveredBy)
+      const safeReceivedBy = pdfSafeText(sourceReceivedBy)
 
       function drawHeader(pageNumber: number) {
         doc.setTextColor(15, 23, 42)
@@ -593,7 +605,7 @@ export default function DeliveryProtocolsPage() {
       doc.text('Dátum odovzdania:', 112, customerInfoY)
       doc.setFont(PDF_FONT_NAME, 'normal')
       doc.text(safeCustomerName, margin, customerInfoY + 6)
-      doc.text(formatDate(protocolDate) || '-', 112, customerInfoY + 6)
+      doc.text(formatDate(sourceProtocolDate) || '-', 112, customerInfoY + 6)
 
       doc.setDrawColor(15, 23, 42)
       doc.setLineWidth(0.4)
@@ -645,8 +657,8 @@ export default function DeliveryProtocolsPage() {
       doc.text('POTVRDENIE', margin, footerStartY)
       doc.setFont(PDF_FONT_NAME, 'normal')
       doc.setFontSize(10)
-      doc.text(`${tested ? '[x]' : '[ ]'} Zariadenie bolo odskúšané a je funkčné.`, margin, footerStartY + 8)
-      doc.text(`${briefed ? '[x]' : '[ ]'} Zákazník bol oboznámený so základnou obsluhou.`, margin, footerStartY + 15)
+      doc.text(`${sourceTested ? '[x]' : '[ ]'} Zariadenie bolo odskúšané a je funkčné.`, margin, footerStartY + 8)
+      doc.text(`${sourceBriefed ? '[x]' : '[ ]'} Zákazník bol oboznámený so základnou obsluhou.`, margin, footerStartY + 15)
 
       const signatureY = footerStartY + 34
       doc.setFont(PDF_FONT_NAME, 'bold')
@@ -655,7 +667,7 @@ export default function DeliveryProtocolsPage() {
       doc.setFont(PDF_FONT_NAME, 'normal')
       doc.text(`Meno: ${safeDeliveredBy}`, margin, signatureY + 10)
       doc.text(`Meno: ${safeReceivedBy}`, 112, signatureY + 10)
-      if (receivedSignature) doc.addImage(receivedSignature, 'PNG', 114, signatureY + 12, 58, 15)
+      if (sourceSignature) doc.addImage(sourceSignature, 'PNG', 114, signatureY + 12, 58, 15)
       doc.line(112, signatureY + 28, pageWidth - margin, signatureY + 28)
       doc.setFontSize(8)
       doc.text('Podpis', 112, signatureY + 33)
@@ -677,7 +689,7 @@ export default function DeliveryProtocolsPage() {
         a.download = `${safeName}.pdf`
         a.click()
 
-        const selectedCustomer = customers.find((customer) => customer.id === customerId)
+        const selectedCustomer = customers.find((customer) => customer.id === (sourceProtocol?.customer_id || customerId))
         const recipient = selectedCustomer?.email || ''
         const subject = `Odovzdávací protokol ${safeProtocolNumber}`
         const body = ['Dobrý deň,', '', 'v prílohe posielame odovzdávací protokol.', '', 'S pozdravom', 'ITspot s. r. o.'].join('\n')
@@ -737,7 +749,7 @@ export default function DeliveryProtocolsPage() {
         .listHeader { display:flex; justify-content:space-between; gap:10px; align-items:end; flex-wrap:wrap; margin-bottom:10px; }
         .filters { display:flex; gap:8px; flex-wrap:wrap; }
         .protocolTable { overflow:auto; border:1px solid #e2e8f0; border-radius:10px; }
-        .protocolHead, .protocolRow { display:grid; grid-template-columns:102px minmax(150px,1fr) minmax(105px,.65fr) 92px 112px 92px; min-width:700px; gap:8px; align-items:center; padding:8px 10px; }
+        .protocolHead, .protocolRow { display:grid; grid-template-columns:102px minmax(150px,1fr) minmax(105px,.65fr) 92px 112px 230px; min-width:840px; gap:8px; align-items:center; padding:8px 10px; }
         .protocolHead { background:#f1f5f9; color:#475569; font-size:11px; font-weight:1000; text-transform:uppercase; }
         .protocolRow { border-top:1px solid #e2e8f0; font-size:13px; font-weight:900; cursor:pointer; background:#fff; }
         .protocolRow:hover, .protocolRow.active { background:#f7fee7; }
@@ -875,8 +887,6 @@ export default function DeliveryProtocolsPage() {
                 <button type="button" style={buttonStyle} onClick={saveProtocol} disabled={saving}>
                   {saving ? 'Ukladám...' : 'Uložiť protokol'}
                 </button>
-                <button type="button" style={primaryButtonStyle} onClick={() => exportPdf('show')}>Ukáž PDF</button>
-                <button type="button" style={primaryButtonStyle} onClick={() => exportPdf('mail')}>Odoslať mailom</button>
               </div>
             </div>
           </section>
@@ -929,6 +939,8 @@ export default function DeliveryProtocolsPage() {
                     </button>
                   </div>
                   <div className="rowActions">
+                    <button type="button" style={buttonStyle} onClick={(event) => { event.stopPropagation(); void exportPdf('show', protocol) }}>Ukáž PDF</button>
+                    <button type="button" style={buttonStyle} onClick={(event) => { event.stopPropagation(); void exportPdf('mail', protocol) }}>Email</button>
                     <button type="button" style={buttonStyle} onClick={(event) => { event.stopPropagation(); openProtocol(protocol) }}>Upraviť</button>
                   </div>
                 </div>
