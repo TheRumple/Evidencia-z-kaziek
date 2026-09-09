@@ -2860,10 +2860,10 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
               <span className="sideMenuIcon">›</span>
             </Link>
 
-            <button type="button" style={sideNavButton(false)} onClick={openDeliveryProtocolModal}>
+            <Link href="/odovzdavacie-protokoly" style={sideNavButton(false)}>
               <span>Odovzdávací protokol</span>
               <span className="sideMenuIcon">›</span>
-            </button>
+            </Link>
 
             <Link href="/kancelaria" style={sideNavButton(false)}>
               <span>Kancelária</span>
