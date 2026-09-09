@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { CSSProperties, PointerEvent } from 'react'
+import type { CSSProperties } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import jsPDF from 'jspdf'
@@ -132,75 +132,90 @@ function SignaturePad({
     image.src = value
   }, [value])
 
-  function getPoint(event: PointerEvent<HTMLCanvasElement>) {
-    const canvas = canvasRef.current
-    if (!canvas) return { x: 0, y: 0 }
-    const rect = canvas.getBoundingClientRect()
-    return {
-      x: ((event.clientX - rect.left) / rect.width) * canvas.width,
-      y: ((event.clientY - rect.top) / rect.height) * canvas.height,
-    }
-  }
-
-  function startDrawing(event: PointerEvent<HTMLCanvasElement>) {
+  useEffect(() => {
     const canvas = canvasRef.current
     const ctx = canvas?.getContext('2d')
     if (!canvas || !ctx) return
-    activePointersRef.current.add(event.pointerId)
-    if (activePointersRef.current.size > 1) {
-      multiTouchRef.current = true
-      drawingRef.current = false
-      lastPointRef.current = null
-      if (signatureSnapshotRef.current) ctx.putImageData(signatureSnapshotRef.current, 0, 0)
-      return
-    }
-    multiTouchRef.current = false
-    signatureSnapshotRef.current = ctx.getImageData(0, 0, canvas.width, canvas.height)
-    drawingRef.current = true
-    canvas.setPointerCapture(event.pointerId)
-    lastPointRef.current = getPoint(event)
-  }
+    const signatureCanvas = canvas
+    const signatureCtx = ctx
 
-  function draw(event: PointerEvent<HTMLCanvasElement>) {
-    if (!drawingRef.current) return
-    if (activePointersRef.current.size > 1) {
-      const canvas = canvasRef.current
-      const ctx = canvas?.getContext('2d')
-      multiTouchRef.current = true
-      drawingRef.current = false
-      lastPointRef.current = null
-      if (ctx && signatureSnapshotRef.current) ctx.putImageData(signatureSnapshotRef.current, 0, 0)
-      return
+    function getPoint(event: globalThis.PointerEvent) {
+      const rect = signatureCanvas.getBoundingClientRect()
+      return {
+        x: ((event.clientX - rect.left) / rect.width) * signatureCanvas.width,
+        y: ((event.clientY - rect.top) / rect.height) * signatureCanvas.height,
+      }
     }
-    const canvas = canvasRef.current
-    const ctx = canvas?.getContext('2d')
-    const lastPoint = lastPointRef.current
-    if (!canvas || !ctx || !lastPoint) return
-    const point = getPoint(event)
-    ctx.beginPath()
-    ctx.moveTo(lastPoint.x, lastPoint.y)
-    ctx.lineTo(point.x, point.y)
-    ctx.strokeStyle = '#020617'
-    ctx.lineWidth = 3
-    ctx.lineCap = 'round'
-    ctx.lineJoin = 'round'
-    ctx.stroke()
-    lastPointRef.current = point
-  }
 
-  function stopDrawing(event: PointerEvent<HTMLCanvasElement>) {
-    const canvas = canvasRef.current
-    const wasDrawing = drawingRef.current
-    activePointersRef.current.delete(event.pointerId)
-    drawingRef.current = false
-    lastPointRef.current = null
-    if (canvas?.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId)
-    if (canvas && wasDrawing && !multiTouchRef.current) onChange(canvas.toDataURL('image/png'))
-    if (activePointersRef.current.size === 0) {
+    function startDrawing(event: globalThis.PointerEvent) {
+      event.preventDefault()
+      activePointersRef.current.add(event.pointerId)
+      if (activePointersRef.current.size > 1) {
+        multiTouchRef.current = true
+        drawingRef.current = false
+        lastPointRef.current = null
+        if (signatureSnapshotRef.current) signatureCtx.putImageData(signatureSnapshotRef.current, 0, 0)
+        return
+      }
       multiTouchRef.current = false
-      signatureSnapshotRef.current = null
+      signatureSnapshotRef.current = signatureCtx.getImageData(0, 0, signatureCanvas.width, signatureCanvas.height)
+      drawingRef.current = true
+      signatureCanvas.setPointerCapture(event.pointerId)
+      lastPointRef.current = getPoint(event)
     }
-  }
+
+    function draw(event: globalThis.PointerEvent) {
+      event.preventDefault()
+      if (!drawingRef.current) return
+      if (activePointersRef.current.size > 1) {
+        multiTouchRef.current = true
+        drawingRef.current = false
+        lastPointRef.current = null
+        if (signatureSnapshotRef.current) signatureCtx.putImageData(signatureSnapshotRef.current, 0, 0)
+        return
+      }
+      const lastPoint = lastPointRef.current
+      if (!lastPoint) return
+      const point = getPoint(event)
+      signatureCtx.beginPath()
+      signatureCtx.moveTo(lastPoint.x, lastPoint.y)
+      signatureCtx.lineTo(point.x, point.y)
+      signatureCtx.strokeStyle = '#020617'
+      signatureCtx.lineWidth = 3
+      signatureCtx.lineCap = 'round'
+      signatureCtx.lineJoin = 'round'
+      signatureCtx.stroke()
+      lastPointRef.current = point
+    }
+
+    function stopDrawing(event: globalThis.PointerEvent) {
+      event.preventDefault()
+      const wasDrawing = drawingRef.current
+      activePointersRef.current.delete(event.pointerId)
+      drawingRef.current = false
+      lastPointRef.current = null
+      if (signatureCanvas.hasPointerCapture(event.pointerId)) signatureCanvas.releasePointerCapture(event.pointerId)
+      if (wasDrawing && !multiTouchRef.current) onChange(signatureCanvas.toDataURL('image/png'))
+      if (activePointersRef.current.size === 0) {
+        multiTouchRef.current = false
+        signatureSnapshotRef.current = null
+      }
+    }
+
+    signatureCanvas.addEventListener('pointerdown', startDrawing)
+    signatureCanvas.addEventListener('pointermove', draw)
+    signatureCanvas.addEventListener('pointerup', stopDrawing)
+    signatureCanvas.addEventListener('pointercancel', stopDrawing)
+    signatureCanvas.addEventListener('pointerleave', stopDrawing)
+
+    return () => {
+      signatureCanvas.removeEventListener('pointerdown', startDrawing)
+      signatureCanvas.removeEventListener('pointermove', draw)
+      signatureCanvas.removeEventListener('pointerup', stopDrawing)
+      signatureCanvas.removeEventListener('pointercancel', stopDrawing)
+      signatureCanvas.removeEventListener('pointerleave', stopDrawing)
+    }
+  }, [onChange])
 
   function clearSignature() {
     const canvas = canvasRef.current
@@ -222,10 +237,6 @@ function SignaturePad({
         ref={canvasRef}
         width={520}
         height={150}
-        onPointerDown={startDrawing}
-        onPointerMove={draw}
-        onPointerUp={stopDrawing}
-        onPointerCancel={stopDrawing}
       />
     </div>
   )
@@ -243,6 +254,8 @@ export default function DeliveryProtocolsPage() {
   const [search, setSearch] = useState('')
   const [signedFilter, setSignedFilter] = useState<'all' | 'signed' | 'unsigned'>('all')
   const [activeView, setActiveView] = useState<'form' | 'list'>('list')
+  const [signatureProtocol, setSignatureProtocol] = useState<DeliveryProtocol | null>(null)
+  const [signatureDraft, setSignatureDraft] = useState('')
 
   const [protocolId, setProtocolId] = useState('')
   const [customerId, setCustomerId] = useState('')
@@ -425,6 +438,45 @@ export default function DeliveryProtocolsPage() {
     setItems(normalizeDeliveryProtocolItems(protocol.items))
     setActiveView('form')
     window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function openSignatureDialog(protocol: DeliveryProtocol) {
+    setSignatureProtocol(protocol)
+    setSignatureDraft(getDeliveryProtocolSignature(protocol))
+  }
+
+  async function saveProtocolSignature() {
+    if (!userId || !signatureProtocol) return
+
+    const updatedItems = {
+      rows: normalizeDeliveryProtocolItems(signatureProtocol.items),
+      receivedSignature: signatureDraft || null,
+    }
+
+    setSaving(true)
+    const { data, error } = await supabase
+      .from('delivery_protocols')
+      .update({
+        items: updatedItems,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', signatureProtocol.id)
+      .eq('user_id', userId)
+      .select()
+      .single()
+    setSaving(false)
+
+    if (error) {
+      setNotice({ type: 'error', text: `Podpis sa neuložil: ${error.message}` })
+      return
+    }
+
+    const saved = data as DeliveryProtocol
+    setProtocols((current) => [saved, ...current.filter((item) => item.id !== saved.id)])
+    if (protocolId === saved.id) setReceivedSignature(getDeliveryProtocolSignature(saved))
+    setSignatureProtocol(null)
+    setSignatureDraft('')
+    setNotice({ type: 'success', text: 'Podpis je uložený v protokole.' })
   }
 
   async function saveProtocol() {
@@ -719,6 +771,13 @@ export default function DeliveryProtocolsPage() {
         .signatureHeader button { border:1px solid #cbd5e1; background:#fff; border-radius:8px; padding:6px 9px; color:#334155; font-weight:900; }
         .signatureHeader button:disabled { opacity:.45; }
         canvas { width:100%; height:130px; background:#fff; border:1px dashed #94a3b8; border-radius:12px; cursor:crosshair; touch-action:none; }
+        .modalBackdrop { position:fixed; inset:0; z-index:50; background:rgba(15,23,42,.58); display:flex; align-items:center; justify-content:center; padding:14px; }
+        .signatureModal { width:min(680px,100%); background:#fff; border-radius:16px; border:1px solid #dbe4ef; box-shadow:0 24px 70px rgba(15,23,42,.3); padding:14px; display:grid; gap:12px; }
+        .signatureModalHeader { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; }
+        .signatureModalHeader h2 { margin:0; font-size:22px; }
+        .signatureModalHeader p { margin:4px 0 0; color:#64748b; font-weight:800; }
+        .signatureStatusButton { border:0; background:transparent; padding:0; cursor:pointer; text-align:left; }
+        .signatureStatusButton:focus-visible { outline:2px solid #65a30d; outline-offset:2px; border-radius:999px; }
         .loadingPage { min-height:100vh; padding:28px; background:#020617; color:#fff; font-weight:900; }
         @media (max-width:980px) {
           .page { padding:10px; }
@@ -880,7 +939,18 @@ export default function DeliveryProtocolsPage() {
                   <div>{protocol.customer_name || 'Bez zákazníka'}</div>
                   <div style={{ color: '#64748b' }}>{protocol.customer_order_number || '-'}</div>
                   <div>{formatDate(protocol.protocol_date)}</div>
-                  <div><span className={`badge ${signed ? 'signed' : 'unsigned'}`}>{signed ? 'Podpísané' : 'Nepodpísané'}</span></div>
+                  <div>
+                    <button
+                      type="button"
+                      className="signatureStatusButton"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        openSignatureDialog(protocol)
+                      }}
+                    >
+                      <span className={`badge ${signed ? 'signed' : 'unsigned'}`}>{signed ? 'Podpísané' : 'Nepodpísané'}</span>
+                    </button>
+                  </div>
                   <div className="rowActions">
                     <button type="button" style={buttonStyle} onClick={(event) => { event.stopPropagation(); openProtocol(protocol) }}>Upraviť</button>
                   </div>
@@ -892,6 +962,35 @@ export default function DeliveryProtocolsPage() {
             )}
           </div>
         </section>
+        )}
+
+        {signatureProtocol && (
+          <div className="modalBackdrop" role="dialog" aria-modal="true" aria-label="Podpis protokolu">
+            <div className="signatureModal">
+              <div className="signatureModalHeader">
+                <div>
+                  <h2>Podpis protokolu</h2>
+                  <p>
+                    {signatureProtocol.protocol_number || 'Bez čísla'} · {signatureProtocol.customer_name || 'Bez zákazníka'}
+                  </p>
+                </div>
+                <button type="button" style={buttonStyle} onClick={() => setSignatureProtocol(null)}>
+                  Zavrieť
+                </button>
+              </div>
+
+              <SignaturePad label="Podpis prevzal" value={signatureDraft} onChange={setSignatureDraft} />
+
+              <div className="actions">
+                <button type="button" style={primaryButtonStyle} onClick={saveProtocolSignature} disabled={saving}>
+                  {saving ? 'Ukladám...' : 'Uložiť podpis'}
+                </button>
+                <button type="button" style={buttonStyle} onClick={() => setSignatureProtocol(null)}>
+                  Zrušiť
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </main>
