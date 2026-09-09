@@ -31,7 +31,7 @@ const DEFAULT_TECHNICIAN = 'Ľuboš Ivanič'
 
 function getProtocolMonthPrefix(dateValue: string) {
   const [year, month] = (dateValue || getTodayDate()).split('-')
-  return `OP-${year}${month}`
+  return `OP-${year.slice(-2)}${month}`
 }
 
 function getNextProtocolNumber(protocols: DeliveryProtocol[], dateValue: string) {
@@ -45,6 +45,10 @@ function getNextProtocolNumber(protocols: DeliveryProtocol[], dateValue: string)
     }, 0) + 1
 
   return `${prefix}${String(nextSequence).padStart(2, '0')}`
+}
+
+function looksLikeGeneratedProtocolNumber(value: string) {
+  return /^OP-\d{6,}$/.test(value)
 }
 
 function createDeliveryProtocolItem(): DeliveryProtocolItem {
@@ -190,6 +194,7 @@ export default function DeliveryProtocolsPage() {
   const [protocols, setProtocols] = useState<DeliveryProtocol[]>([])
   const [search, setSearch] = useState('')
   const [signedFilter, setSignedFilter] = useState<'all' | 'signed' | 'unsigned'>('all')
+  const [activeView, setActiveView] = useState<'form' | 'list'>('list')
 
   const [protocolId, setProtocolId] = useState('')
   const [customerId, setCustomerId] = useState('')
@@ -281,7 +286,7 @@ export default function DeliveryProtocolsPage() {
 
   useEffect(() => {
     if (protocolId) return
-    if (protocolNumber && protocolNumber !== getNextProtocolNumber([], protocolDate)) return
+    if (protocolNumber && !looksLikeGeneratedProtocolNumber(protocolNumber)) return
     setProtocolNumber(getNextProtocolNumber(protocols, protocolDate))
   }, [protocolId, protocolNumber, protocolDate, protocols])
 
@@ -347,6 +352,7 @@ export default function DeliveryProtocolsPage() {
     setBriefed(true)
     setReceivedSignature('')
     setItems(createDeliveryProtocolItems())
+    setActiveView('form')
   }
 
   function selectCustomer(value: string) {
@@ -369,6 +375,7 @@ export default function DeliveryProtocolsPage() {
     setBriefed(Boolean(protocol.briefed))
     setReceivedSignature(getDeliveryProtocolSignature(protocol))
     setItems(normalizeDeliveryProtocolItems(protocol.items))
+    setActiveView('form')
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -620,18 +627,21 @@ export default function DeliveryProtocolsPage() {
   return (
     <main className="page">
       <style jsx>{`
-        .page { min-height:100vh; padding:18px; background:linear-gradient(135deg,#eef4fb 0%,#f7fbf2 100%); color:#0f172a; }
-        .shell { max-width:1780px; margin:0 auto; display:grid; gap:12px; }
+        .page { min-height:100vh; padding:14px; background:linear-gradient(135deg,#eef4fb 0%,#f7fbf2 100%); color:#0f172a; }
+        .shell { max-width:1480px; margin:0 auto; display:grid; gap:12px; }
         .topbar, .panel { background:#fff; border:1px solid #dbe4ef; border-radius:14px; box-shadow:0 12px 34px rgba(15,23,42,.08); }
         .topbar { padding:12px; display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; }
         .brandWrap { display:flex; align-items:center; gap:12px; }
         .brandWrap h1 { margin:0; font-size:28px; letter-spacing:0; }
         .brandWrap p { margin:2px 0 0; color:#64748b; font-weight:800; }
         .actions { display:flex; gap:8px; flex-wrap:wrap; }
+        .tabs { background:#fff; border:1px solid #dbe4ef; border-radius:12px; padding:6px; display:flex; gap:6px; flex-wrap:wrap; }
+        .tabButton { min-height:32px; border:1px solid #cbd5e1; border-radius:8px; padding:6px 12px; background:#fff; color:#0f172a; font-weight:1000; font-size:13px; cursor:pointer; }
+        .tabButton.active { background:#0f172a; border-color:#0f172a; color:#fff; }
         .notice { border-radius:10px; padding:9px 11px; font-weight:900; font-size:13px; }
         .notice.success { background:#dcfce7; color:#166534; border:1px solid #86efac; }
         .notice.error { background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; }
-        .editorGrid { display:grid; grid-template-columns:minmax(360px,.8fr) minmax(620px,1.2fr); gap:12px; align-items:start; }
+        .editorGrid { display:grid; grid-template-columns:minmax(330px,.78fr) minmax(540px,1.22fr); gap:12px; align-items:start; }
         .panel { padding:12px; }
         .eyebrow { color:#65c900; font-size:12px; font-weight:1000; letter-spacing:2px; text-transform:uppercase; }
         h2 { margin:2px 0 12px; font-size:24px; letter-spacing:0; }
@@ -642,13 +652,13 @@ export default function DeliveryProtocolsPage() {
         .checks label { display:flex; align-items:center; gap:8px; margin:0; color:#0f172a; }
         .checks input { width:17px; height:17px; }
         .itemsTable { overflow:auto; border:1px solid #e2e8f0; border-radius:10px; }
-        .itemsHead, .itemRow { display:grid; grid-template-columns:minmax(220px,1.4fr) minmax(130px,.7fr) 58px minmax(160px,.9fr) 38px; min-width:740px; gap:6px; align-items:center; padding:7px; }
+        .itemsHead, .itemRow { display:grid; grid-template-columns:minmax(180px,1.4fr) minmax(115px,.7fr) 52px minmax(130px,.9fr) 36px; min-width:650px; gap:6px; align-items:center; padding:7px; }
         .itemsHead { background:#0f172a; color:#fff; font-size:11px; font-weight:1000; text-transform:uppercase; }
         .itemRow { border-top:1px solid #e2e8f0; background:#fff; }
         .listHeader { display:flex; justify-content:space-between; gap:10px; align-items:end; flex-wrap:wrap; margin-bottom:10px; }
         .filters { display:flex; gap:8px; flex-wrap:wrap; }
         .protocolTable { overflow:auto; border:1px solid #e2e8f0; border-radius:10px; }
-        .protocolHead, .protocolRow { display:grid; grid-template-columns:110px minmax(170px,1fr) minmax(135px,.7fr) 100px 120px 190px; min-width:900px; gap:8px; align-items:center; padding:8px 10px; }
+        .protocolHead, .protocolRow { display:grid; grid-template-columns:102px minmax(150px,1fr) minmax(105px,.65fr) 92px 112px 92px; min-width:700px; gap:8px; align-items:center; padding:8px 10px; }
         .protocolHead { background:#f1f5f9; color:#475569; font-size:11px; font-weight:1000; text-transform:uppercase; }
         .protocolRow { border-top:1px solid #e2e8f0; font-size:13px; font-weight:900; cursor:pointer; background:#fff; }
         .protocolRow:hover, .protocolRow.active { background:#f7fee7; }
@@ -687,96 +697,108 @@ export default function DeliveryProtocolsPage() {
 
         {notice && <div className={`notice ${notice.type}`}>{notice.text}</div>}
 
-        <section className="editorGrid">
-          <div className="panel">
-            <div className="eyebrow">{protocolId ? 'Úprava protokolu' : 'Nový protokol'}</div>
-            <h2>Základné údaje</h2>
-            <div className="formGrid">
-              <div>
-                <label htmlFor="protocol-number">Číslo protokolu</label>
-                <input id="protocol-number" style={inputStyle} value={protocolNumber} onChange={(event) => setProtocolNumber(event.target.value)} />
-              </div>
-              <div>
-                <label htmlFor="protocol-date">Dátum odovzdania</label>
-                <input id="protocol-date" type="date" style={inputStyle} value={protocolDate} onChange={(event) => setProtocolDate(event.target.value)} />
-              </div>
-              <div>
-                <label htmlFor="customer-order">Číslo objednávky zákazníka</label>
-                <input id="customer-order" style={inputStyle} placeholder="Voliteľné" value={customerOrderNumber} onChange={(event) => setCustomerOrderNumber(event.target.value)} />
-              </div>
-              <div>
-                <label htmlFor="customer">Zákazník</label>
-                <select id="customer" style={inputStyle} value={customerId} onChange={(event) => selectCustomer(event.target.value)}>
-                  <option value="">Vyber zákazníka</option>
-                  {customers.map((customer) => (
-                    <option key={customer.id} value={customer.id}>{customer.nazov}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label htmlFor="delivered-by">Odovzdal</label>
-                <input id="delivered-by" style={inputStyle} value={deliveredBy} onChange={(event) => setDeliveredBy(event.target.value)} />
-              </div>
-              <div>
-                <label htmlFor="received-by">Prevzal</label>
-                <input id="received-by" style={inputStyle} value={receivedBy} onChange={(event) => setReceivedBy(event.target.value)} />
-              </div>
-              <div className="full checks">
-                <label>
-                  <input type="checkbox" checked={tested} onChange={(event) => setTested(event.target.checked)} />
-                  Zariadenie bolo odskúšané a je funkčné.
-                </label>
-                <label>
-                  <input type="checkbox" checked={briefed} onChange={(event) => setBriefed(event.target.checked)} />
-                  Zákazník bol oboznámený so základnou obsluhou.
-                </label>
-              </div>
-              <div className="full">
-                <SignaturePad label="Podpis prevzal" value={receivedSignature} onChange={setReceivedSignature} />
-              </div>
-            </div>
-          </div>
+        <div className="tabs">
+          <button type="button" className={`tabButton ${activeView === 'form' ? 'active' : ''}`} onClick={() => setActiveView('form')}>
+            Tvorba protokolu
+          </button>
+          <button type="button" className={`tabButton ${activeView === 'list' ? 'active' : ''}`} onClick={() => setActiveView('list')}>
+            Uložené protokoly ({protocols.length})
+          </button>
+        </div>
 
-          <div className="panel">
-            <div className="listHeader">
-              <div>
-                <div className="eyebrow">Odovzdaná technika</div>
-                <h2>Položky protokolu</h2>
-              </div>
-              <button type="button" style={buttonStyle} onClick={() => setItems((current) => [...current, createDeliveryProtocolItem()])}>
-                + Pridať položku
-              </button>
-            </div>
-            <div className="itemsTable">
-              <div className="itemsHead">
-                <div>Zariadenie / položka</div>
-                <div>Sériové číslo</div>
-                <div>Ks</div>
-                <div>Poznámka</div>
-                <div></div>
-              </div>
-              {items.map((item, index) => (
-                <div className="itemRow" key={item.id}>
-                  <input style={inputStyle} placeholder="Napr. kamera, NVR, klávesnica" value={item.name} onChange={(event) => updateItem(index, 'name', event.target.value)} />
-                  <input style={inputStyle} placeholder="S/N" value={item.serialNumber} onChange={(event) => updateItem(index, 'serialNumber', event.target.value)} />
-                  <input style={inputStyle} inputMode="numeric" value={item.quantity} onChange={(event) => updateItem(index, 'quantity', event.target.value)} />
-                  <input style={inputStyle} placeholder="Voliteľné" value={item.note} onChange={(event) => updateItem(index, 'note', event.target.value)} />
-                  <button type="button" style={buttonStyle} disabled={items.length <= 1} onClick={() => setItems((current) => (current.length <= 1 ? current : current.filter((_, itemIndex) => itemIndex !== index)))}>
-                    ×
-                  </button>
+        {activeView === 'form' && (
+          <section className="editorGrid">
+            <div className="panel">
+              <div className="eyebrow">{protocolId ? 'Úprava protokolu' : 'Nový protokol'}</div>
+              <h2>Základné údaje</h2>
+              <div className="formGrid">
+                <div>
+                  <label htmlFor="protocol-number">Číslo protokolu</label>
+                  <input id="protocol-number" style={inputStyle} value={protocolNumber} onChange={(event) => setProtocolNumber(event.target.value)} />
                 </div>
-              ))}
+                <div>
+                  <label htmlFor="protocol-date">Dátum odovzdania</label>
+                  <input id="protocol-date" type="date" style={inputStyle} value={protocolDate} onChange={(event) => setProtocolDate(event.target.value)} />
+                </div>
+                <div>
+                  <label htmlFor="customer-order">Číslo objednávky zákazníka</label>
+                  <input id="customer-order" style={inputStyle} placeholder="Voliteľné" value={customerOrderNumber} onChange={(event) => setCustomerOrderNumber(event.target.value)} />
+                </div>
+                <div>
+                  <label htmlFor="customer">Zákazník</label>
+                  <select id="customer" style={inputStyle} value={customerId} onChange={(event) => selectCustomer(event.target.value)}>
+                    <option value="">Vyber zákazníka</option>
+                    {customers.map((customer) => (
+                      <option key={customer.id} value={customer.id}>{customer.nazov}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="delivered-by">Odovzdal</label>
+                  <input id="delivered-by" style={inputStyle} value={deliveredBy} onChange={(event) => setDeliveredBy(event.target.value)} />
+                </div>
+                <div>
+                  <label htmlFor="received-by">Prevzal</label>
+                  <input id="received-by" style={inputStyle} value={receivedBy} onChange={(event) => setReceivedBy(event.target.value)} />
+                </div>
+                <div className="full checks">
+                  <label>
+                    <input type="checkbox" checked={tested} onChange={(event) => setTested(event.target.checked)} />
+                    Zariadenie bolo odskúšané a je funkčné.
+                  </label>
+                  <label>
+                    <input type="checkbox" checked={briefed} onChange={(event) => setBriefed(event.target.checked)} />
+                    Zákazník bol oboznámený so základnou obsluhou.
+                  </label>
+                </div>
+                <div className="full">
+                  <SignaturePad label="Podpis prevzal" value={receivedSignature} onChange={setReceivedSignature} />
+                </div>
+              </div>
             </div>
-            <div className="actions" style={{ marginTop: 10 }}>
-              <button type="button" style={buttonStyle} onClick={saveProtocol} disabled={saving}>
-                {saving ? 'Ukladám...' : 'Uložiť protokol'}
-              </button>
-              <button type="button" style={primaryButtonStyle} onClick={() => exportPdf('show')}>Ukáž PDF</button>
-              <button type="button" style={primaryButtonStyle} onClick={() => exportPdf('mail')}>Odoslať mailom</button>
-            </div>
-          </div>
-        </section>
 
+            <div className="panel">
+              <div className="listHeader">
+                <div>
+                  <div className="eyebrow">Odovzdaná technika</div>
+                  <h2>Položky protokolu</h2>
+                </div>
+                <button type="button" style={buttonStyle} onClick={() => setItems((current) => [...current, createDeliveryProtocolItem()])}>
+                  + Pridať položku
+                </button>
+              </div>
+              <div className="itemsTable">
+                <div className="itemsHead">
+                  <div>Zariadenie / položka</div>
+                  <div>Sériové číslo</div>
+                  <div>Ks</div>
+                  <div>Poznámka</div>
+                  <div></div>
+                </div>
+                {items.map((item, index) => (
+                  <div className="itemRow" key={item.id}>
+                    <input style={inputStyle} placeholder="Napr. kamera, NVR, klávesnica" value={item.name} onChange={(event) => updateItem(index, 'name', event.target.value)} />
+                    <input style={inputStyle} placeholder="S/N" value={item.serialNumber} onChange={(event) => updateItem(index, 'serialNumber', event.target.value)} />
+                    <input style={inputStyle} inputMode="numeric" value={item.quantity} onChange={(event) => updateItem(index, 'quantity', event.target.value)} />
+                    <input style={inputStyle} placeholder="Voliteľné" value={item.note} onChange={(event) => updateItem(index, 'note', event.target.value)} />
+                    <button type="button" style={buttonStyle} disabled={items.length <= 1} onClick={() => setItems((current) => (current.length <= 1 ? current : current.filter((_, itemIndex) => itemIndex !== index)))}>
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div className="actions" style={{ marginTop: 10 }}>
+                <button type="button" style={buttonStyle} onClick={saveProtocol} disabled={saving}>
+                  {saving ? 'Ukladám...' : 'Uložiť protokol'}
+                </button>
+                <button type="button" style={primaryButtonStyle} onClick={() => exportPdf('show')}>Ukáž PDF</button>
+                <button type="button" style={primaryButtonStyle} onClick={() => exportPdf('mail')}>Odoslať mailom</button>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {activeView === 'list' && (
         <section className="panel">
           <div className="listHeader">
             <div>
@@ -822,6 +844,7 @@ export default function DeliveryProtocolsPage() {
             )}
           </div>
         </section>
+        )}
       </div>
     </main>
   )
