@@ -1515,14 +1515,8 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
   }
 
   function normalizeDeliveryProtocolItems(items: unknown): DeliveryProtocolItem[] {
-    const sourceItems = Array.isArray(items)
-      ? items
-      : items && typeof items === 'object' && Array.isArray((items as { rows?: unknown }).rows)
-        ? (items as { rows: unknown[] }).rows
-        : []
-
-    if (sourceItems.length === 0) return createDeliveryProtocolItems()
-    const normalized = sourceItems
+    if (!Array.isArray(items)) return createDeliveryProtocolItems()
+    const normalized = items
       .map((item) => {
         const raw = item as Partial<DeliveryProtocolItem>
         return {
@@ -1535,16 +1529,6 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
       })
       .filter((item) => item.name.trim() || item.serialNumber.trim() || item.quantity.trim() || item.note.trim())
     return normalized.length > 0 ? normalized : createDeliveryProtocolItems()
-  }
-
-  function getDeliveryProtocolSignature(protocol: DeliveryProtocol) {
-    if (protocol.received_signature) return protocol.received_signature
-    const items = protocol.items
-    if (items && typeof items === 'object' && !Array.isArray(items)) {
-      const signature = (items as { receivedSignature?: unknown }).receivedSignature
-      return typeof signature === 'string' ? signature : ''
-    }
-    return ''
   }
 
   function openSavedDeliveryProtocol(protocolId: string) {
@@ -1566,7 +1550,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
     setDeliveryProtocolReceivedBy(protocol.received_by || '')
     setDeliveryProtocolTested(Boolean(protocol.tested))
     setDeliveryProtocolBriefed(Boolean(protocol.briefed))
-    setDeliveryProtocolReceivedSignature(getDeliveryProtocolSignature(protocol))
+    setDeliveryProtocolReceivedSignature(protocol.received_signature || '')
     setDeliveryProtocolItems(normalizeDeliveryProtocolItems(protocol.items))
   }
 
@@ -1591,12 +1575,10 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
       customer_name: deliveryProtocolCustomer.trim() || null,
       delivered_by: deliveryProtocolDeliveredBy.trim() || null,
       received_by: deliveryProtocolReceivedBy.trim() || null,
+      received_signature: deliveryProtocolReceivedSignature || null,
       tested: deliveryProtocolTested,
       briefed: deliveryProtocolBriefed,
-      items: {
-        rows: cleanItems,
-        receivedSignature: deliveryProtocolReceivedSignature || null,
-      },
+      items: cleanItems,
       updated_at: new Date().toISOString(),
     }
 

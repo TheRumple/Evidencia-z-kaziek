@@ -1119,11 +1119,7 @@ export function DashboardModals(props: DashboardModalsProps) {
                   <div>Akcie</div>
                 </div>
                 {deliveryProtocols.map((protocol: any) => {
-                  const embeddedSignature =
-                    protocol.items && typeof protocol.items === 'object' && !Array.isArray(protocol.items)
-                      ? protocol.items.receivedSignature
-                      : ''
-                  const isSigned = Boolean(protocol.received_signature || embeddedSignature)
+                  const isSigned = Boolean(protocol.received_signature)
                   return (
                     <div
                       key={protocol.id}
