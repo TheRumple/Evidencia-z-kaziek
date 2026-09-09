@@ -112,6 +112,25 @@ function SignaturePad({
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const drawingRef = useRef(false)
+  const lastPointRef = useRef<{ x: number; y: number } | null>(null)
+  const activePointersRef = useRef(new Set<number>())
+  const multiTouchRef = useRef(false)
+  const signatureSnapshotRef = useRef<ImageData | null>(null)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    const ctx = canvas?.getContext('2d')
+    if (!canvas || !ctx) return
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    if (!value) return
+
+    const image = new Image()
+    image.onload = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      ctx.drawImage(image, 0, 0, canvas.width, canvas.height)
+    }
+    image.src = value
+  }, [value])
 
   function getPoint(event: PointerEvent<HTMLCanvasElement>) {
     const canvas = canvasRef.current
@@ -127,31 +146,60 @@ function SignaturePad({
     const canvas = canvasRef.current
     const ctx = canvas?.getContext('2d')
     if (!canvas || !ctx) return
+    activePointersRef.current.add(event.pointerId)
+    if (activePointersRef.current.size > 1) {
+      multiTouchRef.current = true
+      drawingRef.current = false
+      lastPointRef.current = null
+      if (signatureSnapshotRef.current) ctx.putImageData(signatureSnapshotRef.current, 0, 0)
+      return
+    }
+    multiTouchRef.current = false
+    signatureSnapshotRef.current = ctx.getImageData(0, 0, canvas.width, canvas.height)
     drawingRef.current = true
     canvas.setPointerCapture(event.pointerId)
-    const point = getPoint(event)
-    ctx.beginPath()
-    ctx.moveTo(point.x, point.y)
+    lastPointRef.current = getPoint(event)
   }
 
   function draw(event: PointerEvent<HTMLCanvasElement>) {
     if (!drawingRef.current) return
+    if (activePointersRef.current.size > 1) {
+      const canvas = canvasRef.current
+      const ctx = canvas?.getContext('2d')
+      multiTouchRef.current = true
+      drawingRef.current = false
+      lastPointRef.current = null
+      if (ctx && signatureSnapshotRef.current) ctx.putImageData(signatureSnapshotRef.current, 0, 0)
+      return
+    }
     const canvas = canvasRef.current
     const ctx = canvas?.getContext('2d')
-    if (!canvas || !ctx) return
+    const lastPoint = lastPointRef.current
+    if (!canvas || !ctx || !lastPoint) return
     const point = getPoint(event)
+    ctx.beginPath()
+    ctx.moveTo(lastPoint.x, lastPoint.y)
     ctx.lineTo(point.x, point.y)
     ctx.strokeStyle = '#020617'
     ctx.lineWidth = 3
     ctx.lineCap = 'round'
     ctx.lineJoin = 'round'
     ctx.stroke()
-    onChange(canvas.toDataURL('image/png'))
+    lastPointRef.current = point
   }
 
   function stopDrawing(event: PointerEvent<HTMLCanvasElement>) {
+    const canvas = canvasRef.current
+    const wasDrawing = drawingRef.current
+    activePointersRef.current.delete(event.pointerId)
     drawingRef.current = false
-    canvasRef.current?.releasePointerCapture(event.pointerId)
+    lastPointRef.current = null
+    if (canvas?.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId)
+    if (canvas && wasDrawing && !multiTouchRef.current) onChange(canvas.toDataURL('image/png'))
+    if (activePointersRef.current.size === 0) {
+      multiTouchRef.current = false
+      signatureSnapshotRef.current = null
+    }
   }
 
   function clearSignature() {
