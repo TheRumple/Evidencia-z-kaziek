@@ -8,7 +8,6 @@ import { supabase } from '@/lib/supabase'
 
 type WeatherState = {
   temperature: number | null
-  windSpeed: number | null
   code: number | null
 }
 
@@ -16,7 +15,6 @@ function formatClock(date: Date) {
   return new Intl.DateTimeFormat('sk-SK', {
     hour: '2-digit',
     minute: '2-digit',
-    second: '2-digit',
   }).format(date)
 }
 
@@ -49,8 +47,7 @@ export default function OfficeDashboardPage() {
   const [revisions, setRevisions] = useState<MaintenanceRevision[]>([])
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0)
   const [customerUpdatesCount, setCustomerUpdatesCount] = useState(0)
-  const [weather, setWeather] = useState<WeatherState>({ temperature: null, windSpeed: null, code: null })
-  const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
+  const [weather, setWeather] = useState<WeatherState>({ temperature: null, code: null })
 
   useEffect(() => {
     let mounted = true
@@ -117,37 +114,32 @@ export default function OfficeDashboardPage() {
     if (!pendingResult.error && pendingResult.count !== null) setPendingRequestsCount(pendingResult.count)
     if (!revisionsResult.error) setRevisions((revisionsResult.data || []) as MaintenanceRevision[])
     if (!updatesResult.error && updatesResult.count !== null) setCustomerUpdatesCount(updatesResult.count)
-    setLastRefresh(new Date())
   }
 
   async function loadWeather() {
     try {
       const response = await fetch(
-        'https://api.open-meteo.com/v1/forecast?latitude=48.4237&longitude=18.6407&current=temperature_2m,weather_code,wind_speed_10m&timezone=Europe%2FBratislava'
+        'https://api.open-meteo.com/v1/forecast?latitude=48.4237&longitude=18.6407&current=temperature_2m,weather_code&timezone=Europe%2FBratislava'
       )
       const data = await response.json()
       setWeather({
         temperature: typeof data?.current?.temperature_2m === 'number' ? data.current.temperature_2m : null,
-        windSpeed: typeof data?.current?.wind_speed_10m === 'number' ? data.current.wind_speed_10m : null,
         code: typeof data?.current?.weather_code === 'number' ? data.current.weather_code : null,
       })
     } catch {
-      setWeather({ temperature: null, windSpeed: null, code: null })
+      setWeather({ temperature: null, code: null })
     }
   }
 
   const stats = useMemo(() => {
     const activeStatuses = ['nova', 'rozpracovana', 'cenova_ponuka', 'obhliadka', 'caka']
-    const openStatuses = [...activeStatuses, 'hotova']
 
     return {
-      open: orders.filter((order) => openStatuses.includes(order.stav)).length,
       active: orders.filter((order) => activeStatuses.includes(order.stav)).length,
       inProgress: orders.filter((order) => order.stav === 'rozpracovana').length,
       quotes: orders.filter((order) => order.stav === 'cenova_ponuka').length,
       inspections: orders.filter((order) => order.stav === 'obhliadka').length,
       waiting: orders.filter((order) => order.stav === 'caka').length,
-      invoiced: orders.filter((order) => order.stav === 'odovzdana').length,
       revisionsDue: revisions.filter((revision) => {
         if (!revision.next_due_date) return false
         const today = new Date(new Date().toISOString().slice(0, 10)).getTime()
@@ -199,28 +191,31 @@ export default function OfficeDashboardPage() {
         .officeShell {
           position: relative;
           z-index: 1;
-          max-width: 1380px;
+          max-width: 1920px;
           min-height: calc(100vh - 28px);
           height: calc(100vh - 28px);
           margin: 0 auto;
           display: grid;
-          grid-template-rows: 58px minmax(0, 1fr) 18px;
-          gap: 8px;
-        }
-
-        .officeHeader {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
+          grid-template-rows: 112px minmax(0, 1fr);
           gap: 14px;
         }
 
+        .officeHeader {
+          display: grid;
+          grid-template-columns: 260px minmax(0, 1fr) 300px;
+          align-items: center;
+          gap: 28px;
+          padding: 12px 24px;
+          border-bottom: 1px solid rgba(148, 163, 184, 0.28);
+          background: rgba(15, 23, 42, 0.3);
+        }
+
         .officeLogo {
-          width: clamp(190px, 16vw, 260px);
-          height: 64px;
+          width: 240px;
+          height: 82px;
           display: inline-flex;
           align-items: center;
-          justify-content: center;
+          justify-content: flex-start;
           filter: drop-shadow(0 0 18px rgba(132, 204, 22, 0.32)) drop-shadow(0 12px 34px rgba(0, 0, 0, 0.34));
         }
 
@@ -232,82 +227,74 @@ export default function OfficeDashboardPage() {
           display: block;
         }
 
-        .officeGrid {
+        .dateTimeBlock {
           display: grid;
-          grid-template-columns: minmax(0, 1.18fr) minmax(360px, 0.82fr);
-          grid-template-rows: minmax(220px, 1fr) minmax(174px, 0.62fr);
-          gap: 8px;
-          align-items: stretch;
-          min-height: 0;
-        }
-
-        .officeSideStack {
-          display: grid;
-          grid-template-rows: 68px 68px minmax(0, 1fr);
-          gap: 8px;
-          min-height: 0;
-        }
-
-        .glassPanel {
-          border: 1px solid rgba(148, 163, 184, 0.24);
-          background:
-            linear-gradient(135deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.025)),
-            rgba(15, 23, 42, 0.62);
-          box-shadow: 0 26px 60px rgba(0, 0, 0, 0.34);
-          border-radius: 18px;
-          backdrop-filter: blur(18px);
-        }
-
-        .clockPanel {
-          padding: 20px 22px;
-          display: grid;
-          align-content: center;
-          gap: 6px;
-          min-height: 0;
-          position: relative;
-          overflow: hidden;
-        }
-
-        .clockPanel::after {
-          content: '';
-          position: absolute;
-          right: -90px;
-          bottom: -120px;
-          width: 260px;
-          height: 260px;
-          border-radius: 999px;
-          border: 32px solid rgba(132, 204, 22, 0.12);
-          box-shadow: 0 0 80px rgba(132, 204, 22, 0.12);
+          gap: 2px;
         }
 
         .clockValue {
-          font-size: clamp(82px, 7.8vw, 128px);
-          line-height: 0.92;
+          font-size: 62px;
+          line-height: 0.9;
           font-weight: 900;
           letter-spacing: 0;
         }
 
         .dateValue {
-          margin-top: 6px;
           color: rgba(226, 232, 240, 0.82);
-          font-size: clamp(21px, 2.1vw, 32px);
+          font-size: 25px;
           font-weight: 900;
           text-transform: capitalize;
+        }
+
+        .weatherSummary {
+          justify-self: end;
+          display: grid;
+          grid-template-columns: auto auto;
+          align-items: center;
+          gap: 16px;
+        }
+
+        .weatherTemp {
+          font-size: 58px;
+          font-weight: 900;
+          line-height: 1;
+          white-space: nowrap;
+        }
+
+        .weatherLabel {
+          color: #a3e635;
+          font-size: 24px;
+          font-weight: 900;
+          line-height: 1.1;
+        }
+
+        .officeGrid {
+          display: grid;
+          grid-template-rows: minmax(118px, 0.24fr) minmax(0, 1fr);
+          gap: 14px;
+          min-height: 0;
+        }
+
+        .alertGrid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 14px;
+          min-height: 0;
         }
 
         .requestBadge {
           min-width: 0;
           min-height: 0;
-          border-radius: 16px;
+          border-radius: 8px;
           border: 1px solid rgba(190, 242, 100, 0.35);
           background:
             linear-gradient(135deg, rgba(132, 204, 22, 0.22), rgba(255, 255, 255, 0.06)),
             rgba(15, 23, 42, 0.72);
           display: grid;
           grid-template-columns: minmax(0, 1fr) auto;
-          gap: 12px;
+          gap: 20px;
           align-items: center;
-          padding: 8px 12px;
+          padding: 18px 28px;
           box-shadow: 0 16px 40px rgba(0, 0, 0, 0.24);
         }
 
@@ -322,8 +309,9 @@ export default function OfficeDashboardPage() {
 
         .requestBadgeLabel {
           color: rgba(226, 232, 240, 0.84);
-          font-size: 13px;
+          font-size: 27px;
           font-weight: 900;
+          line-height: 1.1;
         }
 
         .requestBadge.hasRequests .requestBadgeLabel {
@@ -331,9 +319,9 @@ export default function OfficeDashboardPage() {
         }
 
         .requestBadgeText {
-          margin-top: 3px;
+          margin-top: 8px;
           color: #a3e635;
-          font-size: 12px;
+          font-size: 19px;
           font-weight: 900;
         }
 
@@ -343,144 +331,137 @@ export default function OfficeDashboardPage() {
 
         .requestBadgeValue {
           color: #f8fafc;
-          font-size: 46px;
+          font-size: 78px;
           line-height: 0.95;
           font-weight: 900;
         }
 
-        .weatherPanel {
-          padding: 15px 16px;
-          display: grid;
-          align-content: center;
-          gap: 8px;
-          border-color: rgba(132, 204, 22, 0.32);
-        }
-
-        .weatherTemp {
-          font-size: clamp(58px, 5.1vw, 82px);
-          font-weight: 900;
-          line-height: 1;
-        }
-
-        .weatherLabel {
-          color: #a3e635;
-          font-size: 19px;
-          font-weight: 900;
-        }
-
-        .statGrid {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 14px;
-        }
-
         .statusGrid {
           display: grid;
-          grid-column: 1 / -1;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-          grid-template-rows: repeat(2, minmax(82px, 1fr));
-          gap: 8px;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          grid-template-rows: repeat(2, minmax(0, 1fr));
+          gap: 14px;
           min-height: 0;
         }
 
         .statCard {
           min-height: 0;
           height: auto;
-          border-radius: 14px;
-          padding: 8px 12px;
+          border-radius: 8px;
+          padding: 24px 28px;
           border: 1px solid rgba(148, 163, 184, 0.24);
           background:
             linear-gradient(160deg, rgba(255, 255, 255, 0.105), rgba(255, 255, 255, 0.035)),
             rgba(255, 255, 255, 0.06);
-          display: grid;
-          grid-template-columns: minmax(0, 1fr) auto;
-          gap: 10px;
-          align-items: center;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          gap: 18px;
           position: relative;
           overflow: hidden;
+          box-shadow: 0 22px 48px rgba(0, 0, 0, 0.2);
         }
 
         .statCard::before {
           content: '';
           position: absolute;
           inset: 0 auto 0 0;
-          width: 5px;
+          width: 9px;
           background: var(--accent, #64748b);
-        }
-
-        .statCard::after {
-          content: '';
-          position: absolute;
-          right: -26px;
-          top: -30px;
-          width: 86px;
-          height: 86px;
-          border-radius: 999px;
-          background: var(--accentGlow, rgba(148, 163, 184, 0.12));
         }
 
         .statLabel {
           color: rgba(226, 232, 240, 0.76);
-          font-size: 12px;
+          font-size: 29px;
           font-weight: 900;
-          line-height: 1.12;
+          line-height: 1.15;
           min-width: 0;
         }
 
         .statValue {
           position: relative;
           z-index: 1;
-          font-size: clamp(40px, 3.7vw, 62px);
-          line-height: 0.95;
+          color: var(--accent, #f8fafc);
+          font-size: 104px;
+          line-height: 0.85;
           font-weight: 900;
           text-align: right;
-          min-width: 70px;
+          align-self: flex-end;
+          min-width: 100px;
         }
 
-        .highlightCard {
-          background: linear-gradient(135deg, rgba(132, 204, 22, 0.95), rgba(101, 163, 13, 0.88));
-          color: #111827;
-          border-color: rgba(190, 242, 100, 0.76);
-          --accent: #ecfccb;
-          --accentGlow: rgba(236, 252, 203, 0.32);
+        @media (max-width: 1100px) {
+          .officeHeader {
+            grid-template-columns: 210px minmax(0, 1fr) 240px;
+            gap: 18px;
+          }
+
+          .officeLogo {
+            width: 200px;
+          }
+
+          .clockValue {
+            font-size: 52px;
+          }
+
+          .dateValue,
+          .weatherLabel {
+            font-size: 21px;
+          }
+
+          .weatherTemp {
+            font-size: 48px;
+          }
+
+          .requestBadgeLabel,
+          .statLabel {
+            font-size: 23px;
+          }
+
+          .requestBadgeValue {
+            font-size: 66px;
+          }
+
+          .statValue {
+            font-size: 82px;
+          }
         }
 
-        .highlightCard .statLabel {
-          color: rgba(17, 24, 39, 0.78);
-        }
+        @media (max-width: 760px) {
+          .officeScreen {
+            height: auto;
+            min-height: 100vh;
+            overflow: auto;
+          }
 
-        .footerBar {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          color: rgba(226, 232, 240, 0.7);
-          font-size: 12px;
-          font-weight: 800;
-        }
+          .officeShell {
+            height: auto;
+            grid-template-rows: auto auto;
+          }
 
-        @media (max-width: 980px) {
-          .officeGrid,
-          .statGrid,
+          .officeHeader {
+            grid-template-columns: 1fr;
+            justify-items: start;
+          }
+
+          .weatherSummary {
+            justify-self: start;
+          }
+
+          .officeGrid {
+            grid-template-rows: auto auto;
+          }
+
+          .alertGrid,
           .statusGrid {
             grid-template-columns: 1fr;
             grid-template-rows: none;
           }
 
-          .officeHeader {
-            align-items: flex-start;
-            flex-direction: column;
+          .requestBadge,
+          .statCard {
+            min-height: 150px;
           }
-
-          .officeLogo {
-            width: 180px;
-            height: 48px;
-          }
-
-          .requestBadge {
-            min-width: 0;
-            width: 100%;
-          }
-
         }
       `}</style>
 
@@ -489,17 +470,18 @@ export default function OfficeDashboardPage() {
           <div className="officeLogo" aria-label="ITspot">
             <img src="/brand-logo-dark.png" alt="ITspot" />
           </div>
+          <div className="dateTimeBlock">
+            <div className="clockValue">{formatClock(now)}</div>
+            <div className="dateValue">{formatLongDate(now)}</div>
+          </div>
+          <div className="weatherSummary">
+            <div className="weatherTemp">{weather.temperature === null ? '--' : Math.round(weather.temperature)}°C</div>
+            <div className="weatherLabel">{getWeatherLabel(weather.code)}</div>
+          </div>
         </header>
 
         <section className="officeGrid">
-          <div className="glassPanel clockPanel">
-            <div>
-              <div className="clockValue">{formatClock(now)}</div>
-              <div className="dateValue">{formatLongDate(now)}</div>
-            </div>
-          </div>
-
-          <div className="officeSideStack">
+          <section className="alertGrid">
             <div className={`requestBadge ${pendingRequestsCount > 0 ? 'hasRequests' : ''}`}>
               <div>
                 <div className="requestBadgeLabel">Nové žiadosti z portálu</div>
@@ -519,29 +501,9 @@ export default function OfficeDashboardPage() {
               </div>
               <div className="requestBadgeValue">{customerUpdatesCount}</div>
             </div>
-
-            <div className="glassPanel weatherPanel">
-              <div>
-                <div style={{ color: 'rgba(226,232,240,0.72)', fontWeight: 900, marginBottom: 8 }}>Počasie Nová Baňa</div>
-                <div className="weatherTemp">{weather.temperature === null ? '--' : Math.round(weather.temperature)}°C</div>
-              </div>
-              <div>
-                <div className="weatherLabel">{getWeatherLabel(weather.code)}</div>
-                <div style={{ color: 'rgba(226,232,240,0.72)', marginTop: 6, fontWeight: 800 }}>
-                  Vietor {weather.windSpeed === null ? '-' : `${Math.round(weather.windSpeed)} km/h`}
-                </div>
-                <div style={{ color: 'rgba(226,232,240,0.54)', marginTop: 4, fontSize: 12, fontWeight: 800 }}>
-                  Aktualizácia {lastRefresh ? formatClock(lastRefresh) : '-'}
-                </div>
-              </div>
-            </div>
-          </div>
+          </section>
 
           <section className="statusGrid">
-          <div className="statCard" style={{ '--accent': '#a3e635', '--accentGlow': 'rgba(163, 230, 53, 0.16)' } as CSSProperties}>
-            <div className="statLabel">Zákazky</div>
-            <div className="statValue">{stats.open}</div>
-          </div>
           <div className="statCard" style={{ '--accent': '#60a5fa', '--accentGlow': 'rgba(96, 165, 250, 0.17)' } as CSSProperties}>
             <div className="statLabel">Aktívne zákazky</div>
             <div className="statValue">{stats.active}</div>
@@ -577,16 +539,8 @@ export default function OfficeDashboardPage() {
             <div className="statLabel">Revízie do 30 dní</div>
             <div className="statValue">{stats.revisionsDue}</div>
           </div>
-          <div className="statCard" style={{ '--accent': '#22c55e', '--accentGlow': 'rgba(34, 197, 94, 0.17)' } as CSSProperties}>
-            <div className="statLabel">Zrealizované zákazky</div>
-            <div className="statValue">{stats.invoiced}</div>
-          </div>
           </section>
         </section>
-
-        <footer className="footerBar">
-          ITspot s.r.o. · Servisné centrum · Stav systému OK
-        </footer>
       </div>
     </main>
   )
