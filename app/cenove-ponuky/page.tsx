@@ -1068,19 +1068,8 @@ export default function QuotesPage() {
   @page { size:A4; margin:0; }
   @media print {
     body { background:white; padding:0; }
-    .page { box-shadow:none; margin:0; width:210mm; min-height:297mm; padding:10mm 14mm 8mm; }
-    .topline { margin:-10mm -14mm 7mm; }
-    .header { padding-bottom:6mm; }
-    .customer-row { margin-top:6mm; }
-    .offer-title { margin-top:6mm; }
-    table { margin-top:5mm; }
-    th, td { padding:5px 6px; }
-    .summary { margin-top:6mm; }
-    .footer { margin-top:7mm; }
+    .page { box-shadow:none; margin:0; width:210mm; min-height:297mm; }
     .toolbar { display:none; }
-    .summary { display:flex; }
-    .summary .terms { flex:1 1 auto; }
-    .summary .totals { flex:0 0 76mm; }
   }
 </style>
 </head>
