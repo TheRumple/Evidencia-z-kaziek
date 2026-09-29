@@ -200,7 +200,7 @@ function normalizeItems(items: unknown): QuoteItem[] {
         quantity: raw.quantity || '1',
         unit: raw.unit || 'ks',
         unitPrice: raw.unitPrice || '',
-        vatRate: raw.vatRate || '23',
+        vatRate: raw.vatRate === null || raw.vatRate === undefined || raw.vatRate === '' ? '23' : String(raw.vatRate),
       }
     })
     .filter((item) => item.name.trim() || item.note.trim() || item.imageUrl.trim() || item.imageDataUrl.trim() || item.unitPrice.trim())
@@ -246,13 +246,25 @@ function getQuoteTotals(items: QuoteItem[], discountType: 'none' | 'percent' | '
       ? Math.min(base.net, Math.max(0, rawDiscount))
       : 0
   const net = base.net - discount
-  const vat = net * 0.23
+  const discountRatio = base.net > 0 ? net / base.net : 0
+  const vat = base.vat * discountRatio
+  const vatRates = Array.from(new Set(
+    items
+      .filter((item) => getItemTotals(item).net !== 0)
+      .map((item) => parseMoney(item.vatRate))
+  ))
+  const vatLabel = vatRates.length === 1
+    ? `DPH ${vatRates[0].toLocaleString('sk-SK', { maximumFractionDigits: 2 })} %`
+    : vatRates.length > 1
+      ? 'DPH spolu'
+      : 'DPH'
   return {
     originalNet: base.net,
     discount,
     net,
     vat,
     gross: net + vat,
+    vatLabel,
   }
 }
 
@@ -1043,10 +1055,10 @@ export default function QuotesPage() {
   .terms strong { display:block; color:var(--ink); margin-bottom:6px; }
   .totals { border:1px solid var(--line); background:#fff; }
   .total-row { display:flex; justify-content:space-between; gap:12px; padding:9px 12px; border-bottom:1px solid var(--line); font-size:11px; }
-  .total-row strong { font-size:12px; }
+  .total-row strong { font-size:12px; white-space:nowrap; }
   .total-row.final { background:#eefbdc; color:#111827; border:2px solid var(--lime); margin:-1px; align-items:baseline; padding:13px 12px; }
   .total-row.final span { font-size:12px; font-weight:950; text-transform:uppercase; letter-spacing:.04em; }
-  .total-row.final strong { font-size:30px; color:#111827; }
+  .total-row.final strong { flex:0 0 auto; white-space:nowrap; font-size:24px; color:#111827; }
   .total-row.muted { color:var(--muted); }
   .signatures { display:grid; grid-template-columns:1fr; gap:18mm; margin-top:18mm; page-break-inside:avoid; max-width:76mm; }
   .signature { border-top:1px solid #98a2b3; padding-top:7px; color:#667085; font-size:10px; font-weight:800; }
@@ -1088,7 +1100,7 @@ export default function QuotesPage() {
     <div class="totals">
       ${quoteTotals.discount > 0 ? `<div class="total-row muted"><span>Pôvodná cena bez DPH</span><strong>${formatMoney(quoteTotals.originalNet)}</strong></div><div class="total-row"><span>${discountLabel}</span><strong>- ${formatMoney(quoteTotals.discount)}</strong></div>` : ''}
       <div class="total-row final"><span>Celkom bez DPH</span><strong>${formatMoney(quoteTotals.net)}</strong></div>
-      <div class="total-row"><span>DPH 23 %</span><strong>${formatMoney(quoteTotals.vat)}</strong></div>
+      <div class="total-row"><span>${quoteTotals.vatLabel}</span><strong>${formatMoney(quoteTotals.vat)}</strong></div>
       <div class="total-row muted"><span>Celkom s DPH</span><strong>${formatMoney(quoteTotals.gross)}</strong></div>
     </div>
   </section>
@@ -1309,7 +1321,7 @@ export default function QuotesPage() {
     }
     doc.rect(totalsX, totalsY, 80, 9)
     doc.setFontSize(8)
-    doc.text('DPH 23 %', totalsX + 4, totalsY + 6)
+    doc.text(pdfSafeText(quoteTotals.vatLabel), totalsX + 4, totalsY + 6)
     doc.text(formatMoney(quoteTotals.vat), totalsX + 76, totalsY + 6, { align: 'right' })
     doc.rect(totalsX, totalsY + 9, 80, 9)
     doc.text('Celkom s DPH', totalsX + 4, totalsY + 15)
@@ -1751,7 +1763,7 @@ export default function QuotesPage() {
                   <strong style={{ fontSize: 19 }}>{formatMoney(totals.net)}</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: 5, borderBottom: '1px solid #dbe3ee', fontSize: 12 }}>
-                  <span>DPH 23 %</span>
+                  <span>{totals.vatLabel}</span>
                   <strong>{formatMoney(totals.vat)}</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: 5, color: '#64748b', fontSize: 12 }}>
