@@ -1052,7 +1052,6 @@ export default function QuotesPage() {
   .item-name { font-weight:850; }
   .item-note { margin-top:3px; color:var(--muted); font-size:10px; }
   .item-image { display:block; width:18mm; max-height:18mm; object-fit:contain; margin-top:5px; border:1px solid #e8edf3; border-radius:3px; padding:2px; background:white; }
-  .closing { break-inside:avoid; page-break-inside:avoid; }
   .summary { display:grid; grid-template-columns:1fr 76mm; gap:10mm; margin-top:9mm; align-items:start; break-inside:avoid; page-break-inside:avoid; }
   .terms { background:var(--soft); border:1px solid #e8edf3; padding:12px; color:#475467; font-size:10.5px; line-height:1.5; white-space:pre-line; }
   .terms strong { display:block; color:var(--ink); margin-bottom:6px; }
@@ -1063,15 +1062,21 @@ export default function QuotesPage() {
   .total-row.final span { font-size:12px; font-weight:950; text-transform:uppercase; letter-spacing:.04em; }
   .total-row.final strong { flex:0 0 auto; white-space:nowrap; font-size:24px; color:#111827; }
   .total-row.muted { color:var(--muted); }
-  .signatures { display:grid; grid-template-columns:1fr; gap:18mm; margin-top:18mm; page-break-inside:avoid; max-width:76mm; }
-  .signature { border-top:1px solid #98a2b3; padding-top:7px; color:#667085; font-size:10px; font-weight:800; }
   .footer { margin-top:12mm; display:flex; justify-content:space-between; gap:20px; border-top:1px solid var(--line); padding-top:8px; color:var(--muted); font-size:9.5px; font-weight:800; }
   .toolbar { position:fixed; right:20px; top:20px; display:flex; gap:8px; z-index:10; }
   .toolbar button { border:0; border-radius:10px; background:#77d20b; color:#111827; padding:10px 14px; font-weight:900; cursor:pointer; }
   @page { size:A4; margin:0; }
   @media print {
     body { background:white; padding:0; }
-    .page { box-shadow:none; margin:0; width:210mm; min-height:297mm; }
+    .page { box-shadow:none; margin:0; width:210mm; min-height:297mm; padding:10mm 14mm 8mm; }
+    .topline { margin:-10mm -14mm 7mm; }
+    .header { padding-bottom:6mm; }
+    .customer-row { margin-top:6mm; }
+    .offer-title { margin-top:6mm; }
+    table { margin-top:5mm; }
+    th, td { padding:5px 6px; }
+    .summary { margin-top:6mm; }
+    .footer { margin-top:7mm; }
     .toolbar { display:none; }
     .summary { display:flex; }
     .summary .terms { flex:1 1 auto; }
@@ -1115,9 +1120,6 @@ export default function QuotesPage() {
         <div class="total-row"><span>${quoteTotals.vatLabel}</span><strong>${formatMoney(quoteTotals.vat)}</strong></div>
         <div class="total-row muted"><span>Celkom s DPH</span><strong>${formatMoney(quoteTotals.gross)}</strong></div>
       </div>
-    </section>
-    <section class="signatures">
-      <div class="signature">Vystavil: ITspot s. r. o.</div>
     </section>
     <footer class="footer"><span>www.itspot.sk</span><span>info@itspot.sk</span><span>Cenová ponuka ${escapeHtml(source.number)}</span></footer>
   </section>
@@ -1789,7 +1791,6 @@ export default function QuotesPage() {
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
               <button type="button" style={primaryButtonStyle} onClick={saveQuote} disabled={saving}>{saving ? 'Ukladám...' : 'Uložiť ponuku'}</button>
               <button type="button" style={buttonStyle} onClick={() => showQuote()}>Ukáž ponuku</button>
-              <button type="button" style={buttonStyle} onClick={() => void downloadQuotePdf()}>Ulož PDF</button>
               <button type="button" style={buttonStyle} onClick={() => sendQuoteEmail()}>Odoslať mailom</button>
               {editingId && (
                 <button
@@ -1892,7 +1893,6 @@ export default function QuotesPage() {
                       <button type="button" style={buttonStyle} onClick={() => startEdit(quote)}>Upraviť</button>
                       <button type="button" style={buttonStyle} onClick={() => duplicateQuote(quote)}>Duplikovať</button>
                       <button type="button" style={buttonStyle} onClick={() => showQuote(quote)}>Ukáž ponuku</button>
-                      <button type="button" style={buttonStyle} onClick={() => void downloadQuotePdf(quote)}>Ulož</button>
                       <button type="button" style={buttonStyle} onClick={() => sendQuoteEmail(quote)}>Email</button>
                       <button type="button" style={{ ...buttonStyle, borderColor: '#fbbf24', background: '#fef3c7', color: '#92400e' }} onClick={() => openMaterialImport(quote)} disabled={saving}>Nákup</button>
                       <button type="button" style={{ ...buttonStyle, borderColor: '#86efac', background: '#dcfce7', color: '#166534' }} onClick={() => void createOrderFromQuote(quote)} disabled={saving}>Zákazka</button>
@@ -1922,7 +1922,6 @@ export default function QuotesPage() {
                     <button type="button" style={buttonStyle} onClick={() => startEdit(quote)}>Upraviť</button>
                     <button type="button" style={buttonStyle} onClick={() => duplicateQuote(quote)}>Kópia</button>
                     <button type="button" style={buttonStyle} onClick={() => showQuote(quote)}>Ukáž ponuku</button>
-                    <button type="button" style={buttonStyle} onClick={() => void downloadQuotePdf(quote)}>Ulož</button>
                     <button type="button" style={buttonStyle} onClick={() => sendQuoteEmail(quote)}>Email</button>
                     <button type="button" style={{ ...buttonStyle, borderColor: '#fbbf24', background: '#fef3c7', color: '#92400e' }} onClick={() => openMaterialImport(quote)} disabled={saving}>Nákup</button>
                     <button
