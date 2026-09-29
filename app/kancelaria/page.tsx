@@ -196,23 +196,19 @@ export default function OfficeDashboardPage() {
           height: calc(100vh - 28px);
           margin: 0 auto;
           display: grid;
-          grid-template-rows: 112px minmax(0, 1fr);
-          gap: 14px;
+          grid-template-rows: 72px minmax(0, 1fr);
+          gap: 10px;
         }
 
         .officeHeader {
-          display: grid;
-          grid-template-columns: 260px minmax(0, 1fr) 300px;
+          display: flex;
           align-items: center;
-          gap: 28px;
-          padding: 12px 24px;
-          border-bottom: 1px solid rgba(148, 163, 184, 0.28);
-          background: rgba(15, 23, 42, 0.3);
+          justify-content: flex-start;
         }
 
         .officeLogo {
-          width: 240px;
-          height: 82px;
+          width: 260px;
+          height: 72px;
           display: inline-flex;
           align-items: center;
           justify-content: flex-start;
@@ -227,35 +223,56 @@ export default function OfficeDashboardPage() {
           display: block;
         }
 
-        .dateTimeBlock {
+        .glassPanel {
+          border: 1px solid rgba(148, 163, 184, 0.24);
+          background:
+            linear-gradient(135deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.025)),
+            rgba(15, 23, 42, 0.62);
+          box-shadow: 0 26px 60px rgba(0, 0, 0, 0.34);
+          border-radius: 12px;
+          backdrop-filter: blur(18px);
+        }
+
+        .clockPanel {
+          padding: 22px 30px;
           display: grid;
-          gap: 2px;
+          align-content: center;
+          min-height: 0;
+          overflow: hidden;
+          position: relative;
         }
 
         .clockValue {
-          font-size: 62px;
-          line-height: 0.9;
+          font-size: 108px;
+          line-height: 0.92;
           font-weight: 900;
           letter-spacing: 0;
         }
 
         .dateValue {
+          margin-top: 10px;
           color: rgba(226, 232, 240, 0.82);
-          font-size: 25px;
+          font-size: 31px;
           font-weight: 900;
           text-transform: capitalize;
         }
 
-        .weatherSummary {
-          justify-self: end;
+        .weatherPanel {
+          padding: 18px 22px;
           display: grid;
-          grid-template-columns: auto auto;
-          align-items: center;
-          gap: 16px;
+          align-content: center;
+          gap: 10px;
+          border-color: rgba(132, 204, 22, 0.32);
+        }
+
+        .weatherLocation {
+          color: rgba(226, 232, 240, 0.72);
+          font-size: 20px;
+          font-weight: 900;
         }
 
         .weatherTemp {
-          font-size: 58px;
+          font-size: 76px;
           font-weight: 900;
           line-height: 1;
           white-space: nowrap;
@@ -270,31 +287,32 @@ export default function OfficeDashboardPage() {
 
         .officeGrid {
           display: grid;
-          grid-template-rows: minmax(118px, 0.24fr) minmax(0, 1fr);
-          gap: 14px;
+          grid-template-columns: minmax(0, 1.18fr) minmax(360px, 0.82fr);
+          grid-template-rows: minmax(0, 1fr) 270px;
+          gap: 10px;
           min-height: 0;
         }
 
-        .alertGrid {
+        .officeSideStack {
           display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 14px;
+          grid-template-rows: 80px 80px minmax(0, 1fr);
+          gap: 10px;
           min-height: 0;
         }
 
         .requestBadge {
           min-width: 0;
           min-height: 0;
-          border-radius: 8px;
+          border-radius: 12px;
           border: 1px solid rgba(190, 242, 100, 0.35);
           background:
             linear-gradient(135deg, rgba(132, 204, 22, 0.22), rgba(255, 255, 255, 0.06)),
             rgba(15, 23, 42, 0.72);
           display: grid;
           grid-template-columns: minmax(0, 1fr) auto;
-          gap: 20px;
+          gap: 14px;
           align-items: center;
-          padding: 18px 28px;
+          padding: 12px 20px;
           box-shadow: 0 16px 40px rgba(0, 0, 0, 0.24);
         }
 
@@ -309,7 +327,7 @@ export default function OfficeDashboardPage() {
 
         .requestBadgeLabel {
           color: rgba(226, 232, 240, 0.84);
-          font-size: 27px;
+          font-size: 21px;
           font-weight: 900;
           line-height: 1.1;
         }
@@ -319,9 +337,9 @@ export default function OfficeDashboardPage() {
         }
 
         .requestBadgeText {
-          margin-top: 8px;
+          margin-top: 4px;
           color: #a3e635;
-          font-size: 19px;
+          font-size: 16px;
           font-weight: 900;
         }
 
@@ -331,31 +349,32 @@ export default function OfficeDashboardPage() {
 
         .requestBadgeValue {
           color: #f8fafc;
-          font-size: 78px;
+          font-size: 58px;
           line-height: 0.95;
           font-weight: 900;
         }
 
         .statusGrid {
           display: grid;
+          grid-column: 1 / -1;
           grid-template-columns: repeat(3, minmax(0, 1fr));
           grid-template-rows: repeat(2, minmax(0, 1fr));
-          gap: 14px;
+          gap: 10px;
           min-height: 0;
         }
 
         .statCard {
           min-height: 0;
           height: auto;
-          border-radius: 8px;
-          padding: 24px 28px;
+          border-radius: 10px;
+          padding: 16px 22px;
           border: 1px solid rgba(148, 163, 184, 0.24);
           background:
             linear-gradient(160deg, rgba(255, 255, 255, 0.105), rgba(255, 255, 255, 0.035)),
             rgba(255, 255, 255, 0.06);
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          align-items: center;
           gap: 18px;
           position: relative;
           overflow: hidden;
@@ -372,7 +391,7 @@ export default function OfficeDashboardPage() {
 
         .statLabel {
           color: rgba(226, 232, 240, 0.76);
-          font-size: 29px;
+          font-size: 25px;
           font-weight: 900;
           line-height: 1.15;
           min-width: 0;
@@ -382,48 +401,42 @@ export default function OfficeDashboardPage() {
           position: relative;
           z-index: 1;
           color: var(--accent, #f8fafc);
-          font-size: 104px;
-          line-height: 0.85;
+          font-size: 76px;
+          line-height: 0.92;
           font-weight: 900;
           text-align: right;
-          align-self: flex-end;
-          min-width: 100px;
+          min-width: 84px;
         }
 
         @media (max-width: 1100px) {
-          .officeHeader {
-            grid-template-columns: 210px minmax(0, 1fr) 240px;
-            gap: 18px;
-          }
-
           .officeLogo {
             width: 200px;
           }
 
           .clockValue {
-            font-size: 52px;
+            font-size: 86px;
           }
 
           .dateValue,
           .weatherLabel {
-            font-size: 21px;
+            font-size: 22px;
           }
 
           .weatherTemp {
-            font-size: 48px;
+            font-size: 62px;
           }
 
           .requestBadgeLabel,
           .statLabel {
-            font-size: 23px;
+            font-size: 21px;
           }
 
           .requestBadgeValue {
-            font-size: 66px;
+            font-size: 52px;
           }
 
           .statValue {
-            font-size: 82px;
+            font-size: 68px;
           }
         }
 
@@ -439,23 +452,22 @@ export default function OfficeDashboardPage() {
             grid-template-rows: auto auto;
           }
 
-          .officeHeader {
-            grid-template-columns: 1fr;
-            justify-items: start;
-          }
-
-          .weatherSummary {
-            justify-self: start;
-          }
-
           .officeGrid {
-            grid-template-rows: auto auto;
+            grid-template-columns: 1fr;
+            grid-template-rows: auto auto auto;
           }
 
-          .alertGrid,
           .statusGrid {
             grid-template-columns: 1fr;
             grid-template-rows: none;
+          }
+
+          .clockPanel {
+            min-height: 260px;
+          }
+
+          .officeSideStack {
+            grid-template-rows: auto auto 180px;
           }
 
           .requestBadge,
@@ -470,18 +482,15 @@ export default function OfficeDashboardPage() {
           <div className="officeLogo" aria-label="ITspot">
             <img src="/brand-logo-dark.png" alt="ITspot" />
           </div>
-          <div className="dateTimeBlock">
-            <div className="clockValue">{formatClock(now)}</div>
-            <div className="dateValue">{formatLongDate(now)}</div>
-          </div>
-          <div className="weatherSummary">
-            <div className="weatherTemp">{weather.temperature === null ? '--' : Math.round(weather.temperature)}°C</div>
-            <div className="weatherLabel">{getWeatherLabel(weather.code)}</div>
-          </div>
         </header>
 
         <section className="officeGrid">
-          <section className="alertGrid">
+          <div className="glassPanel clockPanel">
+            <div className="clockValue">{formatClock(now)}</div>
+            <div className="dateValue">{formatLongDate(now)}</div>
+          </div>
+
+          <section className="officeSideStack">
             <div className={`requestBadge ${pendingRequestsCount > 0 ? 'hasRequests' : ''}`}>
               <div>
                 <div className="requestBadgeLabel">Nové žiadosti z portálu</div>
@@ -500,6 +509,12 @@ export default function OfficeDashboardPage() {
                 </div>
               </div>
               <div className="requestBadgeValue">{customerUpdatesCount}</div>
+            </div>
+
+            <div className="glassPanel weatherPanel">
+              <div className="weatherLocation">Počasie Nová Baňa</div>
+              <div className="weatherTemp">{weather.temperature === null ? '--' : Math.round(weather.temperature)}°C</div>
+              <div className="weatherLabel">{getWeatherLabel(weather.code)}</div>
             </div>
           </section>
 
