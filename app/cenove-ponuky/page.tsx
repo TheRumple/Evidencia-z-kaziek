@@ -1062,13 +1062,14 @@ export default function QuotesPage() {
   .total-row.final span { font-size:12px; font-weight:950; text-transform:uppercase; letter-spacing:.04em; }
   .total-row.final strong { flex:0 0 auto; white-space:nowrap; font-size:24px; color:#111827; }
   .total-row.muted { color:var(--muted); }
-  .footer { margin-top:12mm; display:flex; justify-content:space-between; gap:20px; border-top:1px solid var(--line); padding-top:8px; color:var(--muted); font-size:9.5px; font-weight:800; }
+  .footer { margin-top:12mm; display:flex; justify-content:space-between; gap:20px; border-top:1px solid var(--line); padding-top:8px; color:var(--muted); font-size:9.5px; font-weight:800; break-inside:avoid; page-break-inside:avoid; }
   .toolbar { position:fixed; right:20px; top:20px; display:flex; gap:8px; z-index:10; }
   .toolbar button { border:0; border-radius:10px; background:#77d20b; color:#111827; padding:10px 14px; font-weight:900; cursor:pointer; }
   @page { size:A4; margin:0; }
   @media print {
     body { background:white; padding:0; }
-    .page { box-shadow:none; margin:0; width:210mm; min-height:297mm; }
+    .page { box-shadow:none; margin:0; width:210mm; min-height:297mm; padding-bottom:8mm; }
+    .footer { margin-top:6mm; }
     .toolbar { display:none; }
   }
 </style>
