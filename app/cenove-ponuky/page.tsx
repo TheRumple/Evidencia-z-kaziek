@@ -301,7 +301,7 @@ export default function QuotesPage() {
 
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
-  const [activeSection, setActiveSection] = useState<'create' | 'list'>('create')
+  const [activeSection, setActiveSection] = useState<'create' | 'list'>('list')
   const [isCompact, setIsCompact] = useState(false)
   const [isNarrow, setIsNarrow] = useState(false)
 
