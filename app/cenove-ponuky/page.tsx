@@ -38,6 +38,8 @@ const INSTALLATION_TERMS_NOTE = 'Ceny sú uvedené bez nepredvídaného materiá
 
 type QuoteKind = 'sale' | 'installation'
 
+type ImportRecord = Record<string, unknown>
+
 type QuotePrintSource = {
   number: string
   date: string
@@ -132,6 +134,24 @@ function normalizeCustomerName(value: string | null | undefined) {
     .replace(/\bs\.?\s*r\.?\s*o\.?\b/g, '')
     .replace(/[^\p{L}\p{N}]+/gu, ' ')
     .trim()
+}
+
+function getImportValue(record: ImportRecord, ...keys: string[]) {
+  for (const key of keys) {
+    if (record[key] !== undefined && record[key] !== null) return record[key]
+  }
+  return undefined
+}
+
+function importString(value: unknown, fallback = '') {
+  if (typeof value === 'string') return value.trim()
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value)
+  return fallback
+}
+
+function importNumberString(value: unknown, fallback = '') {
+  const text = importString(value, fallback)
+  return text.replace('.', ',')
 }
 
 function escapeHtml(value: string | null | undefined) {
@@ -271,6 +291,7 @@ function getQuoteTotals(items: QuoteItem[], discountType: 'none' | 'percent' | '
 export default function QuotesPage() {
   const router = useRouter()
   const formRef = useRef<HTMLElement | null>(null)
+  const importFileRef = useRef<HTMLInputElement | null>(null)
   const [checkingAuth, setCheckingAuth] = useState(true)
   const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -302,6 +323,8 @@ export default function QuotesPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [activeSection, setActiveSection] = useState<'create' | 'list'>('list')
+  const [showImport, setShowImport] = useState(false)
+  const [importText, setImportText] = useState('')
   const [isCompact, setIsCompact] = useState(false)
   const [isNarrow, setIsNarrow] = useState(false)
 
@@ -445,6 +468,144 @@ export default function QuotesPage() {
     window.setTimeout(() => {
       formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }, 50)
+  }
+
+  function importQuoteFromText(rawText: string) {
+    if (!rawText.trim()) {
+      setNotice({ type: 'error', text: 'Vlož JSON ponuky alebo vyber JSON súbor.' })
+      return
+    }
+
+    try {
+      const cleanText = rawText
+        .trim()
+        .replace(/^```(?:json)?\s*/i, '')
+        .replace(/\s*```$/, '')
+      const parsed: unknown = JSON.parse(cleanText)
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        throw new Error('Súbor neobsahuje platnú cenovú ponuku.')
+      }
+
+      const root = parsed as ImportRecord
+      const nestedQuote = root.quote
+      const source = nestedQuote && typeof nestedQuote === 'object' && !Array.isArray(nestedQuote)
+        ? nestedQuote as ImportRecord
+        : root
+      const rawItems = getImportValue(source, 'items', 'polozky', 'položky')
+      if (!Array.isArray(rawItems)) {
+        throw new Error('V ponuke chýba zoznam položiek.')
+      }
+
+      const importedItems = rawItems
+        .map((rawItem): QuoteItem | null => {
+          if (!rawItem || typeof rawItem !== 'object' || Array.isArray(rawItem)) return null
+          const item = rawItem as ImportRecord
+          const name = importString(getImportValue(item, 'name', 'nazov', 'názov', 'item'))
+          if (!name) return null
+          return {
+            id: createQuoteItem().id,
+            name,
+            note: importString(getImportValue(item, 'note', 'description', 'popis')),
+            imageUrl: importString(getImportValue(item, 'imageUrl', 'image_url', 'obrazok', 'obrázok')),
+            imageDataUrl: '',
+            quantity: importNumberString(getImportValue(item, 'quantity', 'mnozstvo', 'množstvo'), '1'),
+            unit: importString(getImportValue(item, 'unit', 'mj', 'jednotka'), 'ks'),
+            unitPrice: importNumberString(getImportValue(item, 'unitPrice', 'unit_price', 'price', 'cena')),
+            vatRate: importNumberString(getImportValue(item, 'vatRate', 'vat_rate', 'vat', 'dph'), '23'),
+          } satisfies QuoteItem
+        })
+        .filter((item): item is QuoteItem => item !== null)
+
+      if (importedItems.length === 0) {
+        throw new Error('Ponuka neobsahuje žiadnu platnú položku.')
+      }
+
+      const importedTitle = importString(getImportValue(source, 'title', 'nazov', 'názov', 'subject'))
+      if (!importedTitle) {
+        throw new Error('V ponuke chýba názov.')
+      }
+
+      const customerValue = getImportValue(source, 'customer', 'zakaznik', 'zákazník')
+      const customerRecord = customerValue && typeof customerValue === 'object' && !Array.isArray(customerValue)
+        ? customerValue as ImportRecord
+        : null
+      const importedCustomerName = importString(
+        getImportValue(source, 'customer_name', 'customerName')
+          ?? (customerRecord ? getImportValue(customerRecord, 'name', 'nazov', 'názov') : customerValue),
+      )
+      const matchedCustomer = customers.find(
+        (customer) => normalizeCustomerName(customer.nazov) === normalizeCustomerName(importedCustomerName),
+      )
+      const importedContact = importString(
+        getImportValue(source, 'contact_name', 'contactName', 'contact')
+          ?? (customerRecord ? getImportValue(customerRecord, 'contact', 'contact_name', 'kontakt') : undefined),
+        matchedCustomer?.kontakt || '',
+      )
+      const importedEmail = importString(
+        getImportValue(source, 'contact_email', 'contactEmail', 'email')
+          ?? (customerRecord ? getImportValue(customerRecord, 'email') : undefined),
+        matchedCustomer?.email || '',
+      )
+      const kindText = importString(getImportValue(source, 'kind', 'quote_kind', 'typ')).toLowerCase()
+      const importedKind: QuoteKind = ['installation', 'montaz', 'montáž', 's montazou', 's montážou'].includes(kindText)
+        ? 'installation'
+        : 'sale'
+      const importedDiscountType = importString(getImportValue(source, 'discount_type', 'discountType', 'typ_zlavy')).toLowerCase()
+      const nextDiscountType: 'none' | 'percent' | 'amount' = ['percent', 'percento', '%'].includes(importedDiscountType)
+        ? 'percent'
+        : ['amount', 'suma', 'hodnota'].includes(importedDiscountType)
+          ? 'amount'
+          : 'none'
+      const today = getTodayDate()
+
+      setEditingId('')
+      setCustomerId(matchedCustomer?.id || '')
+      setQuoteNumber(generateQuoteNumber(today))
+      setQuoteDate(today)
+      setValidUntil(addDays(today, 14))
+      setStatus('draft')
+      setTitle(importedTitle)
+      setCustomerName(importedCustomerName || matchedCustomer?.nazov || '')
+      setContactName(importedContact)
+      setContactEmail(importedEmail)
+      setQuoteKind(importedKind)
+      setRealizationNote(
+        importString(getImportValue(source, 'realization_note', 'realizationNote', 'dodanie'))
+          || (importedKind === 'sale' ? MATERIAL_DELIVERY_NOTE : INSTALLATION_DELIVERY_NOTE),
+      )
+      setNote(importString(getImportValue(source, 'note', 'terms', 'poznamka', 'poznámka')))
+      setDiscountType(nextDiscountType)
+      setDiscountValue(nextDiscountType === 'none' ? '' : importNumberString(getImportValue(source, 'discount_value', 'discountValue', 'zlava', 'zľava')))
+      setItems(importedItems)
+      setActiveSection('create')
+      setShowImport(false)
+      setImportText('')
+      setNotice({ type: 'success', text: `Ponuka „${importedTitle}“ bola načítaná na kontrolu.` })
+      window.setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+    } catch (error) {
+      setNotice({
+        type: 'error',
+        text: error instanceof Error ? `Import sa nepodaril: ${error.message}` : 'Import sa nepodaril.',
+      })
+    }
+  }
+
+  async function importQuoteFile(file: File | null | undefined) {
+    if (!file) return
+    if (!file.name.toLowerCase().endsWith('.json') || file.size > 2 * 1024 * 1024) {
+      setNotice({ type: 'error', text: 'Vyber JSON súbor s veľkosťou najviac 2 MB.' })
+      return
+    }
+
+    try {
+      const text = await file.text()
+      setImportText(text)
+      importQuoteFromText(text)
+    } catch {
+      setNotice({ type: 'error', text: 'JSON súbor sa nepodarilo načítať.' })
+    } finally {
+      if (importFileRef.current) importFileRef.current.value = ''
+    }
   }
 
   function selectCustomer(customerIdValue: string) {
@@ -1454,6 +1615,7 @@ export default function QuotesPage() {
           </div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <Link href="/" style={buttonStyle}>Domov</Link>
+            <button type="button" style={buttonStyle} onClick={() => setShowImport(true)}>Importovať ponuku</button>
             <button type="button" style={primaryButtonStyle} onClick={startNewQuote}>+ Nová ponuka</button>
           </div>
         </header>
@@ -1470,6 +1632,81 @@ export default function QuotesPage() {
         {notice && (
           <div style={{ ...boxStyle, padding: 14, marginBottom: 16, borderColor: notice.type === 'success' ? '#86efac' : '#fecaca', color: notice.type === 'success' ? '#166534' : '#991b1b' }}>
             <strong>{notice.text}</strong>
+          </div>
+        )}
+
+        {showImport && (
+          <div
+            role="presentation"
+            onClick={() => setShowImport(false)}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 1000,
+              display: 'grid',
+              placeItems: 'center',
+              padding: 16,
+              background: 'rgba(15, 23, 42, 0.62)',
+            }}
+          >
+            <section
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="quote-import-title"
+              onClick={(event) => event.stopPropagation()}
+              style={{
+                ...boxStyle,
+                width: 'min(720px, 100%)',
+                maxHeight: 'calc(100vh - 32px)',
+                padding: 16,
+                overflow: 'auto',
+                display: 'grid',
+                gap: 10,
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+                <div>
+                  <div style={{ color: '#77d20b', fontSize: 11, fontWeight: 950, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Import</div>
+                  <h2 id="quote-import-title" style={{ margin: 0, fontSize: 20 }}>Importovať cenovú ponuku</h2>
+                </div>
+                <button
+                  type="button"
+                  style={{ ...buttonStyle, width: 32, minWidth: 32, padding: 0, fontSize: 20 }}
+                  onClick={() => setShowImport(false)}
+                  aria-label="Zavrieť"
+                  title="Zavrieť"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div style={{ color: '#475569', fontWeight: 750, fontSize: 13 }}>
+                Vlož JSON pripravený v ChatGPT alebo vyber súbor z počítača.
+              </div>
+              <textarea
+                style={{ ...inputStyle, minHeight: 260, resize: 'vertical', fontFamily: 'Consolas, monospace', fontWeight: 600, lineHeight: 1.45 }}
+                value={importText}
+                onChange={(event) => setImportText(event.target.value)}
+                placeholder={'{\n  "title": "Kamerový systém",\n  "customer_name": "Názov zákazníka",\n  "items": [...]\n}'}
+                spellCheck={false}
+              />
+              <input
+                ref={importFileRef}
+                type="file"
+                accept=".json,application/json"
+                style={{ display: 'none' }}
+                onChange={(event) => void importQuoteFile(event.target.files?.[0])}
+              />
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+                <button type="button" style={buttonStyle} onClick={() => importFileRef.current?.click()}>
+                  Vybrať JSON súbor
+                </button>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button type="button" style={buttonStyle} onClick={() => setShowImport(false)}>Zrušiť</button>
+                  <button type="button" style={primaryButtonStyle} onClick={() => importQuoteFromText(importText)}>Importovať</button>
+                </div>
+              </div>
+            </section>
           </div>
         )}
 
