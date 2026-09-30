@@ -433,12 +433,42 @@ export default function QuotesPage() {
     const month = String(safeDate.getMonth() + 1).padStart(2, '0')
     const prefix = `${year}${month}`
     const lastNumberInMonth = quotes.reduce((highest, quote) => {
-      const match = quote.quote_number.match(new RegExp(`^${prefix}(\\d{2,})$`))
+      const match = String(quote.quote_number || '').trim().match(new RegExp(`^${prefix}(\\d{2,})$`))
       if (!match) return highest
       const order = Number(match[1])
       return Number.isFinite(order) ? Math.max(highest, order) : highest
     }, 0)
     return `${prefix}${String(lastNumberInMonth + 1).padStart(2, '0')}`
+  }
+
+  async function getNextQuoteNumber(dateValue = getTodayDate()) {
+    const date = new Date(dateValue)
+    const safeDate = Number.isNaN(date.getTime()) ? new Date() : date
+    const prefix = `${String(safeDate.getFullYear()).slice(-2)}${String(safeDate.getMonth() + 1).padStart(2, '0')}`
+    const localNumbers = quotes.map((quote) => String(quote.quote_number || '').trim())
+
+    if (!userId) return generateQuoteNumber(dateValue)
+
+    const { data, error } = await supabase
+      .from('quotes')
+      .select('quote_number')
+      .eq('user_id', userId)
+      .like('quote_number', `${prefix}%`)
+
+    if (error) return generateQuoteNumber(dateValue)
+
+    const allNumbers = [
+      ...localNumbers,
+      ...(data || []).map((quote) => String(quote.quote_number || '').trim()),
+    ]
+    const lastOrder = allNumbers.reduce((highest, number) => {
+      const match = number.match(new RegExp(`^${prefix}(\\d{2,})$`))
+      if (!match) return highest
+      const order = Number(match[1])
+      return Number.isFinite(order) ? Math.max(highest, order) : highest
+    }, 0)
+
+    return `${prefix}${String(lastOrder + 1).padStart(2, '0')}`
   }
 
   function resetForm() {
@@ -461,16 +491,19 @@ export default function QuotesPage() {
     setItems([createQuoteItem()])
   }
 
-  function startNewQuote() {
+  async function startNewQuote() {
+    const today = getTodayDate()
     resetForm()
     setActiveSection('create')
-    setNotice({ type: 'success', text: 'Nová cenová ponuka je pripravená.' })
+    const nextNumber = await getNextQuoteNumber(today)
+    setQuoteNumber(nextNumber)
+    setNotice({ type: 'success', text: `Nová cenová ponuka ${nextNumber} je pripravená.` })
     window.setTimeout(() => {
       formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }, 50)
   }
 
-  function importQuoteFromText(rawText: string) {
+  async function importQuoteFromText(rawText: string) {
     if (!rawText.trim()) {
       setNotice({ type: 'error', text: 'Vlož JSON ponuky alebo vyber JSON súbor.' })
       return
@@ -557,10 +590,11 @@ export default function QuotesPage() {
           ? 'amount'
           : 'none'
       const today = getTodayDate()
+      const nextNumber = await getNextQuoteNumber(today)
 
       setEditingId('')
       setCustomerId(matchedCustomer?.id || '')
-      setQuoteNumber(generateQuoteNumber(today))
+      setQuoteNumber(nextNumber)
       setQuoteDate(today)
       setValidUntil(addDays(today, 14))
       setStatus('draft')
@@ -600,7 +634,7 @@ export default function QuotesPage() {
     try {
       const text = await file.text()
       setImportText(text)
-      importQuoteFromText(text)
+      await importQuoteFromText(text)
     } catch {
       setNotice({ type: 'error', text: 'JSON súbor sa nepodarilo načítať.' })
     } finally {
@@ -731,12 +765,13 @@ export default function QuotesPage() {
     setItems((current) => (current.length <= 1 ? current : current.filter((_item, itemIndex) => itemIndex !== index)))
   }
 
-  function duplicateQuote(quote: Quote) {
+  async function duplicateQuote(quote: Quote) {
     const today = getTodayDate()
+    const nextNumber = await getNextQuoteNumber(today)
     setActiveSection('create')
     setEditingId('')
     setCustomerId(quote.customer_id || '')
-    setQuoteNumber(generateQuoteNumber(today))
+    setQuoteNumber(nextNumber)
     setQuoteDate(today)
     setValidUntil(addDays(today, 14))
     setStatus('draft')
@@ -750,7 +785,7 @@ export default function QuotesPage() {
     setDiscountType((quote.discount_type === 'percent' || quote.discount_type === 'amount') ? quote.discount_type : 'none')
     setDiscountValue(quote.discount_value ? String(quote.discount_value).replace('.', ',') : '')
     setItems(normalizeItems(quote.items).map((item) => ({ ...item, id: createQuoteItem().id })))
-    setNotice({ type: 'success', text: 'Ponuka je skopírovaná ako nová rozpracovaná ponuka.' })
+    setNotice({ type: 'success', text: `Ponuka je skopírovaná ako nová rozpracovaná ponuka ${nextNumber}.` })
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
