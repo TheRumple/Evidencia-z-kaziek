@@ -1904,16 +1904,44 @@ export default function QuotesPage() {
               ))}
             </div>
 
-            <div style={{ display: 'grid', gap: 3 }}>
+            <div style={{ border: '1px solid #dbe3ee', borderRadius: 8, overflow: 'hidden', background: '#fff' }}>
+              {!isCompact && (
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '36px minmax(300px, 2.35fr) minmax(76px, 0.5fr) 60px minmax(110px, 0.68fr) 68px minmax(118px, 0.72fr) 34px',
+                    gap: 6,
+                    alignItems: 'center',
+                    padding: '8px 8px',
+                    background: '#eef2f7',
+                    color: '#334155',
+                    borderBottom: '1px solid #cbd5e1',
+                    fontSize: 10,
+                    fontWeight: 950,
+                    letterSpacing: '0.04em',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  <span style={{ textAlign: 'center' }}>Č.</span>
+                  <span>Položka a popis</span>
+                  <span>Množstvo</span>
+                  <span>MJ</span>
+                  <span>Cena/MJ bez DPH</span>
+                  <span>DPH %</span>
+                  <span>Spolu bez DPH</span>
+                  <span />
+                </div>
+              )}
               {items.map((item, index) => {
                 const itemTotals = getItemTotals(item)
                 if (isCompact) {
                   return (
-                    <div key={item.id} style={{ display: 'grid', gap: 5, border: '1px solid #e2e8f0', borderRadius: 8, padding: 6, background: '#fff' }}>
+                    <div key={item.id} style={{ display: 'grid', gap: 6, padding: 8, background: index % 2 ? '#f8fafc' : '#fff', borderTop: index === 0 ? 'none' : '1px solid #dbe3ee' }}>
+                      <div style={{ color: '#64748b', fontSize: 11, fontWeight: 950 }}>Položka {index + 1}</div>
                       <div>
                         <label style={labelStyle}>Položka</label>
                         <input style={inputStyle} value={item.name} onChange={(event) => updateItem(index, 'name', event.target.value)} placeholder="Názov položky" />
-                        <input style={{ ...inputStyle, minHeight: 26, marginTop: 3, fontSize: 11 }} value={item.note} onChange={(event) => updateItem(index, 'note', event.target.value)} placeholder="Poznámka k položke" />
+                        <textarea style={{ ...inputStyle, minHeight: 48, marginTop: 4, fontSize: 11, lineHeight: 1.35, resize: 'vertical', color: '#475569' }} value={item.note} onChange={(event) => updateItem(index, 'note', event.target.value)} placeholder="Poznámka k položke" />
                         <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginTop: 4 }}>
                           <label style={{ ...buttonStyle, minHeight: 28, background: '#f8fafc', color: '#334155', cursor: 'pointer' }}>
                             Obrázok
@@ -1956,8 +1984,8 @@ export default function QuotesPage() {
                           <input style={inputStyle} value={item.vatRate} onChange={(event) => updateItem(index, 'vatRate', event.target.value)} />
                         </div>
                         <div>
-                          <label style={labelStyle}>Spolu</label>
-                          <div style={{ ...inputStyle, display: 'flex', alignItems: 'center', background: '#f8fafc' }}>{formatMoney(itemTotals.gross)}</div>
+                          <label style={labelStyle}>Spolu bez DPH</label>
+                          <div style={{ ...inputStyle, display: 'flex', alignItems: 'center', background: '#eef2f7' }}>{formatMoney(itemTotals.net)}</div>
                         </div>
                         <button type="button" style={{ ...buttonStyle, minHeight: 28, padding: 0, color: '#991b1b' }} onClick={() => removeItem(index)} disabled={items.length <= 1}>×</button>
                       </div>
@@ -1965,11 +1993,27 @@ export default function QuotesPage() {
                   )
                 }
                 return (
-                  <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '2.35fr 0.5fr 0.38fr 0.68fr 0.42fr 0.72fr 30px', gap: 4, alignItems: 'end', border: '1px solid #e2e8f0', borderRadius: 6, padding: 4, background: index % 2 ? '#fbfdff' : '#fff' }}>
+                  <div
+                    key={item.id}
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '36px minmax(300px, 2.35fr) minmax(76px, 0.5fr) 60px minmax(110px, 0.68fr) 68px minmax(118px, 0.72fr) 34px',
+                      gap: 6,
+                      alignItems: 'start',
+                      padding: '9px 8px',
+                      borderTop: index === 0 ? 'none' : '1px solid #dbe3ee',
+                      background: index % 2 ? '#f8fafc' : '#fff',
+                    }}
+                  >
+                    <div style={{ paddingTop: 7, textAlign: 'center', color: '#475569', fontWeight: 900, fontSize: 12 }}>{index + 1}</div>
                     <div>
-                      {index === 0 && <label style={labelStyle}>Položka</label>}
-                      <input style={inputStyle} value={item.name} onChange={(event) => updateItem(index, 'name', event.target.value)} placeholder="Názov položky" />
-                      <input style={{ ...inputStyle, minHeight: 24, marginTop: 2, fontSize: 11 }} value={item.note} onChange={(event) => updateItem(index, 'note', event.target.value)} placeholder="Poznámka k položke" />
+                      <input style={{ ...inputStyle, minHeight: 30, fontSize: 12, background: '#fff' }} value={item.name} onChange={(event) => updateItem(index, 'name', event.target.value)} placeholder="Názov položky" />
+                      <textarea
+                        style={{ ...inputStyle, minHeight: 48, marginTop: 4, fontSize: 11, lineHeight: 1.35, resize: 'vertical', color: '#475569', background: index % 2 ? '#fff' : '#f8fafc' }}
+                        value={item.note}
+                        onChange={(event) => updateItem(index, 'note', event.target.value)}
+                        placeholder="Popis položky"
+                      />
                       <div style={{ display: 'flex', gap: 5, alignItems: 'center', flexWrap: 'wrap', marginTop: 3 }}>
                         <label style={{ ...buttonStyle, minHeight: 24, padding: '0 8px', fontSize: 11, background: '#f8fafc', color: '#334155', cursor: 'pointer' }}>
                           Obrázok
@@ -1995,26 +2039,21 @@ export default function QuotesPage() {
                       </div>
                     </div>
                     <div>
-                      {index === 0 && <label style={labelStyle}>Množstvo</label>}
-                      <input style={inputStyle} value={item.quantity} onChange={(event) => updateItem(index, 'quantity', event.target.value)} />
+                      <input style={{ ...inputStyle, minHeight: 30 }} value={item.quantity} onChange={(event) => updateItem(index, 'quantity', event.target.value)} aria-label={`Množstvo položky ${index + 1}`} />
                     </div>
                     <div>
-                      {index === 0 && <label style={labelStyle}>MJ</label>}
-                      <input style={inputStyle} value={item.unit} onChange={(event) => updateItem(index, 'unit', event.target.value)} />
+                      <input style={{ ...inputStyle, minHeight: 30 }} value={item.unit} onChange={(event) => updateItem(index, 'unit', event.target.value)} aria-label={`Merná jednotka položky ${index + 1}`} />
                     </div>
                     <div>
-                      {index === 0 && <label style={labelStyle}>Cena bez DPH</label>}
-                      <input style={inputStyle} value={item.unitPrice} onChange={(event) => updateItem(index, 'unitPrice', event.target.value)} placeholder="0,00" />
+                      <input style={{ ...inputStyle, minHeight: 30, textAlign: 'right' }} value={item.unitPrice} onChange={(event) => updateItem(index, 'unitPrice', event.target.value)} placeholder="0,00" aria-label={`Cena bez DPH položky ${index + 1}`} />
                     </div>
                     <div>
-                      {index === 0 && <label style={labelStyle}>DPH %</label>}
-                      <input style={inputStyle} value={item.vatRate} onChange={(event) => updateItem(index, 'vatRate', event.target.value)} />
+                      <input style={{ ...inputStyle, minHeight: 30, textAlign: 'right' }} value={item.vatRate} onChange={(event) => updateItem(index, 'vatRate', event.target.value)} aria-label={`DPH položky ${index + 1}`} />
                     </div>
                     <div>
-                      {index === 0 && <label style={labelStyle}>Spolu</label>}
-                      <div style={{ ...inputStyle, display: 'flex', alignItems: 'center', background: '#f8fafc' }}>{formatMoney(itemTotals.gross)}</div>
+                      <div style={{ ...inputStyle, minHeight: 30, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', background: '#eef2f7', fontWeight: 950 }}>{formatMoney(itemTotals.net)}</div>
                     </div>
-                    <button type="button" style={{ ...buttonStyle, minHeight: 28, padding: 0, color: '#991b1b' }} onClick={() => removeItem(index)} disabled={items.length <= 1}>×</button>
+                    <button type="button" style={{ ...buttonStyle, width: 30, minHeight: 30, padding: 0, color: '#991b1b' }} onClick={() => removeItem(index)} disabled={items.length <= 1} aria-label={`Odstrániť položku ${index + 1}`} title="Odstrániť položku">×</button>
                   </div>
                 )
               })}
