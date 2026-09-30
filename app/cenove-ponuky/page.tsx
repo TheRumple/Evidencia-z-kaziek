@@ -1574,7 +1574,7 @@ export default function QuotesPage() {
 
   const boxStyle: CSSProperties = {
     background: 'rgba(255,255,255,0.94)',
-    border: '1px solid #dbe3ee',
+    border: '1px solid #cbd5e1',
     borderRadius: 10,
     boxShadow: '0 10px 28px rgba(15,23,42,0.06)',
   }
@@ -1582,7 +1582,7 @@ export default function QuotesPage() {
   const inputStyle: CSSProperties = {
     width: '100%',
     minHeight: 28,
-    border: '1px solid #cbd5e1',
+    border: '1px solid #aebdce',
     borderRadius: 8,
     padding: '4px 7px',
     fontWeight: 800,
@@ -1594,7 +1594,7 @@ export default function QuotesPage() {
   const labelStyle: CSSProperties = {
     display: 'block',
     marginBottom: 2,
-    color: '#334155',
+    color: '#1e293b',
     fontSize: 10,
     fontWeight: 900,
   }
@@ -1755,7 +1755,9 @@ export default function QuotesPage() {
               <h2 style={{ margin: 0, fontSize: 18 }}>Základné údaje</h2>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr' : 'repeat(4, minmax(140px, 1fr))', gap: 6 }}>
+            <div style={{ display: 'grid', gap: 7, padding: '8px 10px', background: '#eef2f7', borderLeft: '4px solid #475569' }}>
+              <div style={{ color: '#334155', fontSize: 10, fontWeight: 950, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Ponuka</div>
+              <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr' : 'repeat(4, minmax(140px, 1fr))', gap: 6 }}>
               <div>
                 <label style={labelStyle}>Číslo ponuky</label>
                 <input style={inputStyle} value={quoteNumber} onChange={(event) => setQuoteNumber(event.target.value)} placeholder="260901" />
@@ -1776,108 +1778,115 @@ export default function QuotesPage() {
                 <label style={labelStyle}>Platnosť do</label>
                 <input type="date" style={inputStyle} value={validUntil} onChange={(event) => setValidUntil(event.target.value)} />
               </div>
-            </div>
+              </div>
 
-            <div style={{ display: 'flex', gap: 5, alignItems: 'center', flexWrap: 'wrap' }}>
-              <span style={{ color: '#64748b', fontSize: 11, fontWeight: 900 }}>Workflow</span>
-              {(['draft', 'sent', 'approved'] as Quote['status'][]).map((step) => (
-                <button
-                  key={step}
-                  type="button"
-                  style={workflowStepStyle(status === step)}
-                  onClick={() => setStatus(step)}
-                >
-                  {STATUS_LABELS[step]}
-                </button>
-              ))}
-              <button
-                type="button"
-                style={workflowStepStyle(status === 'rejected', { color: status === 'rejected' ? '#991b1b' : '#334155' })}
-                onClick={() => setStatus('rejected')}
-              >
-                Zamietnutá
-              </button>
-              {editingQuote && (
-                <button
-                  type="button"
-                  style={{ ...workflowStepStyle(false), borderColor: '#86efac', background: '#dcfce7', color: '#166534' }}
-                  onClick={() => void createOrderFromQuote(editingQuote)}
-                  disabled={saving}
-                >
-                  Vytvoriť zákazku
-                </button>
-              )}
-            </div>
-
-            <div>
-              <label style={labelStyle}>Zákazník</label>
-              <select style={inputStyle} value={customerId} onChange={(event) => selectCustomer(event.target.value)}>
-                <option value="">Vyber zákazníka</option>
-                {customers.map((customer) => (
-                  <option key={customer.id} value={customer.id}>{customer.nazov}</option>
+              <div style={{ display: 'flex', gap: 5, alignItems: 'center', flexWrap: 'wrap' }}>
+                <span style={{ color: '#475569', fontSize: 11, fontWeight: 900 }}>Workflow</span>
+                {(['draft', 'sent', 'approved'] as Quote['status'][]).map((step) => (
+                  <button
+                    key={step}
+                    type="button"
+                    style={workflowStepStyle(status === step)}
+                    onClick={() => setStatus(step)}
+                  >
+                    {STATUS_LABELS[step]}
+                  </button>
                 ))}
-              </select>
-            </div>
-
-            <div>
-              <label style={labelStyle}>Názov riešenia</label>
-              <input style={inputStyle} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Kamerový systém pre areál" />
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr' : '1fr 1fr', gap: 10 }}>
-              <div>
-                <label style={labelStyle}>Kontaktná osoba</label>
-                <input style={inputStyle} value={contactName} onChange={(event) => setContactName(event.target.value)} />
+                <button
+                  type="button"
+                  style={workflowStepStyle(status === 'rejected', { color: status === 'rejected' ? '#991b1b' : '#334155' })}
+                  onClick={() => setStatus('rejected')}
+                >
+                  Zamietnutá
+                </button>
+                {editingQuote && (
+                  <button
+                    type="button"
+                    style={{ ...workflowStepStyle(false), borderColor: '#86efac', background: '#dcfce7', color: '#166534' }}
+                    onClick={() => void createOrderFromQuote(editingQuote)}
+                    disabled={saving}
+                  >
+                    Vytvoriť zákazku
+                  </button>
+                )}
               </div>
-              <div>
-                <label style={labelStyle}>Email</label>
-                <input style={inputStyle} value={contactEmail} onChange={(event) => setContactEmail(event.target.value)} />
-              </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr' : '180px 1fr', gap: 10, alignItems: 'end' }}>
+            <div style={{ display: 'grid', gap: 7, padding: '8px 10px', background: '#f8fafc', borderLeft: '4px solid #77d20b' }}>
+              <div style={{ color: '#365314', fontSize: 10, fontWeight: 950, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Odberateľ a riešenie</div>
               <div>
-                <label style={labelStyle}>Typ ponuky</label>
-                <select style={inputStyle} value={quoteKind} onChange={(event) => changeQuoteKind(event.target.value as QuoteKind)}>
-                  {Object.entries(QUOTE_KIND_LABELS).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
+                <label style={labelStyle}>Zákazník</label>
+                <select style={inputStyle} value={customerId} onChange={(event) => selectCustomer(event.target.value)}>
+                  <option value="">Vyber zákazníka</option>
+                  {customers.map((customer) => (
+                    <option key={customer.id} value={customer.id}>{customer.nazov}</option>
                   ))}
                 </select>
               </div>
+
               <div>
-                <label style={labelStyle}>{quoteKind === 'sale' ? 'Dodanie' : 'Realizácia'}</label>
-                <textarea
-                  style={{ ...inputStyle, minHeight: 42, resize: 'vertical' }}
-                  value={realizationNote}
-                  onChange={(event) => setRealizationNote(event.target.value)}
-                  placeholder={quoteKind === 'sale' ? MATERIAL_DELIVERY_NOTE : INSTALLATION_DELIVERY_NOTE}
-                />
+                <label style={labelStyle}>Názov riešenia</label>
+                <input style={inputStyle} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Kamerový systém pre areál" />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr' : '1fr 1fr', gap: 10 }}>
+                <div>
+                  <label style={labelStyle}>Kontaktná osoba</label>
+                  <input style={inputStyle} value={contactName} onChange={(event) => setContactName(event.target.value)} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Email</label>
+                  <input style={inputStyle} value={contactEmail} onChange={(event) => setContactEmail(event.target.value)} />
+                </div>
               </div>
             </div>
 
-            <div>
-              <label style={labelStyle}>Poznámka a podmienky</label>
-              <textarea style={{ ...inputStyle, minHeight: 46, resize: 'vertical' }} value={note} onChange={(event) => setNote(event.target.value)} placeholder={quoteKind === 'sale' ? MATERIAL_TERMS_NOTE : INSTALLATION_TERMS_NOTE} />
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr' : '1fr 1fr', gap: 10 }}>
-              <div>
-                <label style={labelStyle}>Zľava</label>
-                <select style={inputStyle} value={discountType} onChange={(event) => setDiscountType(event.target.value as 'none' | 'percent' | 'amount')}>
-                  <option value="none">Bez zľavy</option>
-                  <option value="percent">Percentá %</option>
-                  <option value="amount">Suma bez DPH €</option>
-                </select>
+            <div style={{ display: 'grid', gap: 7, padding: '8px 10px', background: '#eef2f7', borderLeft: '4px solid #38bdf8' }}>
+              <div style={{ color: '#0c4a6e', fontSize: 10, fontWeight: 950, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Podmienky a zľava</div>
+              <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr' : '180px 1fr', gap: 10, alignItems: 'end' }}>
+                <div>
+                  <label style={labelStyle}>Typ ponuky</label>
+                  <select style={inputStyle} value={quoteKind} onChange={(event) => changeQuoteKind(event.target.value as QuoteKind)}>
+                    {Object.entries(QUOTE_KIND_LABELS).map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label style={labelStyle}>{quoteKind === 'sale' ? 'Dodanie' : 'Realizácia'}</label>
+                  <textarea
+                    style={{ ...inputStyle, minHeight: 42, resize: 'vertical' }}
+                    value={realizationNote}
+                    onChange={(event) => setRealizationNote(event.target.value)}
+                    placeholder={quoteKind === 'sale' ? MATERIAL_DELIVERY_NOTE : INSTALLATION_DELIVERY_NOTE}
+                  />
+                </div>
               </div>
+
               <div>
-                <label style={labelStyle}>Hodnota zľavy</label>
-                <input
-                  style={inputStyle}
-                  value={discountValue}
-                  onChange={(event) => setDiscountValue(event.target.value)}
-                  placeholder={discountType === 'percent' ? 'napr. 5' : discountType === 'amount' ? 'napr. 100' : '0'}
-                  disabled={discountType === 'none'}
-                />
+                <label style={labelStyle}>Poznámka a podmienky</label>
+                <textarea style={{ ...inputStyle, minHeight: 46, resize: 'vertical' }} value={note} onChange={(event) => setNote(event.target.value)} placeholder={quoteKind === 'sale' ? MATERIAL_TERMS_NOTE : INSTALLATION_TERMS_NOTE} />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr' : '1fr 1fr', gap: 10 }}>
+                <div>
+                  <label style={labelStyle}>Zľava</label>
+                  <select style={inputStyle} value={discountType} onChange={(event) => setDiscountType(event.target.value as 'none' | 'percent' | 'amount')}>
+                    <option value="none">Bez zľavy</option>
+                    <option value="percent">Percentá %</option>
+                    <option value="amount">Suma bez DPH €</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={labelStyle}>Hodnota zľavy</label>
+                  <input
+                    style={inputStyle}
+                    value={discountValue}
+                    onChange={(event) => setDiscountValue(event.target.value)}
+                    placeholder={discountType === 'percent' ? 'napr. 5' : discountType === 'amount' ? 'napr. 100' : '0'}
+                    disabled={discountType === 'none'}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -1904,7 +1913,7 @@ export default function QuotesPage() {
               ))}
             </div>
 
-            <div style={{ border: '1px solid #dbe3ee', borderRadius: 8, overflow: 'hidden', background: '#fff' }}>
+            <div style={{ border: '1px solid #b8c4d4', borderRadius: 8, overflow: 'hidden', background: '#fff' }}>
               {!isCompact && (
                 <div
                   style={{
@@ -1913,9 +1922,9 @@ export default function QuotesPage() {
                     gap: 6,
                     alignItems: 'center',
                     padding: '8px 8px',
-                    background: '#eef2f7',
-                    color: '#334155',
-                    borderBottom: '1px solid #cbd5e1',
+                    background: '#dfe6ef',
+                    color: '#1e293b',
+                    borderBottom: '1px solid #aebdce',
                     fontSize: 10,
                     fontWeight: 950,
                     letterSpacing: '0.04em',
@@ -1936,7 +1945,7 @@ export default function QuotesPage() {
                 const itemTotals = getItemTotals(item)
                 if (isCompact) {
                   return (
-                    <div key={item.id} style={{ display: 'grid', gap: 6, padding: 8, background: index % 2 ? '#f8fafc' : '#fff', borderTop: index === 0 ? 'none' : '1px solid #dbe3ee' }}>
+                    <div key={item.id} style={{ display: 'grid', gap: 6, padding: 8, background: index % 2 ? '#edf2f7' : '#fff', borderTop: index === 0 ? 'none' : '1px solid #cbd5e1' }}>
                       <div style={{ color: '#64748b', fontSize: 11, fontWeight: 950 }}>Položka {index + 1}</div>
                       <div>
                         <label style={labelStyle}>Položka</label>
@@ -1985,7 +1994,7 @@ export default function QuotesPage() {
                         </div>
                         <div>
                           <label style={labelStyle}>Spolu bez DPH</label>
-                          <div style={{ ...inputStyle, display: 'flex', alignItems: 'center', background: '#eef2f7' }}>{formatMoney(itemTotals.net)}</div>
+                          <div style={{ ...inputStyle, display: 'flex', alignItems: 'center', background: '#dfe6ef' }}>{formatMoney(itemTotals.net)}</div>
                         </div>
                         <button type="button" style={{ ...buttonStyle, minHeight: 28, padding: 0, color: '#991b1b' }} onClick={() => removeItem(index)} disabled={items.length <= 1}>×</button>
                       </div>
@@ -2001,15 +2010,15 @@ export default function QuotesPage() {
                       gap: 6,
                       alignItems: 'start',
                       padding: '9px 8px',
-                      borderTop: index === 0 ? 'none' : '1px solid #dbe3ee',
-                      background: index % 2 ? '#f8fafc' : '#fff',
+                      borderTop: index === 0 ? 'none' : '1px solid #cbd5e1',
+                      background: index % 2 ? '#edf2f7' : '#fff',
                     }}
                   >
                     <div style={{ paddingTop: 7, textAlign: 'center', color: '#475569', fontWeight: 900, fontSize: 12 }}>{index + 1}</div>
                     <div>
                       <input style={{ ...inputStyle, minHeight: 30, fontSize: 12, background: '#fff' }} value={item.name} onChange={(event) => updateItem(index, 'name', event.target.value)} placeholder="Názov položky" />
                       <textarea
-                        style={{ ...inputStyle, minHeight: 48, marginTop: 4, fontSize: 11, lineHeight: 1.35, resize: 'vertical', color: '#475569', background: index % 2 ? '#fff' : '#f8fafc' }}
+                        style={{ ...inputStyle, minHeight: 48, marginTop: 4, fontSize: 11, lineHeight: 1.35, resize: 'vertical', color: '#334155', background: '#fff' }}
                         value={item.note}
                         onChange={(event) => updateItem(index, 'note', event.target.value)}
                         placeholder="Popis položky"
@@ -2051,7 +2060,7 @@ export default function QuotesPage() {
                       <input style={{ ...inputStyle, minHeight: 30, textAlign: 'right' }} value={item.vatRate} onChange={(event) => updateItem(index, 'vatRate', event.target.value)} aria-label={`DPH položky ${index + 1}`} />
                     </div>
                     <div>
-                      <div style={{ ...inputStyle, minHeight: 30, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', background: '#eef2f7', fontWeight: 950 }}>{formatMoney(itemTotals.net)}</div>
+                      <div style={{ ...inputStyle, minHeight: 30, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', background: '#dfe6ef', fontWeight: 950 }}>{formatMoney(itemTotals.net)}</div>
                     </div>
                     <button type="button" style={{ ...buttonStyle, width: 30, minHeight: 30, padding: 0, color: '#991b1b' }} onClick={() => removeItem(index)} disabled={items.length <= 1} aria-label={`Odstrániť položku ${index + 1}`} title="Odstrániť položku">×</button>
                   </div>
