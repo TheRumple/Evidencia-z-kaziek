@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { ChevronDown, ChevronUp, Trash2 } from 'lucide-react'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { BrandLogo } from '@/components/BrandLogo'
@@ -763,6 +764,17 @@ export default function QuotesPage() {
 
   function removeItem(index: number) {
     setItems((current) => (current.length <= 1 ? current : current.filter((_item, itemIndex) => itemIndex !== index)))
+  }
+
+  function moveItem(index: number, direction: -1 | 1) {
+    setItems((current) => {
+      const targetIndex = index + direction
+      if (targetIndex < 0 || targetIndex >= current.length) return current
+      const next = [...current]
+      const [movedItem] = next.splice(index, 1)
+      next.splice(targetIndex, 0, movedItem)
+      return next
+    })
   }
 
   async function duplicateQuote(quote: Quote) {
@@ -1972,7 +1984,7 @@ export default function QuotesPage() {
                 <div
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: '36px minmax(300px, 2.35fr) minmax(76px, 0.5fr) 60px minmax(110px, 0.68fr) 68px minmax(118px, 0.72fr) 34px',
+                    gridTemplateColumns: '36px minmax(280px, 2.35fr) minmax(76px, 0.5fr) 60px minmax(110px, 0.68fr) 68px minmax(118px, 0.72fr) 82px',
                     gap: 6,
                     alignItems: 'center',
                     padding: '8px 8px',
@@ -2029,7 +2041,7 @@ export default function QuotesPage() {
                           )}
                         </div>
                       </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr 1fr' : '0.75fr 0.55fr 0.9fr 0.65fr 1fr 30px', gap: 5, alignItems: 'end' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr 1fr' : '0.75fr 0.55fr 0.9fr 0.65fr 1fr 82px', gap: 5, alignItems: 'end' }}>
                         <div>
                           <label style={labelStyle}>Množstvo</label>
                           <input style={inputStyle} value={item.quantity} onChange={(event) => updateItem(index, 'quantity', event.target.value)} />
@@ -2050,7 +2062,17 @@ export default function QuotesPage() {
                           <label style={labelStyle}>Spolu bez DPH</label>
                           <div style={{ ...inputStyle, display: 'flex', alignItems: 'center', background: '#dfe6ef' }}>{formatMoney(itemTotals.net)}</div>
                         </div>
-                        <button type="button" style={{ ...buttonStyle, minHeight: 28, padding: 0, color: '#991b1b' }} onClick={() => removeItem(index)} disabled={items.length <= 1}>×</button>
+                        <div style={{ display: 'flex', gap: 3, justifyContent: 'flex-end', alignItems: 'center' }}>
+                          <button type="button" style={{ ...buttonStyle, width: 25, minWidth: 25, minHeight: 28, padding: 0, display: 'grid', placeItems: 'center' }} onClick={() => moveItem(index, -1)} disabled={index === 0} aria-label={`Posunúť položku ${index + 1} vyššie`} title="Posunúť vyššie">
+                            <ChevronUp size={14} strokeWidth={2.5} />
+                          </button>
+                          <button type="button" style={{ ...buttonStyle, width: 25, minWidth: 25, minHeight: 28, padding: 0, display: 'grid', placeItems: 'center' }} onClick={() => moveItem(index, 1)} disabled={index === items.length - 1} aria-label={`Posunúť položku ${index + 1} nižšie`} title="Posunúť nižšie">
+                            <ChevronDown size={14} strokeWidth={2.5} />
+                          </button>
+                          <button type="button" style={{ ...buttonStyle, width: 25, minWidth: 25, minHeight: 28, padding: 0, color: '#991b1b', display: 'grid', placeItems: 'center' }} onClick={() => removeItem(index)} disabled={items.length <= 1} aria-label={`Odstrániť položku ${index + 1}`} title="Odstrániť položku">
+                            <Trash2 size={13} strokeWidth={2.4} />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )
@@ -2060,7 +2082,7 @@ export default function QuotesPage() {
                     key={item.id}
                     style={{
                       display: 'grid',
-                      gridTemplateColumns: '36px minmax(300px, 2.35fr) minmax(76px, 0.5fr) 60px minmax(110px, 0.68fr) 68px minmax(118px, 0.72fr) 34px',
+                      gridTemplateColumns: '36px minmax(280px, 2.35fr) minmax(76px, 0.5fr) 60px minmax(110px, 0.68fr) 68px minmax(118px, 0.72fr) 82px',
                       gap: 6,
                       alignItems: 'start',
                       padding: '9px 8px',
@@ -2116,7 +2138,17 @@ export default function QuotesPage() {
                     <div>
                       <div style={{ ...inputStyle, minHeight: 30, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', background: '#dfe6ef', fontWeight: 950 }}>{formatMoney(itemTotals.net)}</div>
                     </div>
-                    <button type="button" style={{ ...buttonStyle, width: 30, minHeight: 30, padding: 0, color: '#991b1b' }} onClick={() => removeItem(index)} disabled={items.length <= 1} aria-label={`Odstrániť položku ${index + 1}`} title="Odstrániť položku">×</button>
+                    <div style={{ display: 'flex', gap: 3, justifyContent: 'flex-end', alignItems: 'center' }}>
+                      <button type="button" style={{ ...buttonStyle, width: 25, minWidth: 25, minHeight: 30, padding: 0, display: 'grid', placeItems: 'center' }} onClick={() => moveItem(index, -1)} disabled={index === 0} aria-label={`Posunúť položku ${index + 1} vyššie`} title="Posunúť vyššie">
+                        <ChevronUp size={14} strokeWidth={2.5} />
+                      </button>
+                      <button type="button" style={{ ...buttonStyle, width: 25, minWidth: 25, minHeight: 30, padding: 0, display: 'grid', placeItems: 'center' }} onClick={() => moveItem(index, 1)} disabled={index === items.length - 1} aria-label={`Posunúť položku ${index + 1} nižšie`} title="Posunúť nižšie">
+                        <ChevronDown size={14} strokeWidth={2.5} />
+                      </button>
+                      <button type="button" style={{ ...buttonStyle, width: 25, minWidth: 25, minHeight: 30, padding: 0, color: '#991b1b', display: 'grid', placeItems: 'center' }} onClick={() => removeItem(index)} disabled={items.length <= 1} aria-label={`Odstrániť položku ${index + 1}`} title="Odstrániť položku">
+                        <Trash2 size={13} strokeWidth={2.4} />
+                      </button>
+                    </div>
                   </div>
                 )
               })}
