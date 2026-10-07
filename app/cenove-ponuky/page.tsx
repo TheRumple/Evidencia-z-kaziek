@@ -1195,9 +1195,13 @@ export default function QuotesPage() {
           <tr>
             <td>${index + 1}</td>
             <td>
-              <div class="item-name">${escapeHtml(item.name || '-')}</div>
-              ${item.note.trim() ? `<div class="item-note">${escapeHtml(item.note)}</div>` : ''}
-              ${item.imageUrl || item.imageDataUrl ? `<img class="item-image" src="${escapeHtml(item.imageUrl || item.imageDataUrl)}" alt="" />` : ''}
+              <div class="item-layout">
+                ${item.imageUrl || item.imageDataUrl ? `<img class="item-image" src="${escapeHtml(item.imageUrl || item.imageDataUrl)}" alt="" />` : ''}
+                <div class="item-copy">
+                  <div class="item-name">${escapeHtml(item.name || '-')}</div>
+                  ${item.note.trim() ? `<div class="item-note">${escapeHtml(item.note)}</div>` : ''}
+                </div>
+              </div>
             </td>
             <td class="num">${escapeHtml(item.quantity || '1')}</td>
             <td>${escapeHtml(item.unit || 'ks')}</td>
@@ -1217,55 +1221,58 @@ export default function QuotesPage() {
   :root { --ink:#111827; --muted:#667085; --line:#d7dde7; --soft:#f6f8fb; --lime:#77d20b; --deep:#111827; }
   * { box-sizing: border-box; }
   body { margin:0; background:#dfe7f1; color:var(--ink); font-family:Arial,Helvetica,sans-serif; padding:24px; }
-  .page { width:210mm; min-height:297mm; margin:0 auto; background:white; box-shadow:0 24px 70px rgba(15,23,42,.16); padding:15mm 16mm 13mm; position:relative; }
-  .topline { height:4px; background:linear-gradient(90deg,var(--deep),var(--deep) 78%,var(--lime)); margin:-15mm -16mm 12mm; }
-  .header { display:grid; grid-template-columns:1.1fr .9fr; gap:16mm; align-items:start; padding-bottom:9mm; border-bottom:1px solid var(--line); }
-  .brand-logo { display:block; width:22mm; height:22mm; object-fit:contain; }
-  .company { margin-top:3mm; font-size:10.5px; line-height:1.55; color:#344054; }
-  .quote-box { border:1px solid var(--deep); padding:14px 16px; background:#fff; }
-  .quote-label { font-size:10px; color:var(--muted); text-transform:uppercase; font-weight:900; letter-spacing:.09em; }
-  .quote-number { margin-top:6px; font-size:29px; font-weight:950; color:var(--deep); }
-  .quote-meta { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; font-size:11px; }
-  .meta-card { border-top:1px solid var(--line); padding-top:8px; }
+  .page { width:210mm; min-height:297mm; margin:0 auto; background:white; box-shadow:0 24px 70px rgba(15,23,42,.16); padding:10mm 14mm 9mm; position:relative; }
+  .topline { height:3px; background:linear-gradient(90deg,var(--deep),var(--deep) 78%,var(--lime)); margin:-10mm -14mm 6mm; }
+  .header { display:grid; grid-template-columns:1.28fr .72fr; gap:10mm; align-items:start; padding-bottom:5mm; border-bottom:1px solid var(--line); }
+  .brand-block { display:flex; align-items:flex-start; gap:5mm; }
+  .brand-logo { display:block; flex:0 0 auto; width:17mm; height:17mm; object-fit:contain; }
+  .company { margin:0; font-size:9.5px; line-height:1.43; color:#344054; }
+  .quote-box { border:1px solid var(--deep); padding:9px 11px; background:#fff; }
+  .quote-label { font-size:8.5px; color:var(--muted); text-transform:uppercase; font-weight:900; letter-spacing:.09em; }
+  .quote-number { margin-top:4px; font-size:23px; font-weight:950; line-height:1; color:var(--deep); }
+  .quote-meta { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:9px; font-size:10px; }
+  .meta-card { border-top:1px solid var(--line); padding-top:5px; }
   .meta-card span { display:block; color:var(--muted); font-weight:900; font-size:9px; text-transform:uppercase; letter-spacing:.06em; }
-  .meta-card strong { display:block; margin-top:4px; font-size:12px; }
-  .customer-row { display:grid; grid-template-columns:1fr 1fr; gap:9mm; margin-top:10mm; }
-  .panel { border:1px solid var(--line); padding:12px; background:#fff; }
-  .panel h2 { margin:0 0 9px; font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; }
-  .panel .name { font-size:16px; font-weight:950; margin-bottom:6px; }
-  .panel p { margin:0; color:#475467; font-size:11px; line-height:1.5; white-space:pre-line; }
-  .offer-title { margin-top:10mm; }
-  .offer-title span { color:var(--lime); font-size:10px; font-weight:950; text-transform:uppercase; letter-spacing:.08em; }
-  .offer-title h1 { margin:4px 0 0; font-size:22px; line-height:1.18; color:var(--ink); }
-  table { width:100%; border-collapse:collapse; margin-top:8mm; font-size:10.3px; }
+  .meta-card strong { display:block; margin-top:3px; font-size:10.5px; }
+  .customer-row { display:grid; grid-template-columns:1fr 1fr; gap:7mm; margin-top:5mm; }
+  .panel { border:1px solid var(--line); padding:9px 10px; background:#fff; }
+  .panel h2 { margin:0 0 5px; font-size:8.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; }
+  .panel .name { font-size:14px; font-weight:950; margin-bottom:4px; }
+  .panel p { margin:0; color:#475467; font-size:9.5px; line-height:1.4; white-space:pre-line; }
+  .offer-title { margin-top:5mm; }
+  .offer-title span { color:var(--lime); font-size:9px; font-weight:950; text-transform:uppercase; letter-spacing:.08em; }
+  .offer-title h1 { margin:2px 0 0; font-size:18px; line-height:1.16; color:var(--ink); }
+  table { width:100%; border-collapse:collapse; margin-top:4mm; font-size:9.5px; }
   thead { display:table-header-group; }
   tr { break-inside:avoid; page-break-inside:avoid; }
-  th { background:#f0f3f7; color:#344054; padding:8px 7px; text-align:left; font-size:9px; text-transform:uppercase; letter-spacing:.04em; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
-  td { padding:8px 7px; border-bottom:1px solid #e8edf3; vertical-align:top; }
+  th { background:#f0f3f7; color:#344054; padding:5px 6px; text-align:left; font-size:8px; text-transform:uppercase; letter-spacing:.04em; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+  td { padding:5px 6px; border-bottom:1px solid #e8edf3; vertical-align:top; }
   tbody tr:nth-child(even) td { background:#fbfcfe; }
   .num { text-align:right; white-space:nowrap; }
   .strong { font-weight:950; color:var(--ink); }
+  .item-layout { display:flex; align-items:flex-start; gap:6px; }
+  .item-copy { min-width:0; flex:1; }
   .item-name { font-weight:850; }
-  .item-note { margin-top:3px; color:var(--muted); font-size:10px; }
-  .item-image { display:block; width:18mm; max-height:18mm; object-fit:contain; margin-top:5px; border:1px solid #e8edf3; border-radius:3px; padding:2px; background:white; }
-  .summary { display:grid; grid-template-columns:1fr 76mm; gap:10mm; margin-top:9mm; align-items:start; break-inside:avoid; page-break-inside:avoid; }
-  .terms { background:var(--soft); border:1px solid #e8edf3; padding:12px; color:#475467; font-size:10.5px; line-height:1.5; white-space:pre-line; }
-  .terms strong { display:block; color:var(--ink); margin-bottom:6px; }
+  .item-note { margin-top:2px; color:var(--muted); font-size:9px; line-height:1.25; }
+  .item-image { display:block; flex:0 0 auto; width:14mm; height:14mm; object-fit:contain; border:1px solid #e8edf3; border-radius:3px; padding:1px; background:white; }
+  .summary { display:grid; grid-template-columns:1fr 76mm; gap:8mm; margin-top:5mm; align-items:start; break-inside:avoid; page-break-inside:avoid; }
+  .terms { background:var(--soft); border:1px solid #e8edf3; padding:9px 10px; color:#475467; font-size:9.5px; line-height:1.4; white-space:pre-line; }
+  .terms strong { display:block; color:var(--ink); margin-bottom:4px; }
   .totals { border:1px solid var(--line); background:#fff; break-inside:avoid; page-break-inside:avoid; }
-  .total-row { display:flex; justify-content:space-between; gap:12px; padding:9px 12px; border-bottom:1px solid var(--line); font-size:11px; }
-  .total-row strong { font-size:12px; white-space:nowrap; }
-  .total-row.final { background:#eefbdc; color:#111827; border:2px solid var(--lime); margin:-1px; align-items:baseline; padding:13px 12px; }
-  .total-row.final span { font-size:12px; font-weight:950; text-transform:uppercase; letter-spacing:.04em; }
-  .total-row.final strong { flex:0 0 auto; white-space:nowrap; font-size:24px; color:#111827; }
+  .total-row { display:flex; justify-content:space-between; gap:10px; padding:6px 9px; border-bottom:1px solid var(--line); font-size:10px; }
+  .total-row strong { font-size:11px; white-space:nowrap; }
+  .total-row.final { background:#eefbdc; color:#111827; border:2px solid var(--lime); margin:-1px; align-items:baseline; padding:9px; }
+  .total-row.final span { font-size:10px; font-weight:950; text-transform:uppercase; letter-spacing:.04em; }
+  .total-row.final strong { flex:0 0 auto; white-space:nowrap; font-size:20px; color:#111827; }
   .total-row.muted { color:var(--muted); }
-  .footer { margin-top:12mm; display:flex; justify-content:space-between; gap:20px; border-top:1px solid var(--line); padding-top:8px; color:var(--muted); font-size:9.5px; font-weight:800; break-inside:avoid; page-break-inside:avoid; }
+  .footer { margin-top:7mm; display:flex; justify-content:space-between; gap:20px; border-top:1px solid var(--line); padding-top:6px; color:var(--muted); font-size:8.5px; font-weight:800; break-inside:avoid; page-break-inside:avoid; }
   .toolbar { position:fixed; right:20px; top:20px; display:flex; gap:8px; z-index:10; }
   .toolbar button { border:0; border-radius:10px; background:#77d20b; color:#111827; padding:10px 14px; font-weight:900; cursor:pointer; }
   @page { size:A4; margin:0; }
   @media print {
     body { background:white; padding:0; }
-    .page { box-shadow:none; margin:0; width:210mm; min-height:297mm; padding-bottom:8mm; }
-    .footer { margin-top:6mm; }
+    .page { box-shadow:none; margin:0; width:210mm; min-height:297mm; padding-bottom:7mm; }
+    .footer { margin-top:5mm; }
     .toolbar { display:none; }
   }
 </style>
@@ -1275,7 +1282,7 @@ export default function QuotesPage() {
 <main class="page">
   <div class="topline"></div>
   <section class="header">
-    <div>
+    <div class="brand-block">
       <img class="brand-logo" src="/delivery-protocol-logo.png" alt="ITspot" />
       <div class="company"><strong>ITspot s. r. o.</strong><br />Hájles 1703/6, 968 01 Nová Baňa<br />IČO: 56430388 · DIČ: 2122307462<br />IČ DPH: SK2122307462<br />info@itspot.sk · +421 908 806 691</div>
     </div>
@@ -1360,75 +1367,77 @@ export default function QuotesPage() {
     await registerPdfFont(doc)
     const pageWidth = doc.internal.pageSize.getWidth()
     const pageHeight = doc.internal.pageSize.getHeight()
-    const margin = 14
+    const margin = 12
 
     if (logoDataUrl) {
-      doc.addImage(logoDataUrl, 'PNG', margin, 14, 22, 22)
+      doc.addImage(logoDataUrl, 'PNG', margin, 10, 16, 16)
     } else {
       doc.setFont(PDF_FONT_NAME, 'bold')
-      doc.setFontSize(28)
-      doc.text('ITspot', margin, 25)
+      doc.setFontSize(22)
+      doc.text('ITspot', margin, 21)
     }
 
     doc.setFont(PDF_FONT_NAME, 'normal')
-    doc.setFontSize(8.5)
+    doc.setFontSize(7.3)
     doc.setTextColor(52, 64, 84)
-    doc.text('ITspot s. r. o.', margin, 43)
-    doc.text('Hájles 1703/6, 968 01 Nová Baňa', margin, 47)
-    doc.text('IČO: 56430388 · DIČ: 2122307462', margin, 51)
-    doc.text('IČ DPH: SK2122307462', margin, 55)
-    doc.text('info@itspot.sk · +421 908 806 691', margin, 59)
+    doc.text('ITspot s. r. o.', margin + 20, 12)
+    doc.text('Hájles 1703/6, 968 01 Nová Baňa', margin + 20, 16)
+    doc.text('IČO: 56430388 · DIČ: 2122307462', margin + 20, 20)
+    doc.text('IČ DPH: SK2122307462', margin + 20, 24)
+    doc.text('info@itspot.sk · +421 908 806 691', margin + 20, 28)
 
     doc.setDrawColor(17, 24, 39)
-    doc.rect(126, 14, 70, 36)
+    doc.rect(134, 10, 64, 25)
     doc.setFont(PDF_FONT_NAME, 'bold')
-    doc.setFontSize(8)
+    doc.setFontSize(7)
     doc.setTextColor(102, 112, 133)
-    doc.text('CENOVÁ PONUKA', 130, 21)
-    doc.setFontSize(20)
+    doc.text('CENOVÁ PONUKA', 138, 15)
+    doc.setFontSize(16)
     doc.setTextColor(17, 24, 39)
-    doc.text(pdfSafeText(source.number), 130, 30)
+    doc.text(pdfSafeText(source.number), 138, 22)
     doc.setDrawColor(215, 221, 231)
-    doc.line(130, 35, 192, 35)
-    doc.setFontSize(7.5)
+    doc.line(138, 25, 194, 25)
+    doc.setFontSize(6.5)
     doc.setTextColor(102, 112, 133)
-    doc.text('VYSTAVENÉ', 130, 41)
-    doc.text('PLATNOSŤ', 162, 41)
-    doc.setFontSize(8.5)
+    doc.text('VYSTAVENÉ', 138, 29)
+    doc.text('PLATNOSŤ', 167, 29)
+    doc.setFontSize(7.3)
     doc.setTextColor(17, 24, 39)
-    doc.text(formatDate(source.date), 130, 46)
-    doc.text(source.valid ? formatDate(source.valid) : '-', 162, 46)
+    doc.text(formatDate(source.date), 138, 33)
+    doc.text(source.valid ? formatDate(source.valid) : '-', 167, 33)
 
     doc.setDrawColor(215, 221, 231)
-    doc.line(margin, 64, pageWidth - margin, 64)
+    doc.line(margin, 39, pageWidth - margin, 39)
 
     doc.setDrawColor(226, 232, 240)
-    doc.rect(margin, 72, 82, 30)
-    doc.rect(114, 72, 82, 30)
+    doc.rect(margin, 44, 89, 24)
+    doc.rect(109, 44, 89, 24)
     doc.setFont(PDF_FONT_NAME, 'bold')
-    doc.setFontSize(7.5)
+    doc.setFontSize(6.8)
     doc.setTextColor(102, 112, 133)
-    doc.text('ODBERATEĽ', margin + 4, 79)
-    doc.text(pdfSafeText(deliveryTitle).toUpperCase(), 118, 79)
-    doc.setFontSize(11)
+    doc.text('ODBERATEĽ', margin + 4, 49)
+    doc.text(pdfSafeText(deliveryTitle).toUpperCase(), 113, 49)
+    doc.setFontSize(9.5)
     doc.setTextColor(17, 24, 39)
-    doc.text(pdfSafeText(source.customer || 'Bez zákazníka'), margin + 4, 87, { maxWidth: 74 })
+    doc.text(pdfSafeText(source.customer || 'Bez zákazníka'), margin + 4, 55, { maxWidth: 81 })
     doc.setFont(PDF_FONT_NAME, 'normal')
-    doc.setFontSize(8)
-    doc.text(pdfSafeText([source.contact ? `Kontaktna osoba: ${source.contact}` : '', source.email ? `Email: ${source.email}` : ''].filter(Boolean).join('\n')), margin + 4, 94, { maxWidth: 74 })
-    doc.text(pdfSafeText(deliveryText), 118, 87, { maxWidth: 74 })
+    doc.setFontSize(7.2)
+    doc.text(pdfSafeText([source.contact ? `Kontaktná osoba: ${source.contact}` : '', source.email ? `Email: ${source.email}` : ''].filter(Boolean).join('\n')), margin + 4, 60, { maxWidth: 81 })
+    doc.text(pdfSafeText(deliveryText), 113, 55, { maxWidth: 81 })
 
     doc.setFont(PDF_FONT_NAME, 'bold')
-    doc.setFontSize(8)
+    doc.setFontSize(7)
     doc.setTextColor(119, 210, 11)
-    doc.text('NÁVRH RIEŠENIA', margin, 114)
-    doc.setFontSize(17)
+    doc.text('NÁVRH RIEŠENIA', margin, 75)
+    doc.setFontSize(14)
     doc.setTextColor(17, 24, 39)
-    doc.text(pdfSafeText(source.title || 'Cenová ponuka'), margin, 122, { maxWidth: 180 })
+    const titleLines = doc.splitTextToSize(pdfSafeText(source.title || 'Cenová ponuka'), pageWidth - (margin * 2)) as string[]
+    doc.text(titleLines, margin, 81)
+    const tableStartY = 84 + (Math.max(1, titleLines.length) * 5)
 
     autoTable(doc, {
-      startY: 130,
-      margin: { left: margin, right: margin, bottom: 58 },
+      startY: tableStartY,
+      margin: { left: margin, right: margin, bottom: 50 },
       head: [['Č.', 'Položka', 'Množstvo', 'MJ', 'Cena/MJ bez DPH', 'DPH', 'Spolu bez DPH']],
       body: source.items.map((item, index) => {
         const itemTotals = getItemTotals(item)
@@ -1444,8 +1453,8 @@ export default function QuotesPage() {
       }),
       styles: {
         font: PDF_FONT_NAME,
-        fontSize: 8.4,
-        cellPadding: 2.2,
+        fontSize: 7.8,
+        cellPadding: 1.7,
         textColor: [17, 24, 39],
         lineColor: [232, 237, 243],
         lineWidth: 0.25,
@@ -1456,7 +1465,7 @@ export default function QuotesPage() {
         fillColor: [240, 243, 247],
         textColor: [52, 64, 84],
         fontStyle: 'bold',
-        fontSize: 7.5,
+        fontSize: 6.8,
       },
       columnStyles: {
         0: { cellWidth: 9 },
@@ -1472,25 +1481,26 @@ export default function QuotesPage() {
         const image = itemImages[data.row.index]
         if (!image) return
         try {
-          doc.addImage(image, getPdfImageFormat(image), data.cell.x + 2, data.cell.y + data.cell.height - 15, 12, 12)
+          doc.addImage(image, getPdfImageFormat(image), data.cell.x + 1.7, data.cell.y + 1.7, 11, 11)
         } catch {}
       },
       didParseCell: (data) => {
         if (data.section === 'body' && data.column.index === 1 && itemImages[data.row.index]) {
-          data.cell.styles.minCellHeight = Math.max(Number(data.cell.styles.minCellHeight || 0), 18)
+          data.cell.styles.cellPadding = { top: 1.7, right: 1.7, bottom: 1.7, left: 14 }
+          data.cell.styles.minCellHeight = Math.max(Number(data.cell.styles.minCellHeight || 0), 14.4)
         }
       },
     })
 
-    let y = ((doc as unknown as { lastAutoTable?: { finalY?: number } }).lastAutoTable?.finalY || 150) + 10
-    if (y > pageHeight - 75) {
+    let y = ((doc as unknown as { lastAutoTable?: { finalY?: number } }).lastAutoTable?.finalY || 130) + 7
+    if (y > pageHeight - 66) {
       doc.addPage()
-      y = 24
+      y = 18
     }
 
     doc.setDrawColor(232, 237, 243)
     doc.setFillColor(246, 248, 251)
-    doc.rect(margin, y, 82, 28, 'FD')
+    doc.rect(margin, y, 89, 24, 'FD')
     doc.setFont(PDF_FONT_NAME, 'bold')
     doc.setFontSize(8)
     doc.setTextColor(17, 24, 39)
@@ -1498,35 +1508,35 @@ export default function QuotesPage() {
     doc.setFont(PDF_FONT_NAME, 'normal')
     doc.setFontSize(8)
     doc.setTextColor(71, 84, 103)
-    doc.text(pdfSafeText(termsText), margin + 4, y + 14, { maxWidth: 74 })
+    doc.text(pdfSafeText(termsText), margin + 4, y + 13, { maxWidth: 81 })
 
-    const totalsX = 116
+    const totalsX = 109
     doc.setDrawColor(119, 210, 11)
     doc.setLineWidth(0.7)
-    doc.rect(totalsX, y, 80, 17)
+    doc.rect(totalsX, y, 89, 15)
     doc.setFont(PDF_FONT_NAME, 'bold')
     doc.setFontSize(8)
     doc.setTextColor(17, 24, 39)
-    doc.text('CELKOM BEZ DPH', totalsX + 4, y + 10)
-    doc.setFontSize(18)
-    doc.text(formatMoney(quoteTotals.net), totalsX + 76, y + 11, { align: 'right' })
+    doc.text('CELKOM BEZ DPH', totalsX + 4, y + 9)
+    doc.setFontSize(16)
+    doc.text(formatMoney(quoteTotals.net), totalsX + 85, y + 10, { align: 'right' })
     doc.setDrawColor(215, 221, 231)
     doc.setLineWidth(0.25)
-    let totalsY = y + 17
+    let totalsY = y + 15
     if (quoteTotals.discount > 0) {
-      doc.rect(totalsX, totalsY, 80, 9)
+      doc.rect(totalsX, totalsY, 89, 8)
       doc.setFontSize(8)
-      doc.text(pdfSafeText(discountLabel), totalsX + 4, totalsY + 6)
-      doc.text(`- ${formatMoney(quoteTotals.discount)}`, totalsX + 76, totalsY + 6, { align: 'right' })
-      totalsY += 9
+      doc.text(pdfSafeText(discountLabel), totalsX + 4, totalsY + 5.5)
+      doc.text(`- ${formatMoney(quoteTotals.discount)}`, totalsX + 85, totalsY + 5.5, { align: 'right' })
+      totalsY += 8
     }
-    doc.rect(totalsX, totalsY, 80, 9)
+    doc.rect(totalsX, totalsY, 89, 8)
     doc.setFontSize(8)
-    doc.text(pdfSafeText(quoteTotals.vatLabel), totalsX + 4, totalsY + 6)
-    doc.text(formatMoney(quoteTotals.vat), totalsX + 76, totalsY + 6, { align: 'right' })
-    doc.rect(totalsX, totalsY + 9, 80, 9)
-    doc.text('Celkom s DPH', totalsX + 4, totalsY + 15)
-    doc.text(formatMoney(quoteTotals.gross), totalsX + 76, totalsY + 15, { align: 'right' })
+    doc.text(pdfSafeText(quoteTotals.vatLabel), totalsX + 4, totalsY + 5.5)
+    doc.text(formatMoney(quoteTotals.vat), totalsX + 85, totalsY + 5.5, { align: 'right' })
+    doc.rect(totalsX, totalsY + 8, 89, 8)
+    doc.text('Celkom s DPH', totalsX + 4, totalsY + 13.5)
+    doc.text(formatMoney(quoteTotals.gross), totalsX + 85, totalsY + 13.5, { align: 'right' })
 
     const signY = Math.max(y + 46, pageHeight - 36)
     doc.setDrawColor(152, 162, 179)
