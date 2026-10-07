@@ -1569,8 +1569,16 @@ export default function QuotesPage() {
     doc.text('info@itspot.sk', pageWidth / 2, pageHeight - 8, { align: 'center' })
     doc.text(`Cenová ponuka ${pdfSafeText(source.number)}`, pageWidth - margin, pageHeight - 8, { align: 'right' })
 
-    const safeName = pdfSafeText(`cenova-ponuka-${source.number}-${source.customer || ''}`).replace(/[^a-zA-Z0-9\-_ ]/g, '').trim() || `cenova-ponuka-${source.number}`
-    doc.save(`${safeName}.pdf`)
+    const safeName = pdfSafeText(`CP-${source.number}-${source.customer || ''}`).replace(/[^a-zA-Z0-9\-_ ]/g, '').trim() || `CP-${source.number}`
+    const blob = doc.output('blob')
+    const url = URL.createObjectURL(blob)
+    const downloadLink = document.createElement('a')
+    downloadLink.href = url
+    downloadLink.download = `${safeName}.pdf`
+    document.body.appendChild(downloadLink)
+    downloadLink.click()
+    downloadLink.remove()
+    window.setTimeout(() => URL.revokeObjectURL(url), 30000)
     return true
   }
 
@@ -1579,14 +1587,32 @@ export default function QuotesPage() {
     const recipient = target?.contact_email || contactEmail
     const number = target?.quote_number || quoteNumber || generateQuoteNumber()
     const targetTitle = target?.title || title || 'cenová ponuka'
-    const pdfDownloaded = await downloadQuotePdf(quote)
-    if (!pdfDownloaded) return
-    const body = [
-      'Dobrý deň,',
-      '',
-      `v prílohe posielame cenovú ponuku ${number}: ${targetTitle}.`,
-    ].join('\n')
-    window.location.href = `mailto:${encodeURIComponent(recipient || '')}?subject=${encodeURIComponent(`Cenová ponuka ${number}`)}&body=${encodeURIComponent(body)}`
+    setSaving(true)
+    try {
+      const pdfDownloaded = await downloadQuotePdf(quote)
+      if (!pdfDownloaded) return
+      const body = [
+        'Dobrý deň,',
+        '',
+        `v prílohe posielame cenovú ponuku ${number}: ${targetTitle}.`,
+        '',
+        'S pozdravom',
+        'ITspot s. r. o.',
+      ].join('\n')
+      const mailto = `mailto:${encodeURIComponent(recipient || '')}?subject=${encodeURIComponent(`Cenová ponuka ${number}`)}&body=${encodeURIComponent(body)}`
+      window.location.assign(mailto)
+      setNotice({
+        type: 'success',
+        text: recipient
+          ? 'PDF bolo stiahnuté. Prilož ho do otvoreného e-mailu.'
+          : 'PDF bolo stiahnuté. V e-mailovom klientovi doplň adresu zákazníka.',
+      })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Neznáma chyba.'
+      setNotice({ type: 'error', text: `E-mail sa nepodarilo pripraviť: ${message}` })
+    } finally {
+      setSaving(false)
+    }
   }
 
   if (checkingAuth) {
