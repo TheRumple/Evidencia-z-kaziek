@@ -1268,6 +1268,19 @@ export default function QuotesPage() {
   .footer { margin-top:7mm; display:flex; justify-content:space-between; gap:20px; border-top:1px solid var(--line); padding-top:6px; color:var(--muted); font-size:8.5px; font-weight:800; break-inside:avoid; page-break-inside:avoid; }
   .toolbar { position:fixed; right:20px; top:20px; display:flex; gap:8px; z-index:10; }
   .toolbar button { border:0; border-radius:10px; background:#77d20b; color:#111827; padding:10px 14px; font-weight:900; cursor:pointer; }
+  .page.relaxed { display:flex; flex-direction:column; }
+  .page.relaxed .header { padding-bottom:7mm; }
+  .page.relaxed .customer-row { margin-top:7mm; }
+  .page.relaxed .panel { padding:11px 12px; }
+  .page.relaxed .offer-title { margin-top:7mm; }
+  .page.relaxed table { margin-top:6mm; }
+  .page.relaxed th { padding-top:7px; padding-bottom:7px; }
+  .page.relaxed td { padding-top:7px; padding-bottom:7px; }
+  .page.relaxed .item-note { margin-top:3px; line-height:1.35; }
+  .page.relaxed .item-image { width:16mm; height:16mm; }
+  .page.relaxed .summary { margin-top:7mm; }
+  .page.relaxed .closing { flex:1; display:flex; flex-direction:column; }
+  .page.relaxed .footer { margin-top:auto; }
   @page { size:A4; margin:0; }
   @media print {
     body { background:white; padding:0; }
@@ -1279,7 +1292,7 @@ export default function QuotesPage() {
 </head>
 <body>
 <div class="toolbar"><button onclick="window.print()">Tlačiť / uložiť PDF</button></div>
-<main class="page">
+<main class="page${source.items.length <= 6 ? ' relaxed' : ''}">
   <div class="topline"></div>
   <section class="header">
     <div class="brand-block">
@@ -1341,6 +1354,7 @@ export default function QuotesPage() {
     const deliveryText = source.realization || (source.kind === 'sale' ? MATERIAL_DELIVERY_NOTE : INSTALLATION_DELIVERY_NOTE)
     const termsText = source.note || (source.kind === 'sale' ? MATERIAL_TERMS_NOTE : INSTALLATION_TERMS_NOTE)
     const discountLabel = source.discountType === 'percent' ? `Zľava ${source.discountValue || '0'} %` : 'Zľava'
+    const relaxedLayout = source.items.length <= 6
 
     const logoDataUrl = await loadFirstAvailableImage(['/delivery-protocol-logo.png'])
     const itemImages = await Promise.all(
@@ -1453,8 +1467,8 @@ export default function QuotesPage() {
       }),
       styles: {
         font: PDF_FONT_NAME,
-        fontSize: 7.8,
-        cellPadding: 1.7,
+        fontSize: relaxedLayout ? 8.2 : 7.8,
+        cellPadding: relaxedLayout ? 2.4 : 1.7,
         textColor: [17, 24, 39],
         lineColor: [232, 237, 243],
         lineWidth: 0.25,
@@ -1480,19 +1494,23 @@ export default function QuotesPage() {
         if (data.section !== 'body' || data.column.index !== 1) return
         const image = itemImages[data.row.index]
         if (!image) return
+        const imageSize = relaxedLayout ? 13 : 11
+        const imageOffset = relaxedLayout ? 2 : 1.7
         try {
-          doc.addImage(image, getPdfImageFormat(image), data.cell.x + 1.7, data.cell.y + 1.7, 11, 11)
+          doc.addImage(image, getPdfImageFormat(image), data.cell.x + imageOffset, data.cell.y + imageOffset, imageSize, imageSize)
         } catch {}
       },
       didParseCell: (data) => {
         if (data.section === 'body' && data.column.index === 1 && itemImages[data.row.index]) {
-          data.cell.styles.cellPadding = { top: 1.7, right: 1.7, bottom: 1.7, left: 14 }
-          data.cell.styles.minCellHeight = Math.max(Number(data.cell.styles.minCellHeight || 0), 14.4)
+          data.cell.styles.cellPadding = relaxedLayout
+            ? { top: 2, right: 2, bottom: 2, left: 17 }
+            : { top: 1.7, right: 1.7, bottom: 1.7, left: 14 }
+          data.cell.styles.minCellHeight = Math.max(Number(data.cell.styles.minCellHeight || 0), relaxedLayout ? 17 : 14.4)
         }
       },
     })
 
-    let y = ((doc as unknown as { lastAutoTable?: { finalY?: number } }).lastAutoTable?.finalY || 130) + 7
+    let y = ((doc as unknown as { lastAutoTable?: { finalY?: number } }).lastAutoTable?.finalY || 130) + (relaxedLayout ? 10 : 7)
     if (y > pageHeight - 66) {
       doc.addPage()
       y = 18
