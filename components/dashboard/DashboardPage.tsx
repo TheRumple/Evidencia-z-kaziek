@@ -2843,8 +2843,8 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
               <span className="sideMenuIcon">›</span>
             </Link>
 
-            <Link href="/material" style={sideNavButton(false)}>
-              <span>Nákup materiálu</span>
+            <Link href="/sklad" style={sideNavButton(false)}>
+              <span>Sklad</span>
               <span className="sideMenuIcon">›</span>
             </Link>
 
