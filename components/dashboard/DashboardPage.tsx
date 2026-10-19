@@ -2804,22 +2804,19 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
           </Link>
 
           <nav className="sideMenuNav" aria-label="Hlavná navigácia">
+            <div className="sideMenuGroupTitle">Práca</div>
             <button type="button" style={sideNavButton(activeTab === 'zakazky')} onClick={() => setActiveTab('zakazky')}>
               <span>Zákazky</span>
-              <span className="sideMenuBadge">{orders.filter((order) => AKTIVNE_STATUSY.includes(order.stav)).length}</span>
-            </button>
-
-            <button type="button" style={sideNavButton(unseenCustomerUpdateIds.length > 0)} onClick={() => setActiveTab('zakazky')}>
-              <span>Úpravy od zákazníkov</span>
-              <span className={unseenCustomerUpdateIds.length > 0 ? 'sideMenuBadge sideMenuBadgeAlert' : 'sideMenuBadge'}>
-                {unseenCustomerUpdateIds.length}
-              </span>
-            </button>
-
-            <button type="button" style={sideNavButton(unseenCustomerPriorityOrders.length > 0)} onClick={() => setActiveTab('zakazky')}>
-              <span>Zmeny priorít</span>
-              <span className={unseenCustomerPriorityOrders.length > 0 ? 'sideMenuBadge sideMenuBadgeAlert' : 'sideMenuBadge'}>
-                {unseenCustomerPriorityOrders.length}
+              <span className="sideMenuBadgeRow">
+                <span className="sideMenuBadge">{orders.filter((order) => AKTIVNE_STATUSY.includes(order.stav)).length}</span>
+                {unseenCustomerUpdateIds.length + unseenCustomerPriorityOrders.length > 0 && (
+                  <span
+                    className="sideMenuBadge sideMenuBadgeAlert"
+                    title={`${unseenCustomerUpdateIds.length} úprav, ${unseenCustomerPriorityOrders.length} zmien priority`}
+                  >
+                    +{unseenCustomerUpdateIds.length + unseenCustomerPriorityOrders.length}
+                  </span>
+                )}
               </span>
             </button>
 
@@ -2835,21 +2832,12 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
               <span className="sideMenuIcon">›</span>
             </Link>
 
-            <Link href="/mesacny-vykaz" style={sideNavButton(false)}>
-              <span>Mesačný výkaz</span>
-              <span className="sideMenuIcon">›</span>
-            </Link>
-
-            <Link href="/revizie" style={sideNavButton(false)}>
-              <span>Revízie</span>
-              <span className="sideMenuIcon">›</span>
-            </Link>
-
             <Link href="/obhliadky" style={sideNavButton(false)}>
               <span>Obhliadky</span>
               <span className="sideMenuIcon">›</span>
             </Link>
 
+            <div className="sideMenuGroupTitle">Obchod a evidencia</div>
             <Link href="/cenove-ponuky" style={sideNavButton(false)}>
               <span>Cenové ponuky</span>
               <span className="sideMenuIcon">›</span>
@@ -2865,20 +2853,31 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
               <span className="sideMenuIcon">›</span>
             </Link>
 
-            <Link href="/kancelaria" style={sideNavButton(false)}>
-              <span>Kancelária</span>
-              <span className="sideMenuIcon">›</span>
-            </Link>
-
             <button type="button" style={sideNavButton(activeTab === 'zakaznici')} onClick={() => setActiveTab('zakaznici')}>
               <span>Zákazníci</span>
               <span className="sideMenuIcon">›</span>
             </button>
 
-            <Link href="/fakturovane" style={sideNavButton(false)}>
-              <span>Fakturované</span>
-              <span className="sideMenuIcon">›</span>
-            </Link>
+            <details className="sideMenuMore">
+              <summary>
+                <span>Viac</span>
+                <span className="sideMenuIcon">⌄</span>
+              </summary>
+              <div className="sideMenuMoreLinks">
+                <Link href="/revizie" style={sideNavButton(false)}>
+                  <span>Revízie</span>
+                  <span className="sideMenuIcon">›</span>
+                </Link>
+                <Link href="/kancelaria" style={sideNavButton(false)}>
+                  <span>Kancelária</span>
+                  <span className="sideMenuIcon">›</span>
+                </Link>
+                <Link href="/fakturovane" style={sideNavButton(false)}>
+                  <span>Fakturované</span>
+                  <span className="sideMenuIcon">›</span>
+                </Link>
+              </div>
+            </details>
           </nav>
 
           <div className="sideMenuFooter">

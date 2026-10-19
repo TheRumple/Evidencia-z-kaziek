@@ -44,6 +44,25 @@ const STATUS_LABELS: Record<Inspection['status'], string> = {
   quoted: 'V ponuke',
 }
 
+const SKETCH_PAGES_PREFIX = 'itspot-sketch-pages:'
+
+function parseSketchPages(value?: string | null) {
+  if (!value) return ['']
+  if (!value.startsWith(SKETCH_PAGES_PREFIX)) return [value]
+
+  try {
+    const pages = JSON.parse(value.slice(SKETCH_PAGES_PREFIX.length))
+    return Array.isArray(pages) && pages.every((page) => typeof page === 'string') && pages.length ? pages : ['']
+  } catch {
+    return ['']
+  }
+}
+
+function serializeSketchPages(pages: string[]) {
+  if (pages.length <= 1) return pages[0] || ''
+  return `${SKETCH_PAGES_PREFIX}${JSON.stringify(pages)}`
+}
+
 function createForm(): InspectionForm {
   return {
     customerId: '',
@@ -91,6 +110,10 @@ export default function InspectionsPage() {
   const [penWidth, setPenWidth] = useState(4)
   const [sketchTool, setSketchTool] = useState<'pen' | 'eraser'>('pen')
   const [isSketchFullscreen, setIsSketchFullscreen] = useState(false)
+  const [sketchPages, setSketchPages] = useState<string[]>([''])
+  const [activeSketchPage, setActiveSketchPage] = useState(0)
+  const [undoStacks, setUndoStacks] = useState<string[][]>([[]])
+  const [redoStacks, setRedoStacks] = useState<string[][]>([[]])
 
   const boxStyle: CSSProperties = {
     background: '#fff',
@@ -170,14 +193,15 @@ export default function InspectionsPage() {
     ctx.clearRect(0, 0, canvas.width, canvas.height)
     ctx.fillStyle = '#ffffff'
     ctx.fillRect(0, 0, canvas.width, canvas.height)
-    if (!form.sketchDataUrl) return
+    const pageData = sketchPages[activeSketchPage] || ''
+    if (!pageData) return
 
     const image = new Image()
     image.onload = () => {
       ctx.drawImage(image, 0, 0, canvas.width, canvas.height)
     }
-    image.src = form.sketchDataUrl
-  }, [showForm, form.sketchDataUrl])
+    image.src = pageData
+  }, [showForm, sketchPages, activeSketchPage])
 
   async function loadData(currentUserId: string) {
     setLoading(true)
@@ -254,11 +278,16 @@ export default function InspectionsPage() {
   function startNewInspection() {
     setEditingId('')
     setForm(createForm())
+    setSketchPages([''])
+    setActiveSketchPage(0)
+    setUndoStacks([[]])
+    setRedoStacks([[]])
     setShowForm(true)
     window.setTimeout(() => document.getElementById('inspection-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0)
   }
 
   function editInspection(inspection: Inspection) {
+    const pages = parseSketchPages(inspection.sketch_data_url)
     setEditingId(inspection.id)
     setForm({
       customerId: inspection.customer_id || '',
@@ -276,6 +305,10 @@ export default function InspectionsPage() {
       status: inspection.status || 'draft',
       sketchDataUrl: inspection.sketch_data_url || '',
     })
+    setSketchPages(pages)
+    setActiveSketchPage(0)
+    setUndoStacks(pages.map(() => []))
+    setRedoStacks(pages.map(() => []))
     setShowForm(true)
     window.setTimeout(() => document.getElementById('inspection-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0)
   }
@@ -343,21 +376,61 @@ export default function InspectionsPage() {
     drawingRef.current = false
     lastPointRef.current = null
     if (canvas?.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId)
-    if (canvas && wasDrawing && !multiTouchRef.current) updateForm('sketchDataUrl', canvas.toDataURL('image/png'))
+    if (canvas && wasDrawing && !multiTouchRef.current) {
+      const nextPage = canvas.toDataURL('image/png')
+      const previousPage = sketchPages[activeSketchPage] || ''
+      setUndoStacks((current) => current.map((stack, index) => (index === activeSketchPage ? [...stack, previousPage] : stack)))
+      setRedoStacks((current) => current.map((stack, index) => (index === activeSketchPage ? [] : stack)))
+      updateSketchPage(activeSketchPage, nextPage)
+    }
     if (activePointersRef.current.size === 0) {
       multiTouchRef.current = false
       sketchSnapshotRef.current = null
     }
   }
 
+  function updateSketchPage(pageIndex: number, value: string) {
+    const next = sketchPages.map((page, index) => (index === pageIndex ? value : page))
+    setSketchPages(next)
+    updateForm('sketchDataUrl', serializeSketchPages(next))
+  }
+
+  function addSketchPage() {
+    const next = [...sketchPages, '']
+    setSketchPages(next)
+    updateForm('sketchDataUrl', serializeSketchPages(next))
+    setUndoStacks((current) => [...current, []])
+    setRedoStacks((current) => [...current, []])
+    setActiveSketchPage(sketchPages.length)
+  }
+
+  function undoSketch() {
+    const stack = undoStacks[activeSketchPage] || []
+    if (!stack.length) return
+    const previousPage = stack[stack.length - 1]
+    const currentPage = sketchPages[activeSketchPage] || ''
+    setUndoStacks((current) => current.map((item, index) => (index === activeSketchPage ? item.slice(0, -1) : item)))
+    setRedoStacks((current) => current.map((item, index) => (index === activeSketchPage ? [...item, currentPage] : item)))
+    updateSketchPage(activeSketchPage, previousPage)
+  }
+
+  function redoSketch() {
+    const stack = redoStacks[activeSketchPage] || []
+    if (!stack.length) return
+    const nextPage = stack[stack.length - 1]
+    const currentPage = sketchPages[activeSketchPage] || ''
+    setRedoStacks((current) => current.map((item, index) => (index === activeSketchPage ? item.slice(0, -1) : item)))
+    setUndoStacks((current) => current.map((item, index) => (index === activeSketchPage ? [...item, currentPage] : item)))
+    updateSketchPage(activeSketchPage, nextPage)
+  }
+
   function clearSketch() {
-    const canvas = canvasRef.current
-    const ctx = canvas?.getContext('2d')
-    if (!canvas || !ctx) return
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-    ctx.fillStyle = '#ffffff'
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
-    updateForm('sketchDataUrl', '')
+    if (!sketchPages[activeSketchPage]) return
+    if (!window.confirm(`Naozaj chceš vymazať celý List ${activeSketchPage + 1}? Tento krok môžeš následne vrátiť.`)) return
+    const currentPage = sketchPages[activeSketchPage] || ''
+    setUndoStacks((current) => current.map((stack, index) => (index === activeSketchPage ? [...stack, currentPage] : stack)))
+    setRedoStacks((current) => current.map((stack, index) => (index === activeSketchPage ? [] : stack)))
+    updateSketchPage(activeSketchPage, '')
   }
 
   async function saveInspection() {
@@ -591,6 +664,36 @@ export default function InspectionsPage() {
           flex: 0 0 auto;
         }
 
+        .sketchPageBar {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 7px 8px;
+          overflow-x: auto;
+          border-bottom: 1px solid #dbe4ef;
+          background: #eef2f7;
+        }
+
+        .sketchPageButton {
+          flex: 0 0 auto;
+          min-height: 30px;
+          border: 1px solid #cbd5e1;
+          border-radius: 7px;
+          padding: 5px 10px;
+          background: #fff;
+          color: #334155;
+          font-size: 12px;
+          font-weight: 900;
+          cursor: pointer;
+        }
+
+        .sketchPageButton.active {
+          border-color: #65a30d;
+          background: #ecfccb;
+          color: #365314;
+          box-shadow: inset 0 0 0 1px #84cc16;
+        }
+
         .sketchCanvas {
           display: block;
           width: 100%;
@@ -773,6 +876,10 @@ export default function InspectionsPage() {
                     setShowForm(false)
                     setEditingId('')
                     setForm(createForm())
+                    setSketchPages([''])
+                    setActiveSketchPage(0)
+                    setUndoStacks([[]])
+                    setRedoStacks([[]])
                   }}
                 >
                   Zavrieť
@@ -915,13 +1022,34 @@ export default function InspectionsPage() {
                       <option value={4}>Stredné</option>
                       <option value={7}>Hrubé</option>
                     </select>
+                    <button type="button" style={buttonStyle} onClick={undoSketch} disabled={(undoStacks[activeSketchPage] || []).length === 0} title="Vrátiť posledný ťah">
+                      ↶ Späť
+                    </button>
+                    <button type="button" style={buttonStyle} onClick={redoSketch} disabled={(redoStacks[activeSketchPage] || []).length === 0} title="Obnoviť vrátený ťah">
+                      ↷ Dopredu
+                    </button>
                     <button type="button" style={buttonStyle} onClick={clearSketch}>
-                      Vymazať
+                      Vymazať list
                     </button>
                     <button type="button" style={buttonStyle} onClick={() => setIsSketchFullscreen((current) => !current)}>
                       {isSketchFullscreen ? 'Zavrieť' : 'Celá obrazovka'}
                     </button>
                   </div>
+                </div>
+                <div className="sketchPageBar" aria-label="Listy kreslenej poznámky">
+                  {sketchPages.map((page, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      className={`sketchPageButton${activeSketchPage === index ? ' active' : ''}`}
+                      onClick={() => setActiveSketchPage(index)}
+                    >
+                      List {index + 1}{page ? ' •' : ''}
+                    </button>
+                  ))}
+                  <button type="button" className="sketchPageButton" onClick={addSketchPage}>
+                    + Nový list
+                  </button>
                 </div>
                 <canvas
                   ref={canvasRef}
@@ -945,6 +1073,10 @@ export default function InspectionsPage() {
                   onClick={() => {
                     setEditingId('')
                     setForm(createForm())
+                    setSketchPages([''])
+                    setActiveSketchPage(0)
+                    setUndoStacks([[]])
+                    setRedoStacks([[]])
                   }}
                 >
                   Vyčistiť
