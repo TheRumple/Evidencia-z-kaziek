@@ -1067,20 +1067,6 @@ export default function InspectionsPage() {
                 <button type="submit" style={{ ...buttonStyle, background: '#84cc16', borderColor: '#65a30d' }} disabled={saving}>
                   {saving ? 'Ukladám...' : 'Uložiť obhliadku'}
                 </button>
-                <button
-                  type="button"
-                  style={buttonStyle}
-                  onClick={() => {
-                    setEditingId('')
-                    setForm(createForm())
-                    setSketchPages([''])
-                    setActiveSketchPage(0)
-                    setUndoStacks([[]])
-                    setRedoStacks([[]])
-                  }}
-                >
-                  Vyčistiť
-                </button>
               </div>
             </form>
           )}
