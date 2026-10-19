@@ -4,7 +4,7 @@ import { ChangeEvent, useEffect, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowDownToLine, ArrowUpFromLine, Boxes, ClipboardCheck, Columns3, Download, FileJson, History, Plus, Upload } from 'lucide-react'
+import { ArrowDownToLine, ArrowUpFromLine, Boxes, ClipboardCheck, Columns3, Download, FileJson, History, Plus, Upload, Wrench } from 'lucide-react'
 import { BrandLogo } from '@/components/BrandLogo'
 import { getSessionWithTimeout } from '@/lib/auth-timeout'
 import type { Customer, Notice, Order } from '@/lib/dashboard-types'
@@ -52,7 +52,29 @@ type WarehouseInventory = {
   created_at?: string
 }
 
-type ImportDestination = 'stock' | 'customer' | 'job' | 'internal' | 'ignore'
+type WarehouseTool = {
+  id: string
+  user_id: string
+  import_batch_id: string | null
+  name: string
+  category: string | null
+  serial_number: string | null
+  quantity: number
+  unit: string
+  purchase_date: string | null
+  purchase_price: number
+  status: 'active' | 'loaned' | 'service' | 'retired'
+  location: string | null
+  assigned_to: string | null
+  supplier_name: string | null
+  source_invoice: string | null
+  next_check_date: string | null
+  note: string | null
+  created_at?: string
+  updated_at?: string
+}
+
+type ImportDestination = 'stock' | 'customer' | 'job' | 'internal' | 'tool' | 'ignore'
 type ImportInboundPurpose = 'stock' | 'opening'
 
 type ImportPreviewLine = {
@@ -114,7 +136,32 @@ const PURPOSE_LABELS: Record<WarehouseMovement['purpose'], string> = {
 }
 
 const DESTINATION_LABELS: Record<ImportDestination, string> = {
-  stock: 'Sklad', customer: 'Predané zákazníkovi', job: 'Spotrebované na zákazke', internal: 'Interná spotreba', ignore: 'Ignorovať',
+  stock: 'Sklad', customer: 'Predané zákazníkovi', job: 'Spotrebované na zákazke', internal: 'Interná spotreba', tool: 'Náradie', ignore: 'Ignorovať',
+}
+
+const TOOL_STATUS_LABELS: Record<WarehouseTool['status'], string> = {
+  active: 'Používané', loaned: 'Požičané', service: 'V servise', retired: 'Vyradené',
+}
+
+type ToolFormState = {
+  name: string
+  category: string
+  serialNumber: string
+  quantity: string
+  unit: string
+  purchaseDate: string
+  purchasePrice: string
+  status: WarehouseTool['status']
+  location: string
+  assignedTo: string
+  supplierName: string
+  invoiceNumber: string
+  nextCheckDate: string
+  note: string
+}
+
+const EMPTY_TOOL_FORM: ToolFormState = {
+  name: '', category: '', serialNumber: '', quantity: '1', unit: 'ks', purchaseDate: '', purchasePrice: '0', status: 'active', location: '', assignedTo: '', supplierName: '', invoiceNumber: '', nextCheckDate: '', note: '',
 }
 
 const UNIT_OPTIONS = ['ks', 'm', 'bal', 'sada', 'l', 'kg', 'hod']
@@ -154,6 +201,7 @@ function normalizeDestination(value: unknown): ImportDestination {
   if (['customer', 'sale', 'predaj', 'predane'].includes(normalized)) return 'customer'
   if (['job', 'order', 'zakazka'].includes(normalized)) return 'job'
   if (['internal', 'interne', 'firma'].includes(normalized)) return 'internal'
+  if (['tool', 'tools', 'naradie', 'equipment'].includes(normalized)) return 'tool'
   if (['ignore', 'service', 'sluzba'].includes(normalized)) return 'ignore'
   return 'stock'
 }
@@ -207,10 +255,11 @@ export default function WarehousePage() {
   const [saving, setSaving] = useState(false)
   const [setupRequired, setSetupRequired] = useState(false)
   const [notice, setNotice] = useState<Notice>(null)
-  const [activeTab, setActiveTab] = useState<'stock' | 'movement' | 'import' | 'history' | 'inventory' | 'export'>('stock')
+  const [activeTab, setActiveTab] = useState<'stock' | 'tools' | 'movement' | 'import' | 'history' | 'inventory' | 'export'>('stock')
   const [items, setItems] = useState<WarehouseItem[]>([])
   const [movements, setMovements] = useState<WarehouseMovement[]>([])
   const [inventories, setInventories] = useState<WarehouseInventory[]>([])
+  const [tools, setTools] = useState<WarehouseTool[]>([])
   const [customers, setCustomers] = useState<Customer[]>([])
   const [orders, setOrders] = useState<Order[]>([])
   const [search, setSearch] = useState('')
@@ -218,6 +267,9 @@ export default function WarehousePage() {
   const [showStockColumnPicker, setShowStockColumnPicker] = useState(false)
   const [visibleStockColumns, setVisibleStockColumns] = useState(DEFAULT_STOCK_COLUMNS)
   const [showItemForm, setShowItemForm] = useState(false)
+  const [showToolForm, setShowToolForm] = useState(false)
+  const [editingToolId, setEditingToolId] = useState<string | null>(null)
+  const [toolForm, setToolForm] = useState<ToolFormState>(EMPTY_TOOL_FORM)
   const [itemForm, setItemForm] = useState({ sku: '', name: '', category: '', unit: 'ks', minimumQuantity: '0' })
   const [movementForm, setMovementForm] = useState({ itemId: '', direction: 'in' as 'in' | 'out', purpose: 'stock' as WarehouseMovement['purpose'], quantity: '1', unitCost: '0', date: getTodayDate(), supplierName: '', invoiceNumber: '', customerId: '', orderId: '', note: '' })
   const [importLines, setImportLines] = useState<ImportPreviewLine[]>([])
@@ -262,17 +314,18 @@ export default function WarehousePage() {
 
   async function loadData(currentUserId: string) {
     setLoading(true)
-    const [itemsResult, movementsResult, inventoriesResult, customersResult, ordersResult] = await Promise.all([
+    const [itemsResult, movementsResult, inventoriesResult, toolsResult, customersResult, ordersResult] = await Promise.all([
       supabase.from('warehouse_items').select('*').eq('user_id', currentUserId).order('name'),
       supabase.from('warehouse_movements').select('*').eq('user_id', currentUserId).order('movement_date', { ascending: false }).order('created_at', { ascending: false }),
       supabase.from('warehouse_inventories').select('*').eq('user_id', currentUserId).order('inventory_date', { ascending: false }),
+      supabase.from('warehouse_tools').select('*').eq('user_id', currentUserId).order('name'),
       supabase.from('customers').select('*').eq('user_id', currentUserId).order('nazov'),
       supabase.from('orders').select('*').eq('user_id', currentUserId).order('created_at', { ascending: false }),
     ])
     setLoading(false)
-    if (itemsResult.error || movementsResult.error || inventoriesResult.error) {
-      const error = itemsResult.error || movementsResult.error || inventoriesResult.error
-      if (error?.code === '42P01') {
+    if (itemsResult.error || movementsResult.error || inventoriesResult.error || toolsResult.error) {
+      const error = itemsResult.error || movementsResult.error || inventoriesResult.error || toolsResult.error
+      if (error?.code === '42P01' || error?.code === 'PGRST205' || error?.message?.includes('schema cache')) {
         setSetupRequired(true)
         setNotice({ type: 'error', text: 'Sklad ešte nemá databázové tabuľky. Spusť skript scripts/supabase-warehouse.sql v Supabase SQL Editore.' })
       } else setNotice({ type: 'error', text: `Sklad: ${error?.message}` })
@@ -281,6 +334,7 @@ export default function WarehousePage() {
       setItems((itemsResult.data || []) as WarehouseItem[])
       setMovements((movementsResult.data || []) as WarehouseMovement[])
       setInventories((inventoriesResult.data || []) as WarehouseInventory[])
+      setTools((toolsResult.data || []) as WarehouseTool[])
     }
     if (!customersResult.error) setCustomers((customersResult.data || []) as Customer[])
     if (!ordersResult.error) setOrders((ordersResult.data || []) as Order[])
@@ -350,6 +404,66 @@ export default function WarehousePage() {
     setItemForm({ sku: '', name: '', category: '', unit: 'ks', minimumQuantity: '0' })
     setShowItemForm(false)
     setNotice({ type: 'success', text: 'Skladová karta bola vytvorená.' })
+  }
+
+  function closeToolForm() {
+    setShowToolForm(false)
+    setEditingToolId(null)
+    setToolForm(EMPTY_TOOL_FORM)
+  }
+
+  function editTool(tool: WarehouseTool) {
+    setEditingToolId(tool.id)
+    setToolForm({
+      name: tool.name,
+      category: tool.category || '',
+      serialNumber: tool.serial_number || '',
+      quantity: String(tool.quantity),
+      unit: tool.unit,
+      purchaseDate: tool.purchase_date || '',
+      purchasePrice: String(tool.purchase_price),
+      status: tool.status,
+      location: tool.location || '',
+      assignedTo: tool.assigned_to || '',
+      supplierName: tool.supplier_name || '',
+      invoiceNumber: tool.source_invoice || '',
+      nextCheckDate: tool.next_check_date || '',
+      note: tool.note || '',
+    })
+    setShowToolForm(true)
+  }
+
+  async function saveTool() {
+    if (!userId || !toolForm.name.trim()) return
+    const payload = {
+      user_id: userId,
+      name: toolForm.name.trim(),
+      category: toolForm.category.trim() || null,
+      serial_number: toolForm.serialNumber.trim() || null,
+      quantity: Math.max(0.001, toNumber(toolForm.quantity, 1)),
+      unit: toolForm.unit || 'ks',
+      purchase_date: toolForm.purchaseDate || null,
+      purchase_price: Math.max(0, toNumber(toolForm.purchasePrice)),
+      status: toolForm.status,
+      location: toolForm.location.trim() || null,
+      assigned_to: toolForm.assignedTo.trim() || null,
+      supplier_name: toolForm.supplierName.trim() || null,
+      source_invoice: toolForm.invoiceNumber.trim() || null,
+      next_check_date: toolForm.nextCheckDate || null,
+      note: toolForm.note.trim() || null,
+      updated_at: new Date().toISOString(),
+    }
+    setSaving(true)
+    const query = editingToolId
+      ? supabase.from('warehouse_tools').update(payload).eq('id', editingToolId).eq('user_id', userId)
+      : supabase.from('warehouse_tools').insert([payload])
+    const { data, error } = await query.select().single()
+    setSaving(false)
+    if (error || !data) { setNotice({ type: 'error', text: `Náradie sa neuložilo: ${error?.message || 'neznáma chyba'}` }); return }
+    const saved = data as WarehouseTool
+    setTools((current) => [...current.filter((tool) => tool.id !== saved.id), saved].sort((a, b) => a.name.localeCompare(b.name, 'sk')))
+    closeToolForm()
+    setNotice({ type: 'success', text: editingToolId ? 'Náradie bolo upravené.' : 'Náradie bolo pridané.' })
   }
 
   async function saveMovement() {
@@ -433,9 +547,29 @@ export default function WarehousePage() {
     const { data: batch, error: batchError } = await supabase.from('warehouse_import_batches').insert([{ user_id: userId, batch_name: batchName, supplier_name: [...new Set(activeLines.map((line) => line.supplierName).filter(Boolean))].join(', ') || null, invoice_number: invoiceNumbers.join(', ') || null, invoice_date: activeLines[0]?.invoiceDate || null, source_files: [...new Set(activeLines.map((line) => line.sourceFile).filter(Boolean))], imported_lines: importLines }]).select().single()
     if (batchError) { setSaving(false); setNotice({ type: 'error', text: `Import sa neuložil: ${batchError.message}` }); return }
 
+    const toolLines = activeLines.filter((line) => line.destination === 'tool')
+    if (toolLines.length) {
+      const { data: importedTools, error: toolsError } = await supabase.from('warehouse_tools').insert(toolLines.map((line) => ({
+        user_id: userId,
+        import_batch_id: batch.id,
+        name: line.name,
+        category: line.category || null,
+        quantity: line.quantity,
+        unit: line.unit,
+        purchase_date: line.invoiceDate || null,
+        purchase_price: line.unitPriceNet,
+        status: 'active',
+        supplier_name: line.supplierName || null,
+        source_invoice: line.invoiceNumber || null,
+        note: line.note || null,
+      }))).select()
+      if (toolsError) { setSaving(false); setNotice({ type: 'error', text: `Náradie sa nevytvorilo: ${toolsError.message}` }); return }
+      setTools((current) => [...current, ...((importedTools || []) as WarehouseTool[])].sort((a, b) => a.name.localeCompare(b.name, 'sk')))
+    }
+
     const itemCache = [...items]
     const movementRows: Record<string, unknown>[] = []
-    for (const line of activeLines) {
+    for (const line of activeLines.filter((entry) => entry.destination !== 'tool')) {
       let item = itemCache.find((entry) => line.sku ? entry.sku?.toLowerCase() === line.sku.toLowerCase() : entry.name.toLowerCase() === line.name.toLowerCase())
       if (!item) {
         const { data, error } = await supabase.from('warehouse_items').insert([{ user_id: userId, sku: line.sku || null, name: line.name, category: line.category || null, unit: line.unit }]).select().single()
@@ -450,14 +584,14 @@ export default function WarehousePage() {
         movementRows.push({ ...common, direction: 'out', purpose: line.destination === 'customer' ? 'sale' : line.destination, customer_id: line.customerId || null, customer_name: customer?.nazov || line.customerName || null, order_id: line.orderId || null })
       }
     }
-    const { error: movementError } = await supabase.from('warehouse_movements').insert(movementRows)
+    const movementResult = movementRows.length ? await supabase.from('warehouse_movements').insert(movementRows) : { error: null }
     setSaving(false)
-    if (movementError) { setNotice({ type: 'error', text: `Pohyby sa nevytvorili: ${movementError.message}` }); return }
+    if (movementResult.error) { setNotice({ type: 'error', text: `Pohyby sa nevytvorili: ${movementResult.error.message}` }); return }
     setImportLines([])
     setImportFileName('')
     await loadData(userId)
-    setActiveTab('stock')
-    setNotice({ type: 'success', text: `Import je zaúčtovaný. Vytvorených bolo ${movementRows.length} skladových pohybov.` })
+    setActiveTab(movementRows.length ? 'stock' : 'tools')
+    setNotice({ type: 'success', text: `Import je zaúčtovaný. Skladové pohyby: ${movementRows.length}, náradie: ${toolLines.length}.` })
   }
 
   function downloadImportTemplate() {
@@ -505,6 +639,10 @@ export default function WarehousePage() {
     downloadCsv(`sklad-pohyby-${getTodayDate()}.csv`, [['Dátum', 'Smer', 'Účel', 'Kód', 'Položka', 'Množstvo', 'MJ', 'Cena/MJ bez DPH', 'Hodnota', 'Dodávateľ', 'Faktúra', 'Zákazník', 'Zákazka', 'Poznámka'], ...movements.map((movement) => { const item = items.find((entry) => entry.id === movement.item_id); return [movement.movement_date, movement.direction === 'in' ? 'Príjem' : 'Výdaj', PURPOSE_LABELS[movement.purpose], item?.sku, item?.name, movement.quantity, item?.unit, movement.unit_cost, Number(movement.quantity) * Number(movement.unit_cost), movement.supplier_name, movement.source_invoice, customerName(movement.customer_id, movement.customer_name), orderName(movement.order_id), movement.note] })])
   }
 
+  function exportTools() {
+    downloadCsv(`naradie-${getTodayDate()}.csv`, [['Názov', 'Kategória', 'Výrobné číslo', 'Množstvo', 'MJ', 'Dátum nákupu', 'Cena/MJ bez DPH', 'Hodnota bez DPH', 'Stav', 'Umiestnenie', 'Pridelené', 'Dodávateľ', 'Doklad', 'Najbližšia kontrola', 'Poznámka'], ...tools.map((tool) => [tool.name, tool.category, tool.serial_number, tool.quantity, tool.unit, tool.purchase_date, tool.purchase_price, Number(tool.quantity) * Number(tool.purchase_price), TOOL_STATUS_LABELS[tool.status], tool.location, tool.assigned_to, tool.supplier_name, tool.source_invoice, tool.next_check_date, tool.note])])
+  }
+
   function printInventory() {
     const rows = (inventoryLines.length ? inventoryLines : items.map((item) => { const state = stockByItem.get(item.id) || { quantity: 0, unitCost: 0 }; return { itemId: item.id, name: item.name, sku: item.sku || '', unit: item.unit, systemQuantity: state.quantity, physicalQuantity: String(state.quantity), unitCost: state.unitCost } }))
     const popup = window.open('', '_blank')
@@ -516,7 +654,7 @@ export default function WarehousePage() {
   if (checkingAuth) return <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', fontWeight: 900 }}>Načítavam...</main>
 
   const tabs = [
-    { id: 'stock', label: 'Stav skladu', icon: Boxes }, { id: 'movement', label: 'Príjem / výdaj', icon: ArrowDownToLine }, { id: 'import', label: 'Import dokladov', icon: Upload }, { id: 'history', label: 'Pohyby', icon: History }, { id: 'inventory', label: 'Inventúra', icon: ClipboardCheck }, { id: 'export', label: 'Export', icon: Download },
+    { id: 'stock', label: 'Stav skladu', icon: Boxes }, { id: 'tools', label: `Náradie (${tools.length})`, icon: Wrench }, { id: 'movement', label: 'Príjem / výdaj', icon: ArrowDownToLine }, { id: 'import', label: 'Import dokladov', icon: Upload }, { id: 'history', label: 'Pohyby', icon: History }, { id: 'inventory', label: 'Inventúra', icon: ClipboardCheck }, { id: 'export', label: 'Export', icon: Download },
   ] as const
 
   return (
@@ -534,15 +672,37 @@ export default function WarehousePage() {
 
         {activeTab === 'stock' && <section className="warehouseSection" style={boxStyle}><div className="warehouseSectionHead"><div><div className="warehouseKicker">Aktuálny stav</div><h2>Skladové karty</h2></div><div className="warehouseFilters"><input style={{...inputStyle,width:250}} placeholder="Hľadať položku..." value={search} onChange={(event)=>setSearch(event.target.value)}/><label style={{...buttonStyle,cursor:'pointer'}}><input type="checkbox" checked={showZeroStock} onChange={(event)=>setShowZeroStock(event.target.checked)}/>Zobraziť aj nulové</label><button type="button" style={buttonStyle} onClick={()=>setShowStockColumnPicker((current)=>!current)}><Columns3 size={14}/>Stĺpce</button><button type="button" style={{...buttonStyle,background:'#84cc16',borderColor:'#65a30d'}} onClick={()=>setShowItemForm((current)=>!current)}><Plus size={14}/>Nová karta</button></div></div>{showStockColumnPicker&&<div className="warehouseColumnPicker"><strong style={{fontSize:11}}>Zobraziť:</strong>{STOCK_COLUMN_OPTIONS.map((column)=><label key={column.key}><input type="checkbox" checked={visibleStockColumns[column.key]} onChange={()=>setVisibleStockColumns((current)=>({...current,[column.key]:!current[column.key]}))}/>{column.label}</label>)}</div>}{showItemForm&&<div className="warehouseGrid"><div className="warehouseField"><label>Kód / SKU</label><input style={inputStyle} value={itemForm.sku} onChange={(e)=>setItemForm({...itemForm,sku:e.target.value})}/></div><div className="warehouseField"><label>Názov</label><input style={inputStyle} value={itemForm.name} onChange={(e)=>setItemForm({...itemForm,name:e.target.value})}/></div><div className="warehouseField"><label>Kategória</label><input style={inputStyle} value={itemForm.category} onChange={(e)=>setItemForm({...itemForm,category:e.target.value})}/></div><div className="warehouseField"><label>MJ</label><select style={inputStyle} value={itemForm.unit} onChange={(e)=>setItemForm({...itemForm,unit:e.target.value})}>{UNIT_OPTIONS.map((unit)=><option key={unit}>{unit}</option>)}</select></div><div className="warehouseField"><label>Minimálny stav</label><div className="warehouseRow"><input style={inputStyle} type="number" step="0.001" value={itemForm.minimumQuantity} onChange={(e)=>setItemForm({...itemForm,minimumQuantity:e.target.value})}/><button type="button" style={buttonStyle} disabled={saving||!itemForm.name.trim()} onClick={()=>void saveItem()}>Uložiť</button></div></div></div>}<div className="warehouseTableWrap">{loading?<div className="warehouseEmpty">Načítavam...</div>:filteredItems.length===0?<div className="warehouseEmpty">{items.length&&!showZeroStock?'Na sklade momentálne nie sú žiadne položky. Nulové zobrazíš prepínačom vyššie.':'Sklad je zatiaľ prázdny.'}</div>:<table className="warehouseTable"><thead><tr>{visibleStockColumns.code&&<th>Kód</th>}<th>Položka</th>{visibleStockColumns.category&&<th>Kategória</th>}{visibleStockColumns.unit&&<th>MJ</th>}{visibleStockColumns.quantity&&<th className="num">Množstvo</th>}{visibleStockColumns.unitCost&&<th className="num">Cena/MJ</th>}{visibleStockColumns.value&&<th className="num">Hodnota</th>}{visibleStockColumns.document&&<th>Posledný doklad</th>}<th></th></tr></thead><tbody>{filteredItems.map((item)=>{const state=stockByItem.get(item.id)||{quantity:0,unitCost:0,value:0};const latestInbound=latestInboundByItem.get(item.id);const low=Number(item.minimum_quantity)>0&&state.quantity<=Number(item.minimum_quantity);return <tr key={item.id} className={low?'warehouseLow':''}>{visibleStockColumns.code&&<td>{item.sku||'-'}</td>}<td className="strong">{item.name}</td>{visibleStockColumns.category&&<td>{item.category||'-'}</td>}{visibleStockColumns.unit&&<td>{item.unit}</td>}{visibleStockColumns.quantity&&<td className="num strong">{formatQuantity(state.quantity)}</td>}{visibleStockColumns.unitCost&&<td className="num">{formatMoney(state.unitCost)}</td>}{visibleStockColumns.value&&<td className="num strong">{formatMoney(Math.max(0,state.value))}</td>}{visibleStockColumns.document&&<td>{latestInbound?.source_invoice||'-'}</td>}<td><button type="button" style={buttonStyle} onClick={()=>{setMovementForm((current)=>({...current,itemId:item.id,unitCost:state.unitCost.toFixed(4)}));setActiveTab('movement')}}>Pohyb</button></td></tr>})}</tbody></table>}</div></section>}
 
+        {activeTab === 'tools' && <section className="warehouseSection" style={boxStyle}>
+          <div className="warehouseSectionHead"><div><div className="warehouseKicker">Firemné vybavenie</div><h2>Náradie</h2></div><button type="button" style={{...buttonStyle,background:'#84cc16',borderColor:'#65a30d'}} onClick={()=>{if(showToolForm)closeToolForm();else setShowToolForm(true)}}><Plus size={14}/>{showToolForm?'Zavrieť':'Pridať náradie'}</button></div>
+          {showToolForm&&<div className="warehouseGrid">
+            <div className="warehouseField"><label>Názov</label><input style={inputStyle} value={toolForm.name} onChange={(e)=>setToolForm({...toolForm,name:e.target.value})}/></div>
+            <div className="warehouseField"><label>Kategória</label><input style={inputStyle} value={toolForm.category} onChange={(e)=>setToolForm({...toolForm,category:e.target.value})}/></div>
+            <div className="warehouseField"><label>Výrobné číslo</label><input style={inputStyle} value={toolForm.serialNumber} onChange={(e)=>setToolForm({...toolForm,serialNumber:e.target.value})}/></div>
+            <div className="warehouseField"><label>Množstvo</label><input style={inputStyle} type="number" min="0.001" step="0.001" value={toolForm.quantity} onChange={(e)=>setToolForm({...toolForm,quantity:e.target.value})}/></div>
+            <div className="warehouseField"><label>MJ</label><select style={inputStyle} value={toolForm.unit} onChange={(e)=>setToolForm({...toolForm,unit:e.target.value})}>{UNIT_OPTIONS.map((unit)=><option key={unit}>{unit}</option>)}</select></div>
+            <div className="warehouseField"><label>Dátum nákupu</label><input style={inputStyle} type="date" value={toolForm.purchaseDate} onChange={(e)=>setToolForm({...toolForm,purchaseDate:e.target.value})}/></div>
+            <div className="warehouseField"><label>Cena/MJ bez DPH</label><input style={inputStyle} type="number" min="0" step="0.01" value={toolForm.purchasePrice} onChange={(e)=>setToolForm({...toolForm,purchasePrice:e.target.value})}/></div>
+            <div className="warehouseField"><label>Stav</label><select style={inputStyle} value={toolForm.status} onChange={(e)=>setToolForm({...toolForm,status:e.target.value as WarehouseTool['status']})}>{Object.entries(TOOL_STATUS_LABELS).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></div>
+            <div className="warehouseField"><label>Umiestnenie</label><input style={inputStyle} placeholder="Sklad, auto..." value={toolForm.location} onChange={(e)=>setToolForm({...toolForm,location:e.target.value})}/></div>
+            <div className="warehouseField"><label>Pridelené komu</label><input style={inputStyle} value={toolForm.assignedTo} onChange={(e)=>setToolForm({...toolForm,assignedTo:e.target.value})}/></div>
+            <div className="warehouseField"><label>Dodávateľ</label><input style={inputStyle} value={toolForm.supplierName} onChange={(e)=>setToolForm({...toolForm,supplierName:e.target.value})}/></div>
+            <div className="warehouseField"><label>Doklad</label><input style={inputStyle} value={toolForm.invoiceNumber} onChange={(e)=>setToolForm({...toolForm,invoiceNumber:e.target.value})}/></div>
+            <div className="warehouseField"><label>Najbližšia kontrola</label><input style={inputStyle} type="date" value={toolForm.nextCheckDate} onChange={(e)=>setToolForm({...toolForm,nextCheckDate:e.target.value})}/></div>
+            <div className="warehouseField" style={{gridColumn:'span 3'}}><label>Poznámka</label><input style={inputStyle} value={toolForm.note} onChange={(e)=>setToolForm({...toolForm,note:e.target.value})}/></div>
+            <div className="warehouseField"><label>&nbsp;</label><button type="button" style={{...buttonStyle,background:'#84cc16',borderColor:'#65a30d'}} disabled={saving||!toolForm.name.trim()} onClick={()=>void saveTool()}>{editingToolId?'Uložiť zmeny':'Pridať náradie'}</button></div>
+          </div>}
+          <div className="warehouseTableWrap">{tools.length===0?<div className="warehouseEmpty">Zatiaľ tu nie je zaevidované žiadne náradie.</div>:<table className="warehouseTable" style={{minWidth:1250}}><thead><tr><th>Náradie</th><th>Kategória</th><th>Výrobné číslo</th><th className="num">Množstvo</th><th className="num">Cena/MJ</th><th>Doklad</th><th>Umiestnenie</th><th>Pridelené</th><th>Kontrola</th><th>Stav</th><th></th></tr></thead><tbody>{tools.map((tool)=><tr key={tool.id}><td className="strong">{tool.name}</td><td>{tool.category||'-'}</td><td>{tool.serial_number||'-'}</td><td className="num">{formatQuantity(Number(tool.quantity))} {tool.unit}</td><td className="num">{formatMoney(Number(tool.purchase_price))}</td><td>{tool.source_invoice||'-'}<br/><small>{tool.supplier_name}</small></td><td>{tool.location||'-'}</td><td>{tool.assigned_to||'-'}</td><td>{tool.next_check_date?formatDate(tool.next_check_date):'-'}</td><td><span className="warehouseBadge">{TOOL_STATUS_LABELS[tool.status]}</span></td><td><button type="button" style={buttonStyle} onClick={()=>editTool(tool)}>Upraviť</button></td></tr>)}</tbody></table>}</div>
+        </section>}
+
         {activeTab === 'movement' && <section className="warehouseSection" style={boxStyle}><div><div className="warehouseKicker">Ručný doklad</div><h2>Príjem alebo výdaj</h2></div><div className="warehouseGrid"><div className="warehouseField"><label>Položka</label><select style={inputStyle} value={movementForm.itemId} onChange={(e)=>selectMovementItem(e.target.value)}><option value="">Vyber položku</option>{items.map((item)=><option key={item.id} value={item.id}>{item.sku?`${item.sku} – `:''}{item.name}</option>)}</select></div><div className="warehouseField"><label>Smer</label><select style={inputStyle} value={movementForm.direction} onChange={(e)=>setMovementForm({...movementForm,direction:e.target.value as 'in'|'out',purpose:e.target.value==='in'?'stock':'sale'})}><option value="in">Príjem</option><option value="out">Výdaj</option></select></div><div className="warehouseField"><label>Účel</label><select style={inputStyle} value={movementForm.purpose} onChange={(e)=>setMovementForm({...movementForm,purpose:e.target.value as WarehouseMovement['purpose']})}>{Object.entries(PURPOSE_LABELS).filter(([key])=>movementForm.direction==='in'?['stock','return','opening','inventory'].includes(key):['sale','job','internal','return','writeoff','inventory'].includes(key)).map(([key,label])=><option key={key} value={key}>{label}</option>)}</select></div><div className="warehouseField"><label>Množstvo</label><input style={inputStyle} type="number" step="0.001" min="0" value={movementForm.quantity} onChange={(e)=>setMovementForm({...movementForm,quantity:e.target.value})}/></div><div className="warehouseField"><label>Cena/MJ bez DPH</label><input style={inputStyle} type="number" step="0.0001" min="0" value={movementForm.unitCost} onChange={(e)=>setMovementForm({...movementForm,unitCost:e.target.value})}/></div><div className="warehouseField"><label>Dátum</label><input style={inputStyle} type="date" value={movementForm.date} onChange={(e)=>setMovementForm({...movementForm,date:e.target.value})}/></div><div className="warehouseField"><label>Dodávateľ</label><input style={inputStyle} value={movementForm.supplierName} onChange={(e)=>setMovementForm({...movementForm,supplierName:e.target.value})}/></div><div className="warehouseField"><label>Číslo faktúry / dokladu</label><input style={inputStyle} value={movementForm.invoiceNumber} onChange={(e)=>setMovementForm({...movementForm,invoiceNumber:e.target.value})}/></div><div className="warehouseField"><label>Zákazník</label><select style={inputStyle} value={movementForm.customerId} onChange={(e)=>setMovementForm({...movementForm,customerId:e.target.value})}><option value="">Bez zákazníka</option>{customers.map((customer)=><option key={customer.id} value={customer.id}>{customer.nazov}</option>)}</select></div><div className="warehouseField"><label>Zákazka</label><select style={inputStyle} value={movementForm.orderId} onChange={(e)=>setMovementForm({...movementForm,orderId:e.target.value})}><option value="">Bez zákazky</option>{orders.map((order)=><option key={order.id} value={order.id}>{order.nazov}</option>)}</select></div><div className="warehouseField" style={{gridColumn:'span 4'}}><label>Poznámka</label><input style={inputStyle} value={movementForm.note} onChange={(e)=>setMovementForm({...movementForm,note:e.target.value})}/></div><div className="warehouseField"><label>&nbsp;</label><button type="button" style={{...buttonStyle,background:'#84cc16',borderColor:'#65a30d'}} disabled={saving} onClick={()=>void saveMovement()}>{movementForm.direction==='in'?<ArrowDownToLine size={15}/>:<ArrowUpFromLine size={15}/>}Uložiť pohyb</button></div></div></section>}
 
-        {activeTab === 'import' && <section className="warehouseSection" style={boxStyle}><div className="warehouseSectionHead"><div><div className="warehouseKicker">Mesačná dávka</div><h2>Import dokladov</h2></div><div className="warehouseActions"><button type="button" style={buttonStyle} onClick={downloadImportTemplate}><FileJson size={14}/>Vzor JSON</button><button type="button" style={buttonStyle} onClick={()=>setShowImportPaste((current)=>!current)}><FileJson size={14}/>Vložiť JSON</button><label className="warehouseImportFile" style={{...buttonStyle,background:'#84cc16',borderColor:'#65a30d'}}><Upload size={14}/>Načítať súbor<input type="file" accept="application/json,.json" onChange={(event)=>void loadImportFile(event)}/></label></div></div><div className="warehouseImportHelp">JSON môžeš vložiť priamo alebo ho načítať zo súboru. Pred potvrdením môžeš pri každej položke zmeniť cieľ a vybrať zákazníka alebo zákazku. Import nikdy nezaúčtuje služby označené ako <strong>Ignorovať</strong>.</div>{showImportPaste&&<div className="warehouseField"><label>Skopírovaný JSON</label><textarea style={{...inputStyle,minHeight:150,fontFamily:'Consolas, monospace',fontWeight:600,resize:'vertical'}} placeholder="Sem vlož celý JSON..." value={importJsonText} onChange={(event)=>setImportJsonText(event.target.value)}/><div className="warehouseActions" style={{justifyContent:'flex-end'}}><button type="button" style={buttonStyle} onClick={()=>{setShowImportPaste(false);setImportJsonText('')}}>Zrušiť</button><button type="button" style={{...buttonStyle,background:'#84cc16',borderColor:'#65a30d'}} onClick={loadPastedImport}>Načítať vložený JSON</button></div></div>}{importLines.length>0&&<><div className="warehouseTableWrap"><table className="warehouseTable" style={{minWidth:1250}}><thead><tr><th>Doklad</th><th>Položka</th><th>Kód</th><th className="num">Množstvo</th><th>MJ</th><th className="num">Cena bez DPH</th><th>Cieľ</th><th>Zákazník</th><th>Zákazka</th></tr></thead><tbody>{importLines.map((line)=><tr key={line.key}><td><strong>{line.invoiceNumber||'-'}</strong><br/><small>{line.supplierName}</small></td><td className="strong">{line.name}</td><td>{line.sku||'-'}</td><td className="num"><input style={{...inputStyle,width:80,textAlign:'right'}} type="number" step="0.001" value={line.quantity} onChange={(e)=>updateImportLine(line.key,{quantity:toNumber(e.target.value)})}/></td><td>{line.unit}</td><td className="num"><input style={{...inputStyle,width:95,textAlign:'right'}} type="number" step="0.0001" value={line.unitPriceNet} onChange={(e)=>updateImportLine(line.key,{unitPriceNet:toNumber(e.target.value)})}/></td><td><select style={{...inputStyle,width:190}} value={line.destination} onChange={(e)=>updateImportLine(line.key,{destination:e.target.value as ImportDestination})}>{Object.entries(DESTINATION_LABELS).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></td><td><select style={{...inputStyle,width:180}} value={line.customerId} disabled={!['customer','job'].includes(line.destination)} onChange={(e)=>updateImportLine(line.key,{customerId:e.target.value})}><option value="">Bez zákazníka</option>{customers.map((customer)=><option key={customer.id} value={customer.id}>{customer.nazov}</option>)}</select></td><td><select style={{...inputStyle,width:190}} value={line.orderId} disabled={line.destination!=='job'} onChange={(e)=>updateImportLine(line.key,{orderId:e.target.value})}><option value="">Bez zákazky</option>{orders.map((order)=><option key={order.id} value={order.id}>{order.nazov}</option>)}</select></td></tr>)}</tbody></table></div><div className="warehouseRow" style={{justifyContent:'space-between'}}><strong>{importFileName} · {importLines.length} položiek</strong><div className="warehouseActions"><button type="button" style={buttonStyle} onClick={()=>{setImportLines([]);setImportFileName('')}}>Zrušiť</button><button type="button" style={{...buttonStyle,background:'#84cc16',borderColor:'#65a30d'}} disabled={saving} onClick={()=>void postImport()}>{saving?'Zaúčtovávam...':'Zaúčtovať import'}</button></div></div></>}</section>}
+        {activeTab === 'import' && <section className="warehouseSection" style={boxStyle}><div className="warehouseSectionHead"><div><div className="warehouseKicker">Mesačná dávka</div><h2>Import dokladov</h2></div><div className="warehouseActions"><button type="button" style={buttonStyle} onClick={downloadImportTemplate}><FileJson size={14}/>Vzor JSON</button><button type="button" style={buttonStyle} onClick={()=>setShowImportPaste((current)=>!current)}><FileJson size={14}/>Vložiť JSON</button><label className="warehouseImportFile" style={{...buttonStyle,background:'#84cc16',borderColor:'#65a30d'}}><Upload size={14}/>Načítať súbor<input type="file" accept="application/json,.json" onChange={(event)=>void loadImportFile(event)}/></label></div></div><div className="warehouseImportHelp">JSON môžeš vložiť priamo alebo ho načítať zo súboru. Pri každej položke vyberieš cieľ: sklad, zákazníka, zákazku, internú spotrebu, náradie alebo ignorovanie. Položka označená ako <strong>Náradie</strong> sa uloží do samostatnej evidencie a nezvýši stav zásob.</div>{showImportPaste&&<div className="warehouseField"><label>Skopírovaný JSON</label><textarea style={{...inputStyle,minHeight:150,fontFamily:'Consolas, monospace',fontWeight:600,resize:'vertical'}} placeholder="Sem vlož celý JSON..." value={importJsonText} onChange={(event)=>setImportJsonText(event.target.value)}/><div className="warehouseActions" style={{justifyContent:'flex-end'}}><button type="button" style={buttonStyle} onClick={()=>{setShowImportPaste(false);setImportJsonText('')}}>Zrušiť</button><button type="button" style={{...buttonStyle,background:'#84cc16',borderColor:'#65a30d'}} onClick={loadPastedImport}>Načítať vložený JSON</button></div></div>}{importLines.length>0&&<><div className="warehouseTableWrap"><table className="warehouseTable" style={{minWidth:1250}}><thead><tr><th>Doklad</th><th>Položka</th><th>Kód</th><th className="num">Množstvo</th><th>MJ</th><th className="num">Cena bez DPH</th><th>Cieľ</th><th>Zákazník</th><th>Zákazka</th></tr></thead><tbody>{importLines.map((line)=><tr key={line.key}><td><strong>{line.invoiceNumber||'-'}</strong><br/><small>{line.supplierName}</small></td><td className="strong">{line.name}</td><td>{line.sku||'-'}</td><td className="num"><input style={{...inputStyle,width:80,textAlign:'right'}} type="number" step="0.001" value={line.quantity} onChange={(e)=>updateImportLine(line.key,{quantity:toNumber(e.target.value)})}/></td><td>{line.unit}</td><td className="num"><input style={{...inputStyle,width:95,textAlign:'right'}} type="number" step="0.0001" value={line.unitPriceNet} onChange={(e)=>updateImportLine(line.key,{unitPriceNet:toNumber(e.target.value)})}/></td><td><select style={{...inputStyle,width:190}} value={line.destination} onChange={(e)=>updateImportLine(line.key,{destination:e.target.value as ImportDestination})}>{Object.entries(DESTINATION_LABELS).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></td><td><select style={{...inputStyle,width:180}} value={line.customerId} disabled={!['customer','job'].includes(line.destination)} onChange={(e)=>updateImportLine(line.key,{customerId:e.target.value})}><option value="">Bez zákazníka</option>{customers.map((customer)=><option key={customer.id} value={customer.id}>{customer.nazov}</option>)}</select></td><td><select style={{...inputStyle,width:190}} value={line.orderId} disabled={line.destination!=='job'} onChange={(e)=>updateImportLine(line.key,{orderId:e.target.value})}><option value="">Bez zákazky</option>{orders.map((order)=><option key={order.id} value={order.id}>{order.nazov}</option>)}</select></td></tr>)}</tbody></table></div><div className="warehouseRow" style={{justifyContent:'space-between'}}><strong>{importFileName} · {importLines.length} položiek</strong><div className="warehouseActions"><button type="button" style={buttonStyle} onClick={()=>{setImportLines([]);setImportFileName('')}}>Zrušiť</button><button type="button" style={{...buttonStyle,background:'#84cc16',borderColor:'#65a30d'}} disabled={saving} onClick={()=>void postImport()}>{saving?'Zaúčtovávam...':'Zaúčtovať import'}</button></div></div></>}</section>}
 
         {activeTab === 'history' && <section className="warehouseSection" style={boxStyle}><div><div className="warehouseKicker">Auditná stopa</div><h2>Skladové pohyby</h2></div><div className="warehouseTableWrap">{movements.length===0?<div className="warehouseEmpty">Zatiaľ tu nie sú pohyby.</div>:<table className="warehouseTable" style={{minWidth:1150}}><thead><tr><th>Dátum</th><th>Smer</th><th>Položka</th><th>Účel</th><th className="num">Množstvo</th><th className="num">Cena/MJ</th><th>Doklad</th><th>Zákazník / zákazka</th><th>Poznámka</th><th></th></tr></thead><tbody>{movements.map((movement)=>{const item=items.find((entry)=>entry.id===movement.item_id);return <tr key={movement.id}><td>{formatDate(movement.movement_date)}</td><td><span className={`warehouseBadge ${movement.direction==='in'?'warehouseIn':'warehouseOut'}`}>{movement.direction==='in'?'Príjem':'Výdaj'}</span></td><td className="strong">{item?.name||'Neznáma položka'}</td><td>{PURPOSE_LABELS[movement.purpose]}</td><td className="num strong">{formatQuantity(Number(movement.quantity))} {item?.unit}</td><td className="num">{formatMoney(Number(movement.unit_cost))}</td><td>{movement.source_invoice||'-'}<br/><small>{movement.supplier_name}</small></td><td>{customerName(movement.customer_id,movement.customer_name)||'-'}<br/><small>{orderName(movement.order_id)}</small></td><td>{movement.note||'-'}</td><td><button type="button" style={{...buttonStyle,color:'#b91c1c'}} onClick={()=>void deleteMovement(movement)}>Zmazať</button></td></tr>})}</tbody></table>}</div></section>}
 
         {activeTab === 'inventory' && <section className="warehouseSection" style={boxStyle}><div className="warehouseSectionHead"><div><div className="warehouseKicker">Fyzická kontrola</div><h2>Inventúra</h2></div>{!inventoryLines.length&&<button type="button" style={{...buttonStyle,background:'#84cc16',borderColor:'#65a30d'}} onClick={prepareInventory}><ClipboardCheck size={14}/>Začať inventúru</button>}</div><div className="warehouseInventoryMeta"><div className="warehouseField"><label>Dátum</label><input style={inputStyle} type="date" value={inventoryMeta.date} onChange={(e)=>setInventoryMeta({...inventoryMeta,date:e.target.value})}/></div><div className="warehouseField"><label>Miesto uloženia</label><input style={inputStyle} value={inventoryMeta.location} onChange={(e)=>setInventoryMeta({...inventoryMeta,location:e.target.value})}/></div><div className="warehouseField"><label>Zodpovedná osoba</label><input style={inputStyle} value={inventoryMeta.responsibleName} onChange={(e)=>setInventoryMeta({...inventoryMeta,responsibleName:e.target.value})}/></div><div className="warehouseField"><label>Poznámka</label><input style={inputStyle} value={inventoryMeta.note} onChange={(e)=>setInventoryMeta({...inventoryMeta,note:e.target.value})}/></div></div>{inventoryLines.length>0?<><div className="warehouseTableWrap"><table className="warehouseTable"><thead><tr><th>Kód</th><th>Položka</th><th>MJ</th><th className="num">Evidovaný stav</th><th className="num">Fyzický stav</th><th className="num">Rozdiel</th><th className="num">Cena/MJ</th></tr></thead><tbody>{inventoryLines.map((line)=><tr key={line.itemId}><td>{line.sku||'-'}</td><td className="strong">{line.name}</td><td>{line.unit}</td><td className="num">{formatQuantity(line.systemQuantity)}</td><td className="num"><input style={{...inputStyle,width:100,textAlign:'right'}} type="number" step="0.001" value={line.physicalQuantity} onChange={(e)=>setInventoryLines((current)=>current.map((entry)=>entry.itemId===line.itemId?{...entry,physicalQuantity:e.target.value}:entry))}/></td><td className="num strong">{formatQuantity(toNumber(line.physicalQuantity)-line.systemQuantity)}</td><td className="num">{formatMoney(line.unitCost)}</td></tr>)}</tbody></table></div><div className="warehouseRow" style={{justifyContent:'space-between'}}><button type="button" style={buttonStyle} onClick={printInventory}>Tlačiť súpis</button><div className="warehouseActions"><button type="button" style={buttonStyle} onClick={()=>setInventoryLines([])}>Zrušiť</button><button type="button" style={{...buttonStyle,background:'#84cc16',borderColor:'#65a30d'}} disabled={saving} onClick={()=>void closeInventory()}>{saving?'Ukladám...':'Uzavrieť inventúru'}</button></div></div></>:<div className="warehouseEmpty">Klikni na „Začať inventúru“. Aplikácia načíta evidovaný stav a ty doplníš fyzicky spočítané množstvo.</div>}{inventories.length>0&&<div><strong>Posledné inventúry:</strong> {inventories.slice(0,5).map((inventory)=><span key={inventory.id} className="warehouseBadge" style={{marginLeft:6}}>{formatDate(inventory.inventory_date)} · {inventory.location}</span>)}</div>}</section>}
 
-        {activeTab === 'export' && <section className="warehouseSection" style={boxStyle}><div><div className="warehouseKicker">Účtovníctvo</div><h2>Export skladu</h2></div><div className="warehouseExportGrid"><article className="warehouseExportCard"><Boxes size={22}/><h3>Stav skladu</h3><p>Skladové karty, množstvo, priemerná nákupná cena a hodnota zásob bez DPH.</p><button type="button" style={buttonStyle} onClick={exportStock}><Download size={14}/>Stiahnuť CSV</button></article><article className="warehouseExportCard"><History size={22}/><h3>Všetky pohyby</h3><p>Príjmy a výdaje vrátane dokladov, dodávateľov, zákazníkov a zákaziek.</p><button type="button" style={buttonStyle} onClick={exportMovements}><Download size={14}/>Stiahnuť CSV</button></article><article className="warehouseExportCard"><ClipboardCheck size={22}/><h3>Inventúrny súpis</h3><p>Prehľad evidovaného a fyzického stavu pripravený na tlač alebo uloženie do PDF.</p><button type="button" style={buttonStyle} onClick={printInventory}>Tlačiť / uložiť PDF</button></article></div></section>}
+        {activeTab === 'export' && <section className="warehouseSection" style={boxStyle}><div><div className="warehouseKicker">Účtovníctvo</div><h2>Export skladu</h2></div><div className="warehouseExportGrid"><article className="warehouseExportCard"><Boxes size={22}/><h3>Stav skladu</h3><p>Skladové karty, množstvo, priemerná nákupná cena a hodnota zásob bez DPH.</p><button type="button" style={buttonStyle} onClick={exportStock}><Download size={14}/>Stiahnuť CSV</button></article><article className="warehouseExportCard"><History size={22}/><h3>Všetky pohyby</h3><p>Príjmy a výdaje vrátane dokladov, dodávateľov, zákazníkov a zákaziek.</p><button type="button" style={buttonStyle} onClick={exportMovements}><Download size={14}/>Stiahnuť CSV</button></article><article className="warehouseExportCard"><Wrench size={22}/><h3>Náradie</h3><p>Firemné vybavenie, nákupné ceny, doklady, umiestnenie, pridelenie a termíny kontrol.</p><button type="button" style={buttonStyle} onClick={exportTools}><Download size={14}/>Stiahnuť CSV</button></article><article className="warehouseExportCard"><ClipboardCheck size={22}/><h3>Inventúrny súpis</h3><p>Prehľad evidovaného a fyzického stavu pripravený na tlač alebo uloženie do PDF.</p><button type="button" style={buttonStyle} onClick={printInventory}>Tlačiť / uložiť PDF</button></article></div></section>}
       </div>
     </main>
   )

@@ -46,6 +46,28 @@ create table if not exists public.warehouse_movements (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.warehouse_tools (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  import_batch_id uuid references public.warehouse_import_batches(id) on delete set null,
+  name text not null,
+  category text,
+  serial_number text,
+  quantity numeric(14,3) not null default 1 check (quantity > 0),
+  unit text not null default 'ks',
+  purchase_date date,
+  purchase_price numeric(14,4) not null default 0 check (purchase_price >= 0),
+  status text not null default 'active' check (status in ('active', 'loaned', 'service', 'retired')),
+  location text,
+  assigned_to text,
+  supplier_name text,
+  source_invoice text,
+  next_check_date date,
+  note text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create table if not exists public.warehouse_inventories (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -73,6 +95,7 @@ create table if not exists public.warehouse_inventory_lines (
 alter table public.warehouse_items enable row level security;
 alter table public.warehouse_import_batches enable row level security;
 alter table public.warehouse_movements enable row level security;
+alter table public.warehouse_tools enable row level security;
 alter table public.warehouse_inventories enable row level security;
 alter table public.warehouse_inventory_lines enable row level security;
 
@@ -88,6 +111,10 @@ drop policy if exists "Users manage own warehouse movements" on public.warehouse
 create policy "Users manage own warehouse movements" on public.warehouse_movements
 for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
+drop policy if exists "Users manage own warehouse tools" on public.warehouse_tools;
+create policy "Users manage own warehouse tools" on public.warehouse_tools
+for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
 drop policy if exists "Users manage own warehouse inventories" on public.warehouse_inventories;
 create policy "Users manage own warehouse inventories" on public.warehouse_inventories
 for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
@@ -100,6 +127,8 @@ create index if not exists warehouse_items_user_name_idx on public.warehouse_ite
 create index if not exists warehouse_items_user_sku_idx on public.warehouse_items (user_id, sku);
 create index if not exists warehouse_movements_user_date_idx on public.warehouse_movements (user_id, movement_date desc);
 create index if not exists warehouse_movements_user_item_idx on public.warehouse_movements (user_id, item_id, movement_date);
+create index if not exists warehouse_tools_user_name_idx on public.warehouse_tools (user_id, name);
+create index if not exists warehouse_tools_user_status_idx on public.warehouse_tools (user_id, status);
 create index if not exists warehouse_imports_user_created_idx on public.warehouse_import_batches (user_id, created_at desc);
 create index if not exists warehouse_inventories_user_date_idx on public.warehouse_inventories (user_id, inventory_date desc);
 

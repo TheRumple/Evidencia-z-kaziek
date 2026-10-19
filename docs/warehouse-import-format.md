@@ -40,6 +40,7 @@ For stock carried over from the previous year, set `movement_purpose` to `openin
 - `customer`: receive and immediately issue it as a sale to a customer.
 - `job`: receive and immediately issue it to a job/order.
 - `internal`: receive and immediately issue it for internal company consumption.
+- `tool`: add durable company equipment to the Tools register instead of warehouse stock.
 - `ignore`: do not create a stock card or movement (services, shipping, discounts).
 
 The review table in the app is authoritative. The user confirms quantities, prices, destination, customer, and job before posting the batch.
