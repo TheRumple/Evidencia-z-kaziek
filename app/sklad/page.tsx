@@ -608,7 +608,11 @@ export default function WarehousePage() {
     const itemCache = [...items]
     const movementRows: Record<string, unknown>[] = []
     for (const line of activeLines.filter((entry) => entry.destination !== 'tool')) {
-      let item = itemCache.find((entry) => line.sku ? entry.sku?.toLowerCase() === line.sku.toLowerCase() : entry.name.toLowerCase() === line.name.toLowerCase())
+      let item = itemCache.find((entry) => {
+        const sameName = entry.name.trim().toLocaleLowerCase('sk') === line.name.trim().toLocaleLowerCase('sk')
+        if (!line.sku) return sameName
+        return entry.sku?.trim().toLocaleLowerCase('sk') === line.sku.trim().toLocaleLowerCase('sk') || (!entry.sku && sameName)
+      })
       if (!item) {
         const { data, error } = await supabase.from('warehouse_items').insert([{ user_id: userId, sku: line.sku || null, name: line.name, category: line.category || null, unit: line.unit }]).select().single()
         if (error || !data) { setSaving(false); setNotice({ type: 'error', text: `Položka „${line.name}“ sa nevytvorila: ${error?.message}` }); return }
