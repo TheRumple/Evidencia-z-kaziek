@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "batch_name": "Počiatočný stav 2026",
+  "documents": [
+    {
+      "supplier_name": "",
+      "invoice_number": "INV-2025",
+      "invoice_date": "2026-01-01",
+      "source_file": "Skladová invetúra 2026.xlsx",
+      "movement_purpose": "opening",
+      "lines": [
+        { "name": "Loxone Relay extension", "sku": "", "category": "Loxone", "quantity": 1, "unit": "ks", "unit_price_net": 337, "vat_rate": 0, "destination": "stock", "note": "Prenesené zo skladovej inventúry 2025" },
+        { "name": "Loxone DI extension", "sku": "", "category": "Loxone", "quantity": 1, "unit": "ks", "unit_price_net": 284, "vat_rate": 0, "destination": "stock", "note": "Prenesené zo skladovej inventúry 2025" },
+        { "name": "Zdroj 24V 60W", "sku": "", "category": "Napájanie", "quantity": 1, "unit": "ks", "unit_price_net": 14, "vat_rate": 0, "destination": "stock", "note": "Prenesené zo skladovej inventúry 2025" },
+        { "name": "FTP cat. 5e vonkajší", "sku": "", "category": "Kabeláž", "quantity": 504, "unit": "m", "unit_price_net": 0.4, "vat_rate": 0, "destination": "stock", "note": "Prenesené zo skladovej inventúry 2025" },
+        { "name": "Rúrka dvojplastová KOPOFLEX, priem. 63mm", "sku": "", "category": "Inštalačný materiál", "quantity": 90, "unit": "m", "unit_price_net": 1.13, "vat_rate": 0, "destination": "stock", "note": "Prenesené zo skladovej inventúry 2025" },
+        { "name": "Kamera IP Dahua 4 Mpx", "sku": "", "category": "Kamery", "quantity": 1, "unit": "ks", "unit_price_net": 130, "vat_rate": 0, "destination": "stock", "note": "Prenesené zo skladovej inventúry 2025" },
+        { "name": "Chránička FXP 16", "sku": "", "category": "Inštalačný materiál", "quantity": 20, "unit": "m", "unit_price_net": 0.2, "vat_rate": 0, "destination": "stock", "note": "Prenesené zo skladovej inventúry 2025" },
+        { "name": "Chránička FXP 20", "sku": "", "category": "Inštalačný materiál", "quantity": 12, "unit": "m", "unit_price_net": 0.23, "vat_rate": 0, "destination": "stock", "note": "Prenesené zo skladovej inventúry 2025" },
+        { "name": "Loxone Air Base extension", "sku": "", "category": "Loxone", "quantity": 1, "unit": "ks", "unit_price_net": 109, "vat_rate": 0, "destination": "stock", "note": "Prenesené zo skladovej inventúry 2025" },
+        { "name": "Dahua XVR5108HS-4KL-I3", "sku": "XVR5108HS-4KL-I3", "category": "Záznamové zariadenia", "quantity": 1, "unit": "ks", "unit_price_net": 188, "vat_rate": 0, "destination": "stock", "note": "Prenesené zo skladovej inventúry 2025" },
+        { "name": "Dahua HAC-HDW1500T-0280B-S2 5 Mpx HDCVI", "sku": "HAC-HDW1500T-0280B-S2", "category": "Kamery", "quantity": 6, "unit": "ks", "unit_price_net": 45.5, "vat_rate": 0, "destination": "stock", "note": "Prenesené zo skladovej inventúry 2025" },
+        { "name": "Dahua PFA130-E prídavný límec pre kamery", "sku": "PFA130-E", "category": "Príslušenstvo ku kamerám", "quantity": 6, "unit": "ks", "unit_price_net": 11, "vat_rate": 0, "destination": "stock", "note": "Prenesené zo skladovej inventúry 2025" },
+        { "name": "Dahua PFM800-4K súprava Balún", "sku": "PFM800-4K", "category": "Príslušenstvo ku kamerám", "quantity": 6, "unit": "ks", "unit_price_net": 5.2, "vat_rate": 0, "destination": "stock", "note": "Prenesené zo skladovej inventúry 2025" },
+        { "name": "Seagate HDD4000S 24/7 SATA disk", "sku": "HDD4000S", "category": "Disky", "quantity": 1, "unit": "ks", "unit_price_net": 78.4, "vat_rate": 0, "destination": "stock", "note": "Prenesené zo skladovej inventúry 2025" },
+        { "name": "Mean Well LRS-150-12 napájací zdroj", "sku": "LRS-150-12", "category": "Napájanie", "quantity": 1, "unit": "ks", "unit_price_net": 20.3, "vat_rate": 0, "destination": "stock", "note": "Prenesené zo skladovej inventúry 2025" }
+      ]
+    }
+  ]
+}

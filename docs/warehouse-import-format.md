@@ -12,6 +12,7 @@ The warehouse imports UTF-8 JSON with this structure:
       "invoice_number": "FV2026001",
       "invoice_date": "2026-10-19",
       "source_file": "invoice.pdf",
+      "movement_purpose": "stock",
       "lines": [
         {
           "name": "Dahua 4 Mpx IP camera",
@@ -30,6 +31,8 @@ The warehouse imports UTF-8 JSON with this structure:
   ]
 }
 ```
+
+For stock carried over from the previous year, set `movement_purpose` to `opening` on the document or an individual line. The movement will be shown as `Počiatočný stav` instead of a regular purchase receipt.
 
 ## Destinations
 

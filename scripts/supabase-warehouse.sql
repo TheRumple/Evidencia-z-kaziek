@@ -102,3 +102,5 @@ create index if not exists warehouse_movements_user_date_idx on public.warehouse
 create index if not exists warehouse_movements_user_item_idx on public.warehouse_movements (user_id, item_id, movement_date);
 create index if not exists warehouse_imports_user_created_idx on public.warehouse_import_batches (user_id, created_at desc);
 create index if not exists warehouse_inventories_user_date_idx on public.warehouse_inventories (user_id, inventory_date desc);
+
+notify pgrst, 'reload schema';

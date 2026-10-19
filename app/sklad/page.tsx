@@ -53,6 +53,7 @@ type WarehouseInventory = {
 }
 
 type ImportDestination = 'stock' | 'customer' | 'job' | 'internal' | 'ignore'
+type ImportInboundPurpose = 'stock' | 'opening'
 
 type ImportPreviewLine = {
   key: string
@@ -68,6 +69,7 @@ type ImportPreviewLine = {
   unitPriceNet: number
   vatRate: number
   destination: ImportDestination
+  inboundPurpose: ImportInboundPurpose
   customerId: string
   customerName: string
   orderId: string
@@ -135,6 +137,10 @@ function normalizeDestination(value: unknown): ImportDestination {
   return 'stock'
 }
 
+function normalizeInboundPurpose(value: unknown): ImportInboundPurpose {
+  return ['opening', 'opening_balance', 'pociatocny_stav'].includes(String(value || '').toLowerCase()) ? 'opening' : 'stock'
+}
+
 function parseImportPayload(payload: unknown): ImportPreviewLine[] {
   const root = payload as { documents?: unknown[] }
   const documents = Array.isArray(root?.documents) ? root.documents : Array.isArray(payload) ? payload : [payload]
@@ -161,6 +167,7 @@ function parseImportPayload(payload: unknown): ImportPreviewLine[] {
         unitPriceNet: Math.max(0, toNumber(line.unit_price_net ?? line.unit_price ?? line.price_net)),
         vatRate: Math.max(0, toNumber(line.vat_rate ?? line.vat, 23)),
         destination: normalizeDestination(line.destination),
+        inboundPurpose: normalizeInboundPurpose(line.movement_purpose || document.movement_purpose),
         customerId: String(line.customer_id || '').trim(),
         customerName: String(line.customer_name || '').trim(),
         orderId: String(line.order_id || '').trim(),
@@ -378,7 +385,7 @@ export default function WarehousePage() {
         itemCache.push(item)
       }
       const common = { user_id: userId, item_id: item.id, import_batch_id: batch.id, movement_date: line.invoiceDate || getTodayDate(), quantity: line.quantity, unit_cost: line.unitPriceNet, supplier_name: line.supplierName || null, source_invoice: line.invoiceNumber || null, note: line.note || null }
-      movementRows.push({ ...common, direction: 'in', purpose: 'stock' })
+      movementRows.push({ ...common, direction: 'in', purpose: line.inboundPurpose })
       if (line.destination !== 'stock') {
         const customer = customers.find((entry) => entry.id === line.customerId)
         movementRows.push({ ...common, direction: 'out', purpose: line.destination === 'customer' ? 'sale' : line.destination, customer_id: line.customerId || null, customer_name: customer?.nazov || line.customerName || null, order_id: line.orderId || null })
