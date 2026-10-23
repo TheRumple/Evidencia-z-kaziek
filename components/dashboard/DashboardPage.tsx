@@ -3083,7 +3083,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
 
         {activeTab === 'zakazky' && (
           <>
-          <WorkspaceOverview userId={userId} customers={customers} orders={orders} pendingRequestsCount={pendingRequestsCount}/>
+          <WorkspaceOverview userId={userId} customers={customers} orders={orders} pendingRequestsCount={pendingRequestsCount} onSelectOrderSearch={(value) => { setActiveTab('zakazky'); setSearch(value) }}/>
           <OrdersView
             boxStyle={boxStyle}
             buttonStyle={buttonStyle}
