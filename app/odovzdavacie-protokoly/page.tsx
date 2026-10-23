@@ -399,7 +399,7 @@ export default function DeliveryProtocolsPage() {
         setNotice({ type: 'error', text: `Odovzdávacie protokoly: ${protocolsResult.error.message}` })
       }
     } else {
-      setProtocols((protocolsResult.data || []) as DeliveryProtocol[])
+      setProtocols(((protocolsResult.data || []) as DeliveryProtocol[]).filter((protocol) => !protocol.deleted_at))
     }
   }
 
@@ -501,6 +501,16 @@ export default function DeliveryProtocolsPage() {
     setSignatureProtocol(null)
     setSignatureDraft('')
     setNotice({ type: 'success', text: 'Podpis je uložený v protokole.' })
+  }
+
+  async function deleteProtocol(protocol: DeliveryProtocol) {
+    if (!userId || !window.confirm(`Presunúť protokol ${protocol.protocol_number || 'bez čísla'} do koša?`)) return
+    const previous = protocols
+    setProtocols((current) => current.filter((item) => item.id !== protocol.id))
+    const { error } = await supabase.from('delivery_protocols').update({ deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', protocol.id).eq('user_id', userId)
+    if (error) { setProtocols(previous); setNotice({ type: 'error', text: `Protokol sa nepresunul do koša: ${error.message}` }); return }
+    if (protocolId === protocol.id) resetForm()
+    setNotice({ type: 'success', text: 'Protokol bol presunutý do koša.' })
   }
 
   async function saveProtocol() {
@@ -989,6 +999,7 @@ export default function DeliveryProtocolsPage() {
                     <button type="button" style={buttonStyle} onClick={(event) => { event.stopPropagation(); void exportPdf('show', protocol) }}>Ukáž PDF</button>
                     <button type="button" style={buttonStyle} onClick={(event) => { event.stopPropagation(); void exportPdf('mail', protocol) }}>Email</button>
                     <button type="button" style={buttonStyle} onClick={(event) => { event.stopPropagation(); openProtocol(protocol) }}>Upraviť</button>
+                    <button type="button" style={{ ...buttonStyle, color: '#b91c1c', borderColor: '#fecaca' }} onClick={(event) => { event.stopPropagation(); void deleteProtocol(protocol) }}>Do koša</button>
                   </div>
                 </div>
               )

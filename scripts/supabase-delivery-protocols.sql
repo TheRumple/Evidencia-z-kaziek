@@ -15,6 +15,7 @@ create table if not exists public.delivery_protocols (
   tested boolean not null default true,
   briefed boolean not null default true,
   items jsonb not null default '[]'::jsonb,
+  deleted_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -48,6 +49,9 @@ alter table public.delivery_protocols
 
 alter table public.delivery_protocols
   add column if not exists updated_at timestamptz not null default now();
+
+alter table public.delivery_protocols
+  add column if not exists deleted_at timestamptz;
 
 alter table public.delivery_protocols enable row level security;
 

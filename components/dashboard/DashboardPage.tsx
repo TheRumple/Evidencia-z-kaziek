@@ -12,6 +12,7 @@ import { CalendarView } from '@/components/dashboard/CalendarView'
 import { CustomersView } from '@/components/dashboard/CustomersView'
 import { OrdersView } from '@/components/dashboard/OrdersView'
 import { DashboardModals } from '@/components/dashboard/DashboardModals'
+import { WorkspaceOverview } from '@/components/dashboard/WorkspaceOverview'
 import type { CalendarPlan, Customer, CustomerContact, CustomerContactCustomer, CustomerUpdate, DeliveryProtocol, Employee, Notice, Order, OrderSubtask, WorkLog } from '@/lib/dashboard-types'
 import {
   AKTIVNE_STATUSY,
@@ -545,7 +546,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
       return
     }
 
-    setDeliveryProtocols((data || []) as DeliveryProtocol[])
+    setDeliveryProtocols(((data || []) as DeliveryProtocol[]).filter((item) => !item.deleted_at))
   }
 
   async function addCalendarPlan(input: {
@@ -2880,6 +2881,10 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
                   <span>Fakturované</span>
                   <span className="sideMenuIcon">›</span>
                 </Link>
+                <Link href="/kos" style={sideNavButton(false)}>
+                  <span>Kôš</span>
+                  <span className="sideMenuIcon">›</span>
+                </Link>
               </div>
             </details>
           </nav>
@@ -3077,6 +3082,8 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
         )}
 
         {activeTab === 'zakazky' && (
+          <>
+          <WorkspaceOverview userId={userId} customers={customers} orders={orders} pendingRequestsCount={pendingRequestsCount}/>
           <OrdersView
             boxStyle={boxStyle}
             buttonStyle={buttonStyle}
@@ -3115,6 +3122,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
             unseenCustomerPriorityByOrder={unseenCustomerPriorityByOrder}
             markCustomerPrioritySeen={markCustomerPrioritySeen}
           />
+          </>
         )}
 
         {activeTab === 'zakaznici' && (

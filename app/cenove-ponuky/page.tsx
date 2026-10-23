@@ -477,7 +477,7 @@ export default function QuotesPage() {
           setNotice({ type: 'error', text: `Cenové ponuky: ${quotesResult.error.message}` })
         }
       } else {
-        setQuotes((quotesResult.data || []) as Quote[])
+        setQuotes(((quotesResult.data || []) as Quote[]).filter((quote) => !quote.deleted_at))
       }
     } finally {
       setLoading(false)
@@ -990,6 +990,16 @@ export default function QuotesPage() {
       setStatus(saved.status)
     }
     setNotice({ type: 'success', text: `Ponuka je označená ako ${STATUS_LABELS[nextStatus].toLowerCase()}.` })
+  }
+
+  async function deleteQuote(quote: Quote) {
+    if (!userId || !window.confirm(`Presunúť ponuku ${quote.quote_number} do koša?`)) return
+    const previous = quotes
+    setQuotes((current) => current.filter((item) => item.id !== quote.id))
+    const { error } = await supabase.from('quotes').update({ deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', quote.id).eq('user_id', userId)
+    if (error) { setQuotes(previous); setNotice({ type: 'error', text: `Ponuka sa nepresunula do koša: ${error.message}` }); return }
+    if (editingId === quote.id) startNewQuote()
+    setNotice({ type: 'success', text: `Ponuka ${quote.quote_number} bola presunutá do koša.` })
   }
 
   async function saveQuote() {
@@ -2383,6 +2393,7 @@ export default function QuotesPage() {
                       <button type="button" style={buttonStyle} onClick={() => sendQuoteEmail(quote)}>Email</button>
                       <button type="button" style={{ ...buttonStyle, borderColor: '#fbbf24', background: '#fef3c7', color: '#92400e' }} onClick={() => openMaterialImport(quote)} disabled={saving}>Nákup</button>
                       <button type="button" style={{ ...buttonStyle, borderColor: '#86efac', background: '#dcfce7', color: '#166534' }} onClick={() => void createOrderFromQuote(quote)} disabled={saving}>Zákazka</button>
+                      <button type="button" style={{ ...buttonStyle, color: '#b91c1c', borderColor: '#fecaca' }} onClick={() => void deleteQuote(quote)}><Trash2 size={14}/></button>
                     </div>
                   </div>
                 )
@@ -2419,6 +2430,7 @@ export default function QuotesPage() {
                     >
                       Zákazka
                     </button>
+                    <button type="button" title="Presunúť do koša" style={{ ...buttonStyle, color: '#b91c1c', borderColor: '#fecaca' }} onClick={() => void deleteQuote(quote)}><Trash2 size={14}/></button>
                   </div>
                 </div>
               )

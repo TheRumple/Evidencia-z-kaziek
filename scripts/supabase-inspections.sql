@@ -19,6 +19,7 @@ create table if not exists public.inspections (
   sketch_data_url text,
   materials jsonb not null default '[]'::jsonb,
   status text not null default 'draft' check (status in ('draft', 'done', 'quoted')),
+  deleted_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -67,6 +68,9 @@ alter table public.inspections
 
 alter table public.inspections
   add column if not exists status text not null default 'draft';
+
+alter table public.inspections
+  add column if not exists deleted_at timestamptz;
 
 alter table public.inspections enable row level security;
 

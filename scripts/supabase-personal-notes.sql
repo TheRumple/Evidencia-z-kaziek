@@ -8,6 +8,9 @@ create table if not exists public.personal_notes (
   priority text not null default 'normal' check (priority in ('normal', 'important', 'urgent')),
   text_color text not null default 'black',
   content_runs jsonb,
+  is_pinned boolean not null default false,
+  sort_order bigint not null default 0,
+  deleted_at timestamptz,
   completed boolean not null default false,
   completed_at timestamptz,
   created_at timestamptz not null default now(),
@@ -19,6 +22,15 @@ alter table public.personal_notes
 
 alter table public.personal_notes
   add column if not exists content_runs jsonb;
+
+alter table public.personal_notes
+  add column if not exists is_pinned boolean not null default false;
+
+alter table public.personal_notes
+  add column if not exists sort_order bigint not null default 0;
+
+alter table public.personal_notes
+  add column if not exists deleted_at timestamptz;
 
 create index if not exists personal_notes_user_active_idx
   on public.personal_notes (user_id, completed, priority, created_at desc);

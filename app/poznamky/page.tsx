@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Check, Pencil, Plus, Save, Search, Trash2, X } from 'lucide-react'
+import { ArrowDown, ArrowUp, Check, Pencil, Pin, Plus, Save, Search, Trash2, X } from 'lucide-react'
 import { BrandLogo } from '@/components/BrandLogo'
 import { normalizeNoteRuns, noteRunsToText, RichNoteEditor } from '@/components/notes/RichNoteEditor'
 import type { NoteRun, NoteTextColor } from '@/components/notes/RichNoteEditor'
@@ -23,6 +23,9 @@ type PersonalNote = {
   priority: NotePriority
   text_color: NoteTextColor
   content_runs: unknown
+  is_pinned?: boolean
+  sort_order?: number
+  deleted_at?: string | null
   completed: boolean
   completed_at: string | null
   created_at: string
@@ -116,7 +119,7 @@ export default function NotesPage() {
       setNotice({ type: 'error', text: error.code === '42P01' ? 'Poznámky ešte nemajú databázovú tabuľku. Spusť skript scripts/supabase-personal-notes.sql v Supabase SQL Editore.' : `Poznámky sa nenačítali: ${error.message}` })
       return
     }
-    setNotes((data || []) as PersonalNote[])
+    setNotes(((data || []) as PersonalNote[]).filter((note) => !note.deleted_at))
   }
 
   const filteredNotes = useMemo(() => {
@@ -130,8 +133,11 @@ export default function NotesPage() {
         return !needle || note.content.toLocaleLowerCase('sk').includes(needle)
       })
       .sort((a, b) => {
-        if (!a.completed && !b.completed && PRIORITY_ORDER[a.priority] !== PRIORITY_ORDER[b.priority]) return PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]
-        return new Date(b.completed_at || b.created_at).getTime() - new Date(a.completed_at || a.created_at).getTime()
+        if (Boolean(a.is_pinned) !== Boolean(b.is_pinned)) return a.is_pinned ? -1 : 1
+        const orderA = a.sort_order || new Date(a.created_at).getTime()
+        const orderB = b.sort_order || new Date(b.created_at).getTime()
+        if (orderA !== orderB) return orderB - orderA
+        return PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]
       })
   }, [filter, notes, search])
 
@@ -145,7 +151,7 @@ export default function NotesPage() {
   async function addNote() {
     if (!userId || !quickText.trim() || saving) return
     setSaving(true)
-    const { data, error } = await supabase.from('personal_notes').insert([{ user_id: userId, content: quickText.trim(), priority: quickPriority, text_color: 'black', content_runs: quickRuns }]).select().single()
+    const { data, error } = await supabase.from('personal_notes').insert([{ user_id: userId, content: quickText.trim(), priority: quickPriority, text_color: 'black', content_runs: quickRuns, sort_order: Date.now(), is_pinned: false }]).select().single()
     setSaving(false)
     if (error || !data) { setNotice({ type: 'error', text: `Poznámka sa neuložila: ${error?.message || 'neznáma chyba'}` }); return }
     setNotes((current) => [data as PersonalNote, ...current])
@@ -185,11 +191,41 @@ export default function NotesPage() {
     }
   }
 
+  async function togglePinned(note: PersonalNote) {
+    if (!userId || saving) return
+    const patch = { is_pinned: !note.is_pinned, sort_order: Date.now(), updated_at: new Date().toISOString() }
+    setNotes((current) => current.map((item) => item.id === note.id ? { ...item, ...patch } : item))
+    const { error } = await supabase.from('personal_notes').update(patch).eq('id', note.id).eq('user_id', userId)
+    if (error) {
+      setNotes((current) => current.map((item) => item.id === note.id ? note : item))
+      setNotice({ type: 'error', text: `Pripnutie sa nezmenilo: ${error.message}` })
+    }
+  }
+
+  async function moveNote(note: PersonalNote, direction: 'up' | 'down') {
+    if (!userId || saving) return
+    const index = filteredNotes.findIndex((item) => item.id === note.id)
+    const targetIndex = direction === 'up' ? index - 1 : index + 1
+    const target = filteredNotes[targetIndex]
+    if (index < 0 || !target || Boolean(target.is_pinned) !== Boolean(note.is_pinned)) return
+    const noteOrder = note.sort_order || new Date(note.created_at).getTime()
+    const targetOrder = target.sort_order || new Date(target.created_at).getTime()
+    setNotes((current) => current.map((item) => item.id === note.id ? { ...item, sort_order: targetOrder } : item.id === target.id ? { ...item, sort_order: noteOrder } : item))
+    const [first, second] = await Promise.all([
+      supabase.from('personal_notes').update({ sort_order: targetOrder }).eq('id', note.id).eq('user_id', userId),
+      supabase.from('personal_notes').update({ sort_order: noteOrder }).eq('id', target.id).eq('user_id', userId),
+    ])
+    if (first.error || second.error) {
+      setNotes((current) => current.map((item) => item.id === note.id ? { ...item, sort_order: noteOrder } : item.id === target.id ? { ...item, sort_order: targetOrder } : item))
+      setNotice({ type: 'error', text: `Poradie sa neuložilo: ${first.error?.message || second.error?.message}` })
+    }
+  }
+
   async function deleteNote(note: PersonalNote) {
-    if (!userId || !window.confirm('Naozaj chceš túto poznámku odstrániť?')) return
+    if (!userId || !window.confirm('Presunúť túto poznámku do koša?')) return
     const previous = notes
     setNotes((current) => current.filter((item) => item.id !== note.id))
-    const { error } = await supabase.from('personal_notes').delete().eq('id', note.id).eq('user_id', userId)
+    const { error } = await supabase.from('personal_notes').update({ deleted_at: new Date().toISOString() }).eq('id', note.id).eq('user_id', userId)
     if (error) { setNotes(previous); setNotice({ type: 'error', text: `Poznámka sa neodstránila: ${error.message}` }) }
   }
 
@@ -214,7 +250,10 @@ export default function NotesPage() {
           const priority = priorityConfig(note.priority)
           const isEditing = editingId === note.id
           const displayRuns = normalizeNoteRuns(note.content_runs, note.content, note.text_color || 'black')
-          return <article key={note.id} className={`noteRow ${note.priority} ${note.completed?'noteDone':''}`}><span className="priorityTag" style={{color:priority.color,background:priority.background}}>{priority.label}</span>{isEditing?<div className="editArea"><RichNoteEditor runs={editingRuns} onChange={setEditingRuns} compact/><div className="priorityPicker">{PRIORITIES.map((item)=><button key={item.value} type="button" className="priorityButton" style={{color:item.color,background:editingPriority===item.value?item.background:'#fff'}} onClick={()=>setEditingPriority(item.value)}>{item.label}</button>)}</div></div>:<div className="noteContent">{displayRuns.map((run,index)=><span key={`${note.id}-${index}`} style={{color:({black:'#0f172a',red:'#b91c1c',green:'#15803d',blue:'#1d4ed8'} as const)[run.color]}}>{run.text}</span>)}</div>}<div className="noteDate">{formatCreatedAt(note.created_at)}{note.updated_at!==note.created_at&&<><br/>upravené</>}</div><div className="noteActions">{isEditing?<><button type="button" className="iconButton" title="Uložiť" onClick={()=>void saveEdit(note)}><Save size={15}/></button><button type="button" className="iconButton" title="Zrušiť" onClick={()=>setEditingId('')}><X size={15}/></button></>:<button type="button" className="iconButton" title="Upraviť" onClick={()=>beginEdit(note)}><Pencil size={15}/></button>}<button type="button" className="doneButton" title={note.completed?'Vrátiť medzi aktívne':'Označiť ako hotové'} onClick={()=>void toggleCompleted(note)}><Check size={14}/>{note.completed?'Vrátiť':'Hotovo'}</button><button type="button" className="iconButton" title="Odstrániť" style={{color:'#b91c1c',borderColor:'#fecaca'}} onClick={()=>void deleteNote(note)}><Trash2 size={15}/></button></div></article>
+          const noteIndex = filteredNotes.findIndex((item) => item.id === note.id)
+          const canMoveUp = noteIndex > 0 && Boolean(filteredNotes[noteIndex - 1]?.is_pinned) === Boolean(note.is_pinned)
+          const canMoveDown = noteIndex < filteredNotes.length - 1 && Boolean(filteredNotes[noteIndex + 1]?.is_pinned) === Boolean(note.is_pinned)
+          return <article key={note.id} className={`noteRow ${note.priority} ${note.completed?'noteDone':''}`}><span className="priorityTag" style={{color:priority.color,background:priority.background}}>{priority.label}</span>{isEditing?<div className="editArea"><RichNoteEditor runs={editingRuns} onChange={setEditingRuns} compact/><div className="priorityPicker">{PRIORITIES.map((item)=><button key={item.value} type="button" className="priorityButton" style={{color:item.color,background:editingPriority===item.value?item.background:'#fff'}} onClick={()=>setEditingPriority(item.value)}>{item.label}</button>)}</div></div>:<div className="noteContent">{displayRuns.map((run,index)=><span key={`${note.id}-${index}`} style={{color:({black:'#0f172a',red:'#b91c1c',green:'#15803d',blue:'#1d4ed8'} as const)[run.color]}}>{run.text}</span>)}</div>}<div className="noteDate">{formatCreatedAt(note.created_at)}{note.updated_at!==note.created_at&&<><br/>upravené</>}</div><div className="noteActions"><button type="button" className="iconButton" title={note.is_pinned?'Odopnúť':'Pripnúť navrch'} style={{color:note.is_pinned?'#4d7c0f':'#334155',background:note.is_pinned?'#ecfccb':'#fff'}} onClick={()=>void togglePinned(note)}><Pin size={15}/></button><button type="button" className="iconButton" title="Posunúť vyššie" disabled={!canMoveUp} onClick={()=>void moveNote(note,'up')}><ArrowUp size={15}/></button><button type="button" className="iconButton" title="Posunúť nižšie" disabled={!canMoveDown} onClick={()=>void moveNote(note,'down')}><ArrowDown size={15}/></button>{isEditing?<><button type="button" className="iconButton" title="Uložiť" onClick={()=>void saveEdit(note)}><Save size={15}/></button><button type="button" className="iconButton" title="Zrušiť" onClick={()=>setEditingId('')}><X size={15}/></button></>:<button type="button" className="iconButton" title="Upraviť" onClick={()=>beginEdit(note)}><Pencil size={15}/></button>}<button type="button" className="doneButton" title={note.completed?'Vrátiť medzi aktívne':'Označiť ako hotové'} onClick={()=>void toggleCompleted(note)}><Check size={14}/>{note.completed?'Vrátiť':'Hotovo'}</button><button type="button" className="iconButton" title="Presunúť do koša" style={{color:'#b91c1c',borderColor:'#fecaca'}} onClick={()=>void deleteNote(note)}><Trash2 size={15}/></button></div></article>
         })}
       </section>
     </div>

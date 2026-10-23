@@ -254,7 +254,7 @@ export default function InspectionsPage() {
       return
     }
 
-    setInspections((inspectionsResult.data || []) as Inspection[])
+    setInspections(((inspectionsResult.data || []) as Inspection[]).filter((inspection) => !inspection.deleted_at))
   }
 
   const summary = useMemo(() => {
@@ -508,10 +508,10 @@ export default function InspectionsPage() {
   }
 
   async function deleteInspection(inspectionId: string) {
-    if (!userId || !window.confirm('Naozaj chceš zmazať túto obhliadku?')) return
+    if (!userId || !window.confirm('Presunúť túto obhliadku do koša?')) return
     const previous = inspections
     setInspections((current) => current.filter((item) => item.id !== inspectionId))
-    const { error } = await supabase.from('inspections').delete().eq('id', inspectionId).eq('user_id', userId)
+    const { error } = await supabase.from('inspections').update({ deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', inspectionId).eq('user_id', userId)
     if (error) {
       setInspections(previous)
       setNotice({ type: 'error', text: `Obhliadka sa nezmazala: ${error.message}` })
@@ -522,7 +522,7 @@ export default function InspectionsPage() {
       setShowForm(false)
       setForm(createForm())
     }
-    setNotice({ type: 'success', text: 'Obhliadka bola zmazaná.' })
+    setNotice({ type: 'success', text: 'Obhliadka bola presunutá do koša.' })
   }
 
   if (checkingAuth) {
@@ -1157,7 +1157,7 @@ export default function InspectionsPage() {
                           Upraviť
                         </button>
                         <button type="button" style={buttonStyle} onClick={() => void deleteInspection(inspection.id)}>
-                          Zmazať
+                          Do koša
                         </button>
                       </div>
                     </article>

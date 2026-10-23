@@ -120,6 +120,7 @@ export type DeliveryProtocol = {
   items: unknown
   created_at?: string
   updated_at?: string
+  deleted_at?: string | null
 }
 
 export type Quote = {
@@ -141,6 +142,7 @@ export type Quote = {
   items: unknown
   created_at?: string
   updated_at?: string
+  deleted_at?: string | null
 }
 
 export type MaintenanceRevision = {
@@ -196,6 +198,7 @@ export type Inspection = {
   status: 'draft' | 'done' | 'quoted'
   created_at?: string
   updated_at?: string
+  deleted_at?: string | null
 }
 
 export type Notice =

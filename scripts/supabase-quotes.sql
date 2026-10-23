@@ -18,6 +18,7 @@ create table if not exists public.quotes (
   discount_type text not null default 'none',
   discount_value numeric not null default 0,
   items jsonb not null default '[]'::jsonb,
+  deleted_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint quotes_status_check check (status in ('draft', 'sent', 'approved', 'rejected')),
@@ -68,6 +69,9 @@ alter table public.quotes
 
 alter table public.quotes
   add column if not exists updated_at timestamptz not null default now();
+
+alter table public.quotes
+  add column if not exists deleted_at timestamptz;
 
 alter table public.quotes enable row level security;
 
