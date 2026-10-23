@@ -2805,6 +2805,10 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
 
           <nav className="sideMenuNav" aria-label="Hlavná navigácia">
             <div className="sideMenuGroupTitle">Práca</div>
+            <Link href="/poznamky" style={sideNavButton(false)}>
+              <span>Poznámky</span>
+              <span className="sideMenuIcon">›</span>
+            </Link>
             <button type="button" style={sideNavButton(activeTab === 'zakazky')} onClick={() => setActiveTab('zakazky')}>
               <span>Zákazky</span>
               <span className="sideMenuBadgeRow">
@@ -3149,7 +3153,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
             calendarPlans={calendarPlans}
             deleteCalendarPlan={deleteCalendarPlan}
             getCustomerName={getCustomerName}
-            onBackToOrders={() => router.push('/')}
+            onBackToOrders={() => router.push('/zakazky')}
             orders={orders}
             startEditOrder={startEditOrder}
             updateCalendarPlan={updateCalendarPlan}
