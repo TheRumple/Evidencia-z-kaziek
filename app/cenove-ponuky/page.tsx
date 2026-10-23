@@ -12,6 +12,7 @@ import { getSessionWithTimeout } from '@/lib/auth-timeout'
 import type { Customer, Notice, Quote } from '@/lib/dashboard-types'
 import { PDF_FONT_NAME, formatDate, getTodayDate, loadFirstAvailableImage, pdfSafeText, registerPdfFont } from '@/lib/dashboard-utils'
 import { supabase } from '@/lib/supabase'
+import { useFormDraft } from '@/lib/use-form-draft'
 
 type QuoteItem = {
   id: string
@@ -23,6 +24,25 @@ type QuoteItem = {
   unit: string
   unitPrice: string
   vatRate: string
+}
+
+type QuoteFormDraft = {
+  editingId: string
+  customerId: string
+  quoteNumber: string
+  quoteDate: string
+  validUntil: string
+  status: Quote['status']
+  title: string
+  customerName: string
+  contactName: string
+  contactEmail: string
+  quoteKind: QuoteKind
+  realizationNote: string
+  note: string
+  discountType: 'none' | 'percent' | 'amount'
+  discountValue: string
+  items: QuoteItem[]
 }
 
 const STATUS_LABELS: Record<Quote['status'], string> = {
@@ -329,6 +349,38 @@ export default function QuotesPage() {
   const [isCompact, setIsCompact] = useState(false)
   const [isNarrow, setIsNarrow] = useState(false)
 
+  const quoteDraft = useMemo<QuoteFormDraft>(() => ({
+    editingId, customerId, quoteNumber, quoteDate, validUntil, status, title, customerName, contactName,
+    contactEmail, quoteKind, realizationNote, note, discountType, discountValue, items,
+  }), [contactEmail, contactName, customerId, customerName, discountType, discountValue, editingId, items, note, quoteDate, quoteKind, quoteNumber, realizationNote, status, title, validUntil])
+
+  const { clearDraft: clearQuoteDraft, lastSavedAt: quoteDraftSavedAt } = useFormDraft(
+    userId ? `quote-form:${userId}` : null,
+    quoteDraft,
+    (draft) => {
+      if (!draft || !Array.isArray(draft.items)) return
+      setEditingId(draft.editingId || '')
+      setCustomerId(draft.customerId || '')
+      setQuoteNumber(draft.quoteNumber || '')
+      setQuoteDate(draft.quoteDate || getTodayDate())
+      setValidUntil(draft.validUntil || addDays(getTodayDate(), 14))
+      setStatus(draft.status || 'draft')
+      setTitle(draft.title || '')
+      setCustomerName(draft.customerName || '')
+      setContactName(draft.contactName || '')
+      setContactEmail(draft.contactEmail || '')
+      setQuoteKind(draft.quoteKind || 'sale')
+      setRealizationNote(draft.realizationNote || MATERIAL_DELIVERY_NOTE)
+      setNote(draft.note || '')
+      setDiscountType(draft.discountType || 'none')
+      setDiscountValue(draft.discountValue || '')
+      setItems(draft.items.length ? draft.items : [createQuoteItem()])
+      setActiveSection('create')
+      setNotice({ type: 'success', text: 'Obnovil sa rozpracovaný koncept cenovej ponuky.' })
+    },
+    activeSection === 'create' && Boolean(title.trim() || customerName.trim() || note.trim() || items.some((item) => item.name.trim() || item.note.trim() || item.unitPrice.trim() || item.imageUrl || item.imageDataUrl)),
+  )
+
   useEffect(() => {
     let mounted = true
 
@@ -499,6 +551,7 @@ export default function QuotesPage() {
 
   async function startNewQuote() {
     const today = getTodayDate()
+    clearQuoteDraft()
     resetForm()
     setActiveSection('create')
     const nextNumber = await getNextQuoteNumber(today)
@@ -996,6 +1049,7 @@ export default function QuotesPage() {
       return [saved, ...withoutSaved]
     })
     startEdit(saved)
+    clearQuoteDraft()
     setNotice({ type: 'success', text: editingId ? 'Ponuka bola upravená.' : 'Ponuka bola uložená.' })
   }
 
@@ -1837,6 +1891,7 @@ export default function QuotesPage() {
                 {editingId ? 'Úprava ponuky' : 'Nová ponuka'}
               </div>
               <h2 style={{ margin: 0, fontSize: 18 }}>Základné údaje</h2>
+              {quoteDraftSavedAt && <small style={{ color: '#64748b', fontWeight: 800 }}>Koncept uložený automaticky</small>}
             </div>
 
             <div style={{ display: 'grid', gap: 7, padding: '8px 10px', background: '#eef2f7', borderLeft: '4px solid #475569' }}>

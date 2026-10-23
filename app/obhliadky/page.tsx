@@ -9,6 +9,7 @@ import { getSessionWithTimeout } from '@/lib/auth-timeout'
 import type { Customer, Inspection, Notice } from '@/lib/dashboard-types'
 import { formatDate, getTodayDate } from '@/lib/dashboard-utils'
 import { supabase } from '@/lib/supabase'
+import { useFormDraft } from '@/lib/use-form-draft'
 
 type InspectionForm = {
   customerId: string
@@ -25,6 +26,13 @@ type InspectionForm = {
   quoteNote: string
   status: Inspection['status']
   sketchDataUrl: string
+}
+
+type InspectionDraft = {
+  editingId: string
+  form: InspectionForm
+  sketchPages: string[]
+  activeSketchPage: number
 }
 
 const INSPECTION_TYPES = [
@@ -114,6 +122,25 @@ export default function InspectionsPage() {
   const [activeSketchPage, setActiveSketchPage] = useState(0)
   const [undoStacks, setUndoStacks] = useState<string[][]>([[]])
   const [redoStacks, setRedoStacks] = useState<string[][]>([[]])
+
+  const inspectionDraft = useMemo<InspectionDraft>(() => ({ editingId, form, sketchPages, activeSketchPage }), [activeSketchPage, editingId, form, sketchPages])
+  const { clearDraft: clearInspectionDraft, lastSavedAt: inspectionDraftSavedAt } = useFormDraft(
+    userId ? `inspection-form:${userId}` : null,
+    inspectionDraft,
+    (draft) => {
+      if (!draft?.form) return
+      const pages = Array.isArray(draft.sketchPages) && draft.sketchPages.length ? draft.sketchPages : ['']
+      setEditingId(draft.editingId || '')
+      setForm({ ...createForm(), ...draft.form })
+      setSketchPages(pages)
+      setActiveSketchPage(Math.min(Math.max(0, draft.activeSketchPage || 0), pages.length - 1))
+      setUndoStacks(pages.map(() => []))
+      setRedoStacks(pages.map(() => []))
+      setShowForm(true)
+      setNotice({ type: 'success', text: 'Obnovil sa rozpracovaný koncept obhliadky.' })
+    },
+    showForm && Boolean(form.customerName.trim() || form.siteAddress.trim() || form.requestSummary.trim() || form.currentState.trim() || form.verificationNotes.trim() || form.quoteNote.trim() || sketchPages.some(Boolean)),
+  )
 
   const boxStyle: CSSProperties = {
     background: '#fff',
@@ -276,6 +303,7 @@ export default function InspectionsPage() {
   }
 
   function startNewInspection() {
+    clearInspectionDraft()
     setEditingId('')
     setForm(createForm())
     setSketchPages([''])
@@ -475,6 +503,7 @@ export default function InspectionsPage() {
     const saved = data as Inspection
     setEditingId(saved.id)
     setInspections((current) => [saved, ...current.filter((item) => item.id !== saved.id)])
+    clearInspectionDraft()
     setNotice({ type: 'success', text: 'Obhliadka je uložená.' })
   }
 
@@ -868,6 +897,7 @@ export default function InspectionsPage() {
                     {editingId ? 'Úprava obhliadky' : 'Nová obhliadka'}
                   </div>
                   <h2>{editingId ? 'Upraviť obhliadku' : 'Zapísať obhliadku'}</h2>
+                  {inspectionDraftSavedAt && <small style={{ color: '#64748b', fontWeight: 800 }}>Koncept uložený automaticky</small>}
                 </div>
                 <button
                   type="button"

@@ -18,6 +18,7 @@ import {
   registerPdfFont,
 } from '@/lib/dashboard-utils'
 import { supabase } from '@/lib/supabase'
+import { useFormDraft } from '@/lib/use-form-draft'
 
 type DeliveryProtocolItem = {
   id: string
@@ -25,6 +26,21 @@ type DeliveryProtocolItem = {
   serialNumber: string
   quantity: string
   note: string
+}
+
+type ProtocolFormDraft = {
+  protocolId: string
+  customerId: string
+  protocolNumber: string
+  customerOrderNumber: string
+  protocolDate: string
+  customerName: string
+  deliveredBy: string
+  receivedBy: string
+  tested: boolean
+  briefed: boolean
+  receivedSignature: string
+  items: DeliveryProtocolItem[]
 }
 
 const DEFAULT_TECHNICIAN = 'Ľuboš Ivanič'
@@ -249,6 +265,34 @@ export default function DeliveryProtocolsPage() {
   const [receivedSignature, setReceivedSignature] = useState('')
   const [items, setItems] = useState<DeliveryProtocolItem[]>(() => createDeliveryProtocolItems())
 
+  const protocolDraft = useMemo<ProtocolFormDraft>(() => ({
+    protocolId, customerId, protocolNumber, customerOrderNumber, protocolDate, customerName,
+    deliveredBy, receivedBy, tested, briefed, receivedSignature, items,
+  }), [briefed, customerId, customerName, customerOrderNumber, deliveredBy, items, protocolDate, protocolId, protocolNumber, receivedBy, receivedSignature, tested])
+
+  const { clearDraft: clearProtocolDraft, lastSavedAt: protocolDraftSavedAt } = useFormDraft(
+    userId ? `delivery-protocol-form:${userId}` : null,
+    protocolDraft,
+    (draft) => {
+      if (!draft || !Array.isArray(draft.items)) return
+      setProtocolId(draft.protocolId || '')
+      setCustomerId(draft.customerId || '')
+      setProtocolNumber(draft.protocolNumber || getNextProtocolNumber(protocols, getTodayDate()))
+      setCustomerOrderNumber(draft.customerOrderNumber || '')
+      setProtocolDate(draft.protocolDate || getTodayDate())
+      setCustomerName(draft.customerName || '')
+      setDeliveredBy(draft.deliveredBy || DEFAULT_TECHNICIAN)
+      setReceivedBy(draft.receivedBy || '')
+      setTested(draft.tested !== false)
+      setBriefed(draft.briefed !== false)
+      setReceivedSignature(draft.receivedSignature || '')
+      setItems(draft.items.length ? draft.items : createDeliveryProtocolItems())
+      setActiveView('form')
+      setNotice({ type: 'success', text: 'Obnovil sa rozpracovaný koncept odovzdávacieho protokolu.' })
+    },
+    activeView === 'form' && Boolean(customerName.trim() || customerOrderNumber.trim() || receivedBy.trim() || items.some((item) => item.name.trim() || item.serialNumber.trim() || item.note.trim())),
+  )
+
   const inputStyle: CSSProperties = {
     width: '100%',
     minHeight: 34,
@@ -380,6 +424,7 @@ export default function DeliveryProtocolsPage() {
   }, [protocols, search, signedFilter])
 
   function resetForm() {
+    clearProtocolDraft()
     setProtocolId('')
     setCustomerId('')
     setProtocolNumber(getNextProtocolNumber(protocols, getTodayDate()))
@@ -500,6 +545,7 @@ export default function DeliveryProtocolsPage() {
     const saved = data as DeliveryProtocol
     setProtocolId(saved.id)
     setProtocols((current) => [saved, ...current.filter((item) => item.id !== saved.id)])
+    clearProtocolDraft()
     setNotice({ type: 'success', text: 'Odovzdávací protokol je uložený.' })
     return saved
   }
@@ -807,6 +853,7 @@ export default function DeliveryProtocolsPage() {
             <div className="panel">
               <div className="eyebrow">{protocolId ? 'Úprava protokolu' : 'Nový protokol'}</div>
               <h2>Základné údaje</h2>
+              {protocolDraftSavedAt && <small style={{ color: '#64748b', fontWeight: 800 }}>Koncept uložený automaticky</small>}
               <div className="formGrid">
                 <div>
                   <label htmlFor="protocol-number">Číslo protokolu</label>
