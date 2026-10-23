@@ -712,16 +712,16 @@ export default function MyRequestsPage() {
         >
           <div className="customerHeroInner">
             <img
-              src="/brand-logo-dark.png"
+              src="/delivery-protocol-logo.png"
               alt="ITspot"
               style={{
-                width: 190,
+                width: 76,
                 maxWidth: '58vw',
-                height: 52,
+                height: 76,
                 objectFit: 'contain',
                 display: 'block',
                 margin: '0 auto 10px',
-                filter: 'drop-shadow(0 0 14px rgba(132, 204, 22, 0.18)) drop-shadow(0 8px 18px rgba(0, 0, 0, 0.24))',
+                filter: 'drop-shadow(0 8px 18px rgba(0, 0, 0, 0.24))',
               }}
             />
             <div>

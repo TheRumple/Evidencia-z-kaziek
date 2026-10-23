@@ -201,12 +201,12 @@ export default function PublicRequestPage() {
           <div>
             <img
               className="requestLogo"
-              src="/brand-logo-dark.png"
+              src="/delivery-protocol-logo.png"
               alt="ITspot"
               style={{
-                width: 210,
+                width: 78,
                 maxWidth: '62vw',
-                height: 58,
+                height: 78,
                 objectFit: 'contain',
                 objectPosition: 'center',
                 display: 'block',
@@ -415,9 +415,9 @@ export default function PublicRequestPage() {
           }
 
           .requestLogo {
-            width: 150px !important;
+            width: 58px !important;
             max-width: 54vw !important;
-            height: 42px !important;
+            height: 58px !important;
             margin-bottom: 10px !important;
           }
 

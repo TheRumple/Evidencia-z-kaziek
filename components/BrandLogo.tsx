@@ -10,9 +10,9 @@ type BrandLogoProps = {
 }
 
 const dimensions = {
-  sm: { width: 118, height: 38 },
-  md: { width: 150, height: 48 },
-  lg: { width: 190, height: 60 },
+  sm: { width: 42, height: 42 },
+  md: { width: 58, height: 58 },
+  lg: { width: 82, height: 82 },
 }
 
 export function BrandLogo({ size = 'md', tone = 'light', label = false, style }: BrandLogoProps) {
@@ -28,13 +28,13 @@ export function BrandLogo({ size = 'md', tone = 'light', label = false, style }:
           alignItems: 'center',
           justifyContent: 'center',
           overflow: 'hidden',
-          borderRadius: 10,
-          background: tone === 'dark' ? 'rgba(255,255,255,0.96)' : '#f8fafc',
+          borderRadius: 8,
+          background: '#fff',
           border: tone === 'dark' ? '1px solid rgba(255,255,255,0.24)' : '1px solid #e2e8f0',
         }}
       >
         <img
-          src="/brand-logo-light.png"
+          src="/delivery-protocol-logo.png"
           alt="ITspot"
           style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
         />

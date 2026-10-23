@@ -1908,7 +1908,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
   try {
     const [logoDataUrl, stampDataUrl] = await Promise.all([
       loadFirstAvailableImage([
-        '/brand-logo-light.png',
+        '/delivery-protocol-logo.png',
       ]),
       loadFirstAvailableImage([
         '/stamp.png',
@@ -1921,7 +1921,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
     if (!logoDataUrl) {
       setNotice({
         type: 'error',
-        text: 'Chýba logo v public/brand-logo-light.png.',
+        text: 'Chýba logo v public/delivery-protocol-logo.png.',
       })
       return
     }
@@ -2019,7 +2019,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
 
         if (pageNum === 1) {
           try {
-            doc.addImage(logoDataUrl, 'PNG', margin, 12, 46, 13)
+            doc.addImage(logoDataUrl, 'PNG', margin, 10, 18, 18)
           } catch {}
 
           doc.setFont(PDF_FONT_NAME, 'bold')
@@ -2214,7 +2214,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
     setNotice({
       type: 'error',
       text:
-        'Nepodarilo sa vygenerovať PDF. Skontroluj súbory v public/brand-logo-light.png a public/stamp.png.',
+        'Nepodarilo sa vygenerovať PDF. Skontroluj súbory v public/delivery-protocol-logo.png a public/stamp.png.',
     })
   }
 }

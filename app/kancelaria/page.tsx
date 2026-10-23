@@ -207,12 +207,12 @@ export default function OfficeDashboardPage() {
         }
 
         .officeLogo {
-          width: 260px;
+          width: 72px;
           height: 72px;
           display: inline-flex;
           align-items: center;
           justify-content: flex-start;
-          filter: drop-shadow(0 0 18px rgba(132, 204, 22, 0.32)) drop-shadow(0 12px 34px rgba(0, 0, 0, 0.34));
+          filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.34));
         }
 
         .officeLogo img {
@@ -410,7 +410,8 @@ export default function OfficeDashboardPage() {
 
         @media (max-width: 1100px) {
           .officeLogo {
-            width: 200px;
+            width: 64px;
+            height: 64px;
           }
 
           .clockValue {
@@ -480,7 +481,7 @@ export default function OfficeDashboardPage() {
       <div className="officeShell">
         <header className="officeHeader">
           <div className="officeLogo" aria-label="ITspot">
-            <img src="/brand-logo-dark.png" alt="ITspot" />
+            <img src="/delivery-protocol-logo.png" alt="ITspot" />
           </div>
         </header>
 
