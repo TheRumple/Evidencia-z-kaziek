@@ -7,6 +7,7 @@ create table if not exists public.personal_notes (
   content text not null check (char_length(trim(content)) > 0),
   priority text not null default 'normal' check (priority in ('normal', 'important', 'urgent')),
   text_color text not null default 'black',
+  content_runs jsonb,
   completed boolean not null default false,
   completed_at timestamptz,
   created_at timestamptz not null default now(),
@@ -15,6 +16,9 @@ create table if not exists public.personal_notes (
 
 alter table public.personal_notes
   add column if not exists text_color text not null default 'black';
+
+alter table public.personal_notes
+  add column if not exists content_runs jsonb;
 
 create index if not exists personal_notes_user_active_idx
   on public.personal_notes (user_id, completed, priority, created_at desc);
