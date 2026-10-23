@@ -381,6 +381,11 @@ export default function QuotesPage() {
     return getQuoteTotals(items, discountType, discountValue)
   }, [discountType, discountValue, items])
 
+  const commonVatRate = useMemo(() => {
+    const rates = Array.from(new Set(items.map((item) => item.vatRate.trim() || '0')))
+    return rates.length === 1 ? rates[0] : 'mixed'
+  }, [items])
+
   const filteredQuotes = useMemo(() => {
     const term = search.trim().toLowerCase()
     return quotes
@@ -752,14 +757,27 @@ export default function QuotesPage() {
   }
 
   function addItem() {
-    setItems((current) => [...current, createQuoteItem()])
+    setItems((current) => {
+      const rates = Array.from(new Set(current.map((item) => item.vatRate.trim() || '0')))
+      const vatRate = rates.length === 1 ? rates[0] : '23'
+      return [...current, { ...createQuoteItem(), vatRate }]
+    })
   }
 
   function addTemplateItem(template: Omit<QuoteItem, 'id'>) {
-    setItems((current) => [
-      ...current.filter((item) => item.name.trim() || item.note.trim() || item.unitPrice.trim()),
-      { ...template, id: createQuoteItem().id },
-    ])
+    setItems((current) => {
+      const rates = Array.from(new Set(current.map((item) => item.vatRate.trim() || '0')))
+      const vatRate = rates.length === 1 ? rates[0] : template.vatRate
+      return [
+        ...current.filter((item) => item.name.trim() || item.note.trim() || item.unitPrice.trim()),
+        { ...template, id: createQuoteItem().id, vatRate },
+      ]
+    })
+  }
+
+  function setVatRateForAll(vatRate: string) {
+    if (vatRate === 'mixed') return
+    setItems((current) => current.map((item) => ({ ...item, vatRate })))
   }
 
   function removeItem(index: number) {
@@ -1963,7 +1981,21 @@ export default function QuotesPage() {
                 <div style={{ color: '#77d20b', fontSize: 12, fontWeight: 950, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Položky</div>
                 <h2 style={{ margin: 0, fontSize: 18 }}>Rozpočet ponuky</h2>
               </div>
-              <button type="button" style={buttonStyle} onClick={addItem}>+ Pridať položku</button>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                <div>
+                  <label style={labelStyle}>DPH pre všetky položky</label>
+                  <select
+                    style={{ ...inputStyle, width: 175, minHeight: 32 }}
+                    value={commonVatRate}
+                    onChange={(event) => setVatRateForAll(event.target.value)}
+                  >
+                    {commonVatRate === 'mixed' && <option value="mixed">Rôzne sadzby</option>}
+                    <option value="23">23 %</option>
+                    <option value="0">0 % (bez DPH)</option>
+                  </select>
+                </div>
+                <button type="button" style={buttonStyle} onClick={addItem}>+ Pridať položku</button>
+              </div>
             </div>
 
             <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 6 }}>
@@ -2152,6 +2184,10 @@ export default function QuotesPage() {
                   </div>
                 )
               })}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: 7 }}>
+              <button type="button" style={{ ...buttonStyle, background: '#f0fdf4', borderColor: '#86efac', color: '#166534' }} onClick={addItem}>+ Pridať položku</button>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: isCompact ? '1fr' : '1fr 260px', gap: 8, marginTop: 6, alignItems: 'start' }}>
