@@ -6,6 +6,7 @@ create table if not exists public.personal_notes (
   user_id uuid not null references auth.users(id) on delete cascade,
   content text not null check (char_length(trim(content)) > 0),
   priority text not null default 'normal' check (priority in ('normal', 'important', 'urgent')),
+  note_scope text not null default 'company' check (note_scope in ('company', 'private')),
   text_color text not null default 'black',
   content_runs jsonb,
   is_pinned boolean not null default false,
@@ -22,6 +23,9 @@ alter table public.personal_notes
 
 alter table public.personal_notes
   add column if not exists content_runs jsonb;
+
+alter table public.personal_notes
+  add column if not exists note_scope text not null default 'company';
 
 alter table public.personal_notes
   add column if not exists is_pinned boolean not null default false;

@@ -5,6 +5,9 @@ alter table public.personal_notes
   add column if not exists content_runs jsonb;
 
 alter table public.personal_notes
+  add column if not exists note_scope text not null default 'company';
+
+alter table public.personal_notes
   add column if not exists is_pinned boolean not null default false;
 
 alter table public.personal_notes
