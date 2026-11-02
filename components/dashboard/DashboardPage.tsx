@@ -551,6 +551,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
 
   async function addCalendarPlan(input: {
     orderId?: string
+    customerId?: string
     title?: string
     planDate: string
     startTime: string
@@ -574,6 +575,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
         {
           user_id: userId,
           order_id: input.orderId || null,
+          customer_id: input.customerId || null,
           title: input.title?.trim() || null,
           plan_date: input.planDate,
           start_time: input.startTime || null,
@@ -613,7 +615,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
     setNotice({ type: 'success', text: 'Položka bola zmazaná z kalendára.' })
   }
 
-  async function updateCalendarPlan(planId: string, changes: Partial<Pick<CalendarPlan, 'plan_date' | 'start_time' | 'end_time' | 'note' | 'title'>>) {
+  async function updateCalendarPlan(planId: string, changes: Partial<Pick<CalendarPlan, 'customer_id' | 'plan_date' | 'start_time' | 'end_time' | 'note' | 'title'>>) {
     const previous = calendarPlans
     setCalendarPlans((current) =>
       current
@@ -624,6 +626,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
     const { error } = await supabase
       .from('calendar_plans')
       .update({
+        customer_id: changes.customer_id,
         plan_date: changes.plan_date,
         start_time: changes.start_time,
         end_time: changes.end_time,
@@ -3159,6 +3162,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
             boxStyle={boxStyle}
             buttonStyle={buttonStyle}
             calendarPlans={calendarPlans}
+            customers={customers}
             deleteCalendarPlan={deleteCalendarPlan}
             getCustomerName={getCustomerName}
             onBackToOrders={() => router.push('/zakazky')}

@@ -1,19 +1,20 @@
-import { DragEvent, MouseEvent, useMemo, useState } from 'react'
+import { DragEvent, PointerEvent, useMemo, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
-import type { CalendarPlan, Order } from '@/lib/dashboard-types'
-import { formatDate, getStatusBadgeStyle, getTodayDate } from '@/lib/dashboard-utils'
+import type { CalendarPlan, Customer, Order } from '@/lib/dashboard-types'
+import { formatDate, getTodayDate } from '@/lib/dashboard-utils'
 
 type CalendarViewProps = {
-  addCalendarPlan: (input: { orderId?: string; title?: string; planDate: string; startTime: string; endTime: string; note: string }) => Promise<void>
+  addCalendarPlan: (input: { orderId?: string; customerId?: string; title?: string; planDate: string; startTime: string; endTime: string; note: string }) => Promise<void>
   boxStyle: CSSProperties
   buttonStyle: CSSProperties
   calendarPlans: CalendarPlan[]
+  customers: Customer[]
   deleteCalendarPlan: (planId: string) => Promise<void>
   getCustomerName: (customerId: string) => string
   onBackToOrders: () => void
   orders: Order[]
   startEditOrder: (order: Order) => void
-  updateCalendarPlan: (planId: string, changes: Partial<Pick<CalendarPlan, 'plan_date' | 'start_time' | 'end_time' | 'note' | 'title'>>) => Promise<void>
+  updateCalendarPlan: (planId: string, changes: Partial<Pick<CalendarPlan, 'customer_id' | 'plan_date' | 'start_time' | 'end_time' | 'note' | 'title'>>) => Promise<void>
 }
 
 const dayNames = ['Pondelok', 'Utorok', 'Streda', 'Štvrtok', 'Piatok', 'Sobota', 'Nedeľa']
@@ -82,17 +83,25 @@ function getTimeRange(plan: CalendarPlan) {
   return 'Bez času'
 }
 
-function getPlanAccent(order?: Order | null) {
-  if (!order) return { border: '#3b82f6', bg: '#eff6ff', color: '#1d4ed8' }
-  const badge = getStatusBadgeStyle(order.stav)
-  return {
-    border: String(badge.borderColor || '#84cc16'),
-    bg: String(badge.background || '#f7fee7'),
-    color: String(badge.color || '#365314'),
-  }
+const customerAccents = [
+  { border: '#2563eb', bg: '#eff6ff', color: '#1d4ed8' },
+  { border: '#16a34a', bg: '#f0fdf4', color: '#166534' },
+  { border: '#ea580c', bg: '#fff7ed', color: '#9a3412' },
+  { border: '#7c3aed', bg: '#f5f3ff', color: '#6d28d9' },
+  { border: '#0891b2', bg: '#ecfeff', color: '#0e7490' },
+  { border: '#db2777', bg: '#fdf2f8', color: '#be185d' },
+  { border: '#ca8a04', bg: '#fefce8', color: '#a16207' },
+  { border: '#475569', bg: '#f8fafc', color: '#334155' },
+]
+
+function getPlanAccent(customerId?: string | null) {
+  if (!customerId) return { border: '#64748b', bg: '#f8fafc', color: '#334155' }
+  let hash = 0
+  for (const character of customerId) hash = ((hash << 5) - hash + character.charCodeAt(0)) | 0
+  return customerAccents[Math.abs(hash) % customerAccents.length]
 }
 
-export function CalendarView({ addCalendarPlan, boxStyle, buttonStyle, calendarPlans, deleteCalendarPlan, getCustomerName, onBackToOrders, orders, startEditOrder, updateCalendarPlan }: CalendarViewProps) {
+export function CalendarView({ addCalendarPlan, boxStyle, buttonStyle, calendarPlans, customers, deleteCalendarPlan, getCustomerName, onBackToOrders, orders, startEditOrder, updateCalendarPlan }: CalendarViewProps) {
   const today = getTodayDate()
   const [selectedDate, setSelectedDate] = useState(today)
   const [weekStart, setWeekStart] = useState(() => getMonday(today))
@@ -101,11 +110,14 @@ export function CalendarView({ addCalendarPlan, boxStyle, buttonStyle, calendarP
   const [planStart, setPlanStart] = useState('08:00')
   const [planEnd, setPlanEnd] = useState('09:00')
   const [selectedOrderId, setSelectedOrderId] = useState('')
+  const [selectedCustomerId, setSelectedCustomerId] = useState('')
   const [taskTitle, setTaskTitle] = useState('')
   const [taskNote, setTaskNote] = useState('')
   const [dragOverDate, setDragOverDate] = useState('')
   const [editingPlanId, setEditingPlanId] = useState('')
   const [isFormOpen, setIsFormOpen] = useState(false)
+  const [timeSelection, setTimeSelection] = useState<{ dateKey: string; anchor: number; start: number; end: number } | null>(null)
+  const timeSelectionRef = useRef<typeof timeSelection>(null)
 
   const workWeekDays = getWeekDays(weekStart, 5)
   const fullWeekDays = getWeekDays(weekStart, 7)
@@ -141,28 +153,30 @@ export function CalendarView({ addCalendarPlan, boxStyle, buttonStyle, calendarP
   function clearForm(close = false) {
     setEditingPlanId('')
     setSelectedOrderId('')
+    setSelectedCustomerId('')
     setTaskTitle('')
     setTaskNote('')
     if (close) setIsFormOpen(false)
   }
 
-  function openNewPlan(dateKey = selectedDate, startTime = '08:00') {
+  function openNewPlan(dateKey = selectedDate, startTime = '08:00', endTime?: string) {
     const startMinutes = timeToMinutes(startTime) ?? 8 * 60
     clearForm()
     chooseDate(dateKey)
     setPlanStart(minutesToTime(startMinutes))
-    setPlanEnd(minutesToTime(startMinutes + 60))
+    setPlanEnd(endTime || minutesToTime(startMinutes + 60))
     setIsFormOpen(true)
   }
 
   async function savePlan() {
-    await addCalendarPlan({ orderId: selectedOrderId || undefined, title: selectedOrderId ? undefined : taskTitle, planDate, startTime: planStart, endTime: planEnd, note: taskNote })
+    const order = selectedOrderId ? orderMap.get(selectedOrderId) : null
+    await addCalendarPlan({ orderId: selectedOrderId || undefined, customerId: order?.customer_id || selectedCustomerId || undefined, title: selectedOrderId ? undefined : taskTitle, planDate, startTime: planStart, endTime: planEnd, note: taskNote })
     clearForm(true)
   }
 
   async function saveEditedPlan() {
     if (!editingPlanId) return
-    await updateCalendarPlan(editingPlanId, { plan_date: planDate, start_time: planStart || null, end_time: planEnd || null, title: taskTitle.trim() || null, note: taskNote.trim() || null })
+    await updateCalendarPlan(editingPlanId, { customer_id: selectedCustomerId || null, plan_date: planDate, start_time: planStart || null, end_time: planEnd || null, title: taskTitle.trim() || null, note: taskNote.trim() || null })
     clearForm(true)
   }
 
@@ -170,6 +184,7 @@ export function CalendarView({ addCalendarPlan, boxStyle, buttonStyle, calendarP
     const order = plan.order_id ? orderMap.get(plan.order_id) : null
     setEditingPlanId(plan.id)
     setSelectedOrderId('')
+    setSelectedCustomerId(plan.customer_id || order?.customer_id || '')
     setTaskTitle(plan.title || order?.nazov || '')
     setPlanDate(String(plan.plan_date).slice(0, 10))
     setPlanStart(plan.start_time?.slice(0, 5) || '08:00')
@@ -192,20 +207,52 @@ export function CalendarView({ addCalendarPlan, boxStyle, buttonStyle, calendarP
     chooseDate(dateKey)
   }
 
-  function onTimelineClick(event: MouseEvent<HTMLDivElement>, dateKey: string) {
-    if ((event.target as HTMLElement).closest('.simpleCalendarEvent')) return
+  function pointerMinutes(event: PointerEvent<HTMLDivElement>) {
     const rect = event.currentTarget.getBoundingClientRect()
     const relativeY = Math.max(0, Math.min(rect.height, event.clientY - rect.top))
     const rawMinutes = dayStartMinutes + (relativeY / rect.height) * (dayEndMinutes - dayStartMinutes)
-    const roundedMinutes = Math.round(rawMinutes / 30) * 30
-    openNewPlan(dateKey, minutesToTime(Math.min(roundedMinutes, dayEndMinutes - 60)))
+    return Math.max(dayStartMinutes, Math.min(dayEndMinutes - 30, Math.floor(rawMinutes / 30) * 30))
+  }
+
+  function onTimelinePointerDown(event: PointerEvent<HTMLDivElement>, dateKey: string) {
+    if (event.pointerType === 'touch' || (event.target as HTMLElement).closest('.simpleCalendarEvent')) return
+    event.preventDefault()
+    event.currentTarget.setPointerCapture(event.pointerId)
+    const anchor = pointerMinutes(event)
+    const selection = { dateKey, anchor, start: anchor, end: anchor + 30 }
+    timeSelectionRef.current = selection
+    setTimeSelection(selection)
+  }
+
+  function onTimelinePointerMove(event: PointerEvent<HTMLDivElement>, dateKey: string) {
+    const selection = timeSelectionRef.current
+    if (!selection || selection.dateKey !== dateKey || !event.currentTarget.hasPointerCapture(event.pointerId)) return
+    const current = pointerMinutes(event)
+    const nextSelection = {
+      ...selection,
+      start: Math.min(selection.anchor, current),
+      end: Math.min(dayEndMinutes, Math.max(selection.anchor, current) + 30),
+    }
+    timeSelectionRef.current = nextSelection
+    setTimeSelection(nextSelection)
+  }
+
+  function onTimelinePointerUp(event: PointerEvent<HTMLDivElement>, dateKey: string) {
+    const selection = timeSelectionRef.current
+    if (!selection || selection.dateKey !== dateKey) return
+    event.currentTarget.releasePointerCapture(event.pointerId)
+    const { start, end } = selection
+    timeSelectionRef.current = null
+    setTimeSelection(null)
+    openNewPlan(dateKey, minutesToTime(start), minutesToTime(end))
   }
 
   function renderTimelinePlan(plan: CalendarPlan) {
     const order = plan.order_id ? orderMap.get(plan.order_id) : null
     const title = order?.nazov || plan.title || 'Úloha'
-    const customer = order ? getCustomerName(order.customer_id) : ''
-    const accent = getPlanAccent(order)
+    const customerId = order?.customer_id || plan.customer_id
+    const customer = customerId ? getCustomerName(customerId) : ''
+    const accent = getPlanAccent(customerId)
     const rawStart = timeToMinutes(plan.start_time) ?? dayStartMinutes
     const rawEnd = timeToMinutes(plan.end_time) ?? rawStart + 60
     const start = Math.max(dayStartMinutes, Math.min(dayEndMinutes - 30, rawStart))
@@ -225,10 +272,11 @@ export function CalendarView({ addCalendarPlan, boxStyle, buttonStyle, calendarP
   function renderAgendaPlan(plan: CalendarPlan) {
     const order = plan.order_id ? orderMap.get(plan.order_id) : null
     const title = order?.nazov || plan.title || 'Úloha'
-    const accent = getPlanAccent(order)
+    const customerId = order?.customer_id || plan.customer_id
+    const accent = getPlanAccent(customerId)
     return (
       <div key={plan.id} className="simpleAgendaItem" style={{ borderLeftColor: accent.border }}>
-        <button type="button" onClick={() => startEditPlan(plan)}><span>{getTimeRange(plan)}</span><strong>{title}</strong>{order && <small>{getCustomerName(order.customer_id)}</small>}{plan.note && <em>{plan.note}</em>}</button>
+        <button type="button" onClick={() => startEditPlan(plan)}><span>{getTimeRange(plan)}</span><strong>{title}</strong>{customerId && <small>{getCustomerName(customerId)}</small>}{plan.note && <em>{plan.note}</em>}</button>
         <button type="button" className="simpleAgendaDelete" onClick={() => void deleteCalendarPlan(plan.id)} title="Zmazať z kalendára">×</button>
       </div>
     )
@@ -267,7 +315,7 @@ export function CalendarView({ addCalendarPlan, boxStyle, buttonStyle, calendarP
                 return <button key={dateKey} type="button" className={`simpleCalendarDayHeader${dateKey === today ? ' today' : ''}`} onClick={() => { chooseDate(dateKey); setViewMode('day') }}><span>{viewMode === 'day' ? dayNames[dayIndex] : shortDayNames[dayIndex]}</span><strong>{getShortDate(dateKey)}</strong><em>{(plansByDate[dateKey] || []).length}</em></button>
               })}
               <div className="simpleCalendarTimeScale" style={{ height: (dayEndMinutes - dayStartMinutes) / 60 * hourHeight }}>{timelineHours.map((hour, index) => <span key={hour} style={{ top: index * hourHeight }}>{hour}:00</span>)}</div>
-              {visibleDays.map((dateKey) => <div key={dateKey} className={`simpleCalendarTrack${dateKey === today ? ' today' : ''}${dragOverDate === dateKey ? ' dragOver' : ''}`} style={{ height: (dayEndMinutes - dayStartMinutes) / 60 * hourHeight }} onClick={(event) => onTimelineClick(event, dateKey)} onDragOver={(event) => { event.preventDefault(); setDragOverDate(dateKey) }} onDragLeave={() => setDragOverDate('')} onDrop={(event) => onDayDrop(event, dateKey)}>{(plansByDate[dateKey] || []).map(renderTimelinePlan)}</div>)}
+              {visibleDays.map((dateKey) => <div key={dateKey} className={`simpleCalendarTrack${dateKey === today ? ' today' : ''}${dragOverDate === dateKey ? ' dragOver' : ''}`} style={{ height: (dayEndMinutes - dayStartMinutes) / 60 * hourHeight }} onPointerDown={(event) => onTimelinePointerDown(event, dateKey)} onPointerMove={(event) => onTimelinePointerMove(event, dateKey)} onPointerUp={(event) => onTimelinePointerUp(event, dateKey)} onPointerCancel={() => { timeSelectionRef.current = null; setTimeSelection(null) }} onDragOver={(event) => { event.preventDefault(); setDragOverDate(dateKey) }} onDragLeave={() => setDragOverDate('')} onDrop={(event) => onDayDrop(event, dateKey)}>{timeSelection?.dateKey === dateKey && <div className="simpleCalendarSelection" style={{ top: ((timeSelection.start - dayStartMinutes) / 60) * hourHeight, height: ((timeSelection.end - timeSelection.start) / 60) * hourHeight }}><strong>{minutesToTime(timeSelection.start)} – {minutesToTime(timeSelection.end)}</strong></div>}{(plansByDate[dateKey] || []).map(renderTimelinePlan)}</div>)}
             </div>
           </div>
         </section>
@@ -284,7 +332,8 @@ export function CalendarView({ addCalendarPlan, boxStyle, buttonStyle, calendarP
         <div className="simpleCalendarModal" role="dialog" aria-modal="true" aria-label={editingPlanId ? 'Upraviť položku kalendára' : 'Pridať do kalendára'}>
           <form className="simpleCalendarForm" style={boxStyle} onSubmit={(event) => { event.preventDefault(); void (editingPlanId ? saveEditedPlan() : savePlan()) }}>
             <div className="simpleCalendarFormHeader"><div><div className="sectionKicker">{editingPlanId ? 'Úprava plánu' : 'Nová položka'}</div><h3>{editingPlanId ? 'Upraviť položku' : 'Pridať do kalendára'}</h3></div><button type="button" style={buttonStyle} onClick={() => clearForm(true)} title="Zavrieť">×</button></div>
-            {!editingPlanId && <div><label className="calendarPlanLabel" htmlFor="calendar-order">Zákazka alebo interná úloha</label><select id="calendar-order" className="calendarPlanInput" value={selectedOrderId} onChange={(event) => setSelectedOrderId(event.target.value)}><option value="">Interná úloha bez zákazky</option>{activeOrders.map((order) => <option key={order.id} value={order.id}>{order.nazov} – {getCustomerName(order.customer_id)}</option>)}</select></div>}
+            {!editingPlanId && <div><label className="calendarPlanLabel" htmlFor="calendar-order">Zákazka (voliteľné)</label><select id="calendar-order" className="calendarPlanInput" value={selectedOrderId} onChange={(event) => { const orderId = event.target.value; setSelectedOrderId(orderId); const order = orderMap.get(orderId); if (order) setSelectedCustomerId(order.customer_id) }}><option value="">Bez zákazky</option>{activeOrders.map((order) => <option key={order.id} value={order.id}>{order.nazov} – {getCustomerName(order.customer_id)}</option>)}</select></div>}
+            <div><label className="calendarPlanLabel" htmlFor="calendar-customer">Zákazník (voliteľné)</label><select id="calendar-customer" className="calendarPlanInput" value={selectedCustomerId} disabled={Boolean(selectedOrderId)} onChange={(event) => { const customerId = event.target.value; setSelectedCustomerId(customerId); if (customerId && !taskTitle.trim()) setTaskTitle('Stretnutie') }}><option value="">Interná položka bez zákazníka</option>{customers.map((customer) => <option key={customer.id} value={customer.id}>{customer.nazov}</option>)}</select></div>
             {(!selectedOrderId || editingPlanId) && <div><label className="calendarPlanLabel" htmlFor="calendar-title">Názov</label><input id="calendar-title" className="calendarPlanInput" value={taskTitle} onChange={(event) => setTaskTitle(event.target.value)} placeholder="Napr. servis kamier" autoFocus required={!selectedOrderId} /></div>}
             <div className="simpleCalendarFormGrid"><div><label className="calendarPlanLabel" htmlFor="calendar-date">Deň</label><input id="calendar-date" className="calendarPlanInput" type="date" value={planDate} onChange={(event) => setPlanDate(event.target.value)} required /></div><div><label className="calendarPlanLabel" htmlFor="calendar-start">Od</label><input id="calendar-start" className="calendarPlanInput" type="time" value={planStart} onChange={(event) => setPlanStart(event.target.value)} /></div><div><label className="calendarPlanLabel" htmlFor="calendar-end">Do</label><input id="calendar-end" className="calendarPlanInput" type="time" value={planEnd} onChange={(event) => setPlanEnd(event.target.value)} /></div></div>
             <div><label className="calendarPlanLabel" htmlFor="calendar-note">Poznámka alebo miesto</label><textarea id="calendar-note" className="calendarPlanInput simpleCalendarTextarea" value={taskNote} onChange={(event) => setTaskNote(event.target.value)} /></div>

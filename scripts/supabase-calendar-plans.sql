@@ -5,6 +5,7 @@ create table if not exists public.calendar_plans (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
   order_id uuid references public.orders(id) on delete cascade,
+  customer_id uuid references public.customers(id) on delete set null,
   title text,
   plan_date date not null,
   start_time time,
@@ -18,6 +19,9 @@ alter table public.calendar_plans
 
 alter table public.calendar_plans
   add column if not exists title text;
+
+alter table public.calendar_plans
+  add column if not exists customer_id uuid references public.customers(id) on delete set null;
 
 alter table public.calendar_plans enable row level security;
 
@@ -53,3 +57,6 @@ using (auth.uid() = user_id);
 
 create index if not exists calendar_plans_user_date_idx
 on public.calendar_plans (user_id, plan_date, start_time);
+
+create index if not exists calendar_plans_customer_idx
+on public.calendar_plans (customer_id);

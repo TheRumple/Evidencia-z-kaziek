@@ -1376,6 +1376,27 @@ export function DashboardStyles() {
           box-shadow: inset 0 0 0 3px rgba(132, 204, 22, 0.65);
         }
 
+        .simpleCalendarSelection {
+          position: absolute;
+          left: 4px;
+          right: 4px;
+          z-index: 3;
+          min-height: 30px;
+          border: 2px solid #65a30d;
+          border-radius: 7px;
+          background: rgba(190, 242, 100, 0.42);
+          color: #365314;
+          padding: 5px 7px;
+          pointer-events: none;
+          box-sizing: border-box;
+          box-shadow: 0 4px 12px rgba(77, 124, 15, 0.2);
+        }
+
+        .simpleCalendarSelection strong {
+          font-size: 11px;
+          font-weight: 950;
+        }
+
         .simpleCalendarEvent {
           position: absolute;
           left: 4px;
