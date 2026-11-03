@@ -65,6 +65,12 @@ export function DashboardStyles() {
           max-width: 100%;
         }
 
+        .sideMenuNav a:hover,
+        .sideMenuNav button:hover,
+        .sideMenuMore summary:hover {
+          background: #f1f5f9;
+        }
+
         .sideMenuGroupTitle {
           margin-top: 7px;
           padding: 0 5px;
@@ -222,8 +228,6 @@ export function DashboardStyles() {
           }
 
           .sideMenu.collapsed .sideMenuBrandText,
-          .sideMenu.collapsed .sideMenuGroupTitle,
-          .sideMenu.collapsed .sideMenuLabel,
           .sideMenu.collapsed .sideMenuIcon,
           .sideMenu.collapsed .sideMenuMoreLinks {
             display: none;
@@ -237,9 +241,34 @@ export function DashboardStyles() {
           .sideMenu.collapsed .sideMenuNav button,
           .sideMenu.collapsed .sideMenuMore summary,
           .sideMenu.collapsed .sideMenuFooter button {
-            min-height: 44px !important;
-            padding: 8px !important;
+            min-height: 50px !important;
+            padding: 6px 4px !important;
             justify-content: center !important;
+            flex-direction: column;
+            gap: 3px !important;
+            text-align: center !important;
+          }
+
+          .sideMenu.collapsed .sideMenuLabel {
+            display: block;
+            max-width: 76px;
+            overflow: hidden;
+            color: inherit;
+            font-size: 9px;
+            font-weight: 900;
+            line-height: 1.05;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+
+          .sideMenu.collapsed .sideMenuGroupTitle {
+            height: 1px;
+            margin: 5px 7px 3px;
+            padding: 0;
+            overflow: hidden;
+            background: #e2e8f0;
+            color: transparent;
+            font-size: 0;
           }
 
           .sideMenu.collapsed .sideMenuBadgeRow {
@@ -1345,12 +1374,12 @@ export function DashboardStyles() {
           padding: 0;
           overflow: hidden;
           border-color: #cbd5e1 !important;
-          box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08) !important;
+          box-shadow: 0 12px 32px rgba(15, 23, 42, 0.09) !important;
         }
 
         .simpleCalendarScroller {
           overflow-x: auto;
-          overflow-y: visible;
+          overflow-y: hidden;
           max-height: none;
         }
 
@@ -1452,13 +1481,18 @@ export function DashboardStyles() {
           transform: translateY(-7px);
           padding-right: 7px;
           color: #475569;
-          font-size: 10px;
+          font-size: 11px;
           font-weight: 900;
           text-align: right;
         }
 
+        .simpleCalendarTimeScale span:last-child {
+          transform: translateY(-100%);
+        }
+
         .simpleCalendarTrack {
           cursor: crosshair;
+          background-color: #fff;
         }
 
         .simpleCalendarTrack.today {
@@ -1503,7 +1537,7 @@ export function DashboardStyles() {
           overflow: hidden;
           box-sizing: border-box;
           cursor: grab;
-          box-shadow: 0 2px 7px rgba(15, 23, 42, 0.1);
+          box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12);
           transition: box-shadow 120ms ease, filter 120ms ease;
         }
 
@@ -1525,21 +1559,21 @@ export function DashboardStyles() {
         }
 
         .simpleCalendarEventMain span {
-          font-size: 10px;
+          font-size: 11px;
           font-weight: 950;
         }
 
         .simpleCalendarEventMain strong {
           color: #0f172a;
-          font-size: 12px;
-          line-height: 1.15;
+          font-size: 13px;
+          line-height: 1.2;
         }
 
         .simpleCalendarEventMain small,
         .simpleCalendarEventMain em {
           overflow: hidden;
           color: #475569;
-          font-size: 10px;
+          font-size: 11px;
           font-style: normal;
           line-height: 1.2;
           text-overflow: ellipsis;
@@ -1577,6 +1611,7 @@ export function DashboardStyles() {
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
+          font-size: 11px;
         }
 
         .simpleCalendarEvent.compact .simpleCalendarEventMain small,

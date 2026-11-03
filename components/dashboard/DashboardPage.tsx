@@ -2710,7 +2710,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
     minHeight: 40,
     borderRadius: 10,
     border: active ? '1px solid #0f172a' : '1px solid transparent',
-    background: active ? '#0f172a' : 'transparent',
+    background: active ? '#0f172a' : undefined,
     color: active ? '#fff' : '#334155',
     cursor: 'pointer',
     fontWeight: 900,
@@ -2792,7 +2792,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
         boxSizing: 'border-box',
       }}
     >
-      <div className={`layoutWrap appShell ${sideMenuExpanded ? 'menuExpanded' : 'menuCollapsed'}`} style={{ maxWidth: 'none', margin: 0, display: 'grid', gridTemplateColumns: `${sideMenuExpanded ? 220 : 72}px minmax(0, 1fr)`, gap: 10 }}>
+      <div className={`layoutWrap appShell ${sideMenuExpanded ? 'menuExpanded' : 'menuCollapsed'}`} style={{ maxWidth: 'none', margin: 0, display: 'grid', gridTemplateColumns: `${sideMenuExpanded ? 220 : 94}px minmax(0, 1fr)`, gap: 10 }}>
         <aside className={`sideMenu ${sideMenuExpanded ? 'expanded' : 'collapsed'}`}>
           <div className="sideMenuBrand">
             <BrandLogo size="sm" tone="light" />
