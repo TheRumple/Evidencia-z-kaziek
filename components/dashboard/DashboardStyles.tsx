@@ -1613,13 +1613,30 @@ export function DashboardStyles() {
         }
 
         .simpleCalendarEvent.compact .simpleCalendarEventMain strong {
+          flex: 1 1 auto;
+          min-width: 0;
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
           font-size: 11px;
         }
 
-        .simpleCalendarEvent.compact .simpleCalendarEventMain small,
+        .simpleCalendarEvent.compact .simpleCalendarEventMain small {
+          display: block;
+          flex: 0 1 34%;
+          max-width: 110px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          font-size: 10px;
+        }
+
+        .simpleCalendarEvent.compact .simpleCalendarEventMain small::before {
+          width: 5px;
+          height: 5px;
+          margin-right: 4px;
+        }
+
         .simpleCalendarEvent.compact .simpleCalendarEventMain em {
           display: none;
         }

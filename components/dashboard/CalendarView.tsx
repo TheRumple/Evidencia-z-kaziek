@@ -82,7 +82,9 @@ function getTimeRange(plan: CalendarPlan) {
   return 'Bez času'
 }
 
-const customerAccents = [
+type PlanAccent = { border: string; bg: string; color: string }
+
+const customerAccents: PlanAccent[] = [
   { border: '#2563eb', bg: '#eff6ff', color: '#1d4ed8' },
   { border: '#16a34a', bg: '#f0fdf4', color: '#166534' },
   { border: '#ea580c', bg: '#fff7ed', color: '#9a3412' },
@@ -90,17 +92,49 @@ const customerAccents = [
   { border: '#0891b2', bg: '#ecfeff', color: '#0e7490' },
   { border: '#db2777', bg: '#fdf2f8', color: '#be185d' },
   { border: '#ca8a04', bg: '#fefce8', color: '#a16207' },
+  { border: '#0f766e', bg: '#f0fdfa', color: '#115e59' },
+  { border: '#4f46e5', bg: '#eef2ff', color: '#3730a3' },
+  { border: '#dc2626', bg: '#fef2f2', color: '#991b1b' },
+  { border: '#65a30d', bg: '#f7fee7', color: '#3f6212' },
+  { border: '#c026d3', bg: '#fdf4ff', color: '#86198f' },
+  { border: '#0284c7', bg: '#f0f9ff', color: '#075985' },
+  { border: '#059669', bg: '#ecfdf5', color: '#047857' },
+  { border: '#9333ea', bg: '#faf5ff', color: '#7e22ce' },
 ]
 
 const internalAccent = { border: '#64748b', bg: '#f1f5f9', color: '#334155' }
 const privateAccent = { border: '#e11d48', bg: '#fff1f2', color: '#be123c' }
 
-function getPlanAccent(customerId?: string | null, isPrivate = false) {
-  if (isPrivate) return privateAccent
-  if (!customerId) return internalAccent
+function customerHash(customerId: string) {
   let hash = 0
   for (const character of customerId) hash = ((hash << 5) - hash + character.charCodeAt(0)) | 0
-  return customerAccents[Math.abs(hash) % customerAccents.length]
+  return Math.abs(hash)
+}
+
+function buildCustomerAccentMap(customers: Customer[]) {
+  const accents = new Map<string, PlanAccent>()
+  const usedIndexes = new Set<number>()
+  const stableCustomers = [...customers].sort((a, b) => a.id.localeCompare(b.id))
+  stableCustomers.forEach((customer) => {
+    const preferredIndex = customerHash(customer.id) % customerAccents.length
+    let selectedIndex = preferredIndex
+    for (let offset = 0; offset < customerAccents.length; offset += 1) {
+      const candidate = (preferredIndex + offset) % customerAccents.length
+      if (!usedIndexes.has(candidate)) {
+        selectedIndex = candidate
+        break
+      }
+    }
+    usedIndexes.add(selectedIndex)
+    accents.set(customer.id, customerAccents[selectedIndex])
+  })
+  return accents
+}
+
+function getPlanAccent(customerId: string | null | undefined, isPrivate: boolean, customerAccentMap: Map<string, PlanAccent>) {
+  if (isPrivate) return privateAccent
+  if (!customerId) return internalAccent
+  return customerAccentMap.get(customerId) || customerAccents[customerHash(customerId) % customerAccents.length]
 }
 
 export function CalendarView({ addCalendarPlan, boxStyle, buttonStyle, calendarPlans, customers, deleteCalendarPlan, getCustomerName, orders, startEditOrder, updateCalendarPlan }: CalendarViewProps) {
@@ -125,6 +159,7 @@ export function CalendarView({ addCalendarPlan, boxStyle, buttonStyle, calendarP
   const workWeekDays = getWeekDays(weekStart, 5)
   const fullWeekDays = getWeekDays(weekStart, 7)
   const orderMap = useMemo(() => new Map(orders.map((order) => [order.id, order])), [orders])
+  const customerAccentMap = useMemo(() => buildCustomerAccentMap(customers), [customers])
   const activeOrders = useMemo(() => orders.filter((order) => !inactiveStatuses.has(order.stav)), [orders])
   const plansByDate = useMemo(() => calendarPlans.reduce<Record<string, CalendarPlan[]>>((acc, plan) => {
     const key = String(plan.plan_date).slice(0, 10)
@@ -267,7 +302,7 @@ export function CalendarView({ addCalendarPlan, boxStyle, buttonStyle, calendarP
     const title = order?.nazov || plan.title || 'Úloha'
     const customerId = order?.customer_id || plan.customer_id
     const customer = customerId ? getCustomerName(customerId) : ''
-    const accent = getPlanAccent(customerId, plan.is_private)
+    const accent = getPlanAccent(customerId, plan.is_private, customerAccentMap)
     const rawStart = timeToMinutes(plan.start_time) ?? dayStartMinutes
     const rawEnd = timeToMinutes(plan.end_time) ?? rawStart + 60
     const start = Math.max(dayStartMinutes, Math.min(dayEndMinutes - 30, rawStart))
@@ -288,7 +323,7 @@ export function CalendarView({ addCalendarPlan, boxStyle, buttonStyle, calendarP
     const order = plan.order_id ? orderMap.get(plan.order_id) : null
     const title = order?.nazov || plan.title || 'Úloha'
     const customerId = order?.customer_id || plan.customer_id
-    const accent = getPlanAccent(customerId, plan.is_private)
+    const accent = getPlanAccent(customerId, plan.is_private, customerAccentMap)
     return (
       <div key={plan.id} className="simpleAgendaItem" style={{ borderLeftColor: accent.border }}>
         <button type="button" onClick={() => startEditPlan(plan)}><span>{getTimeRange(plan)}</span><strong>{title}</strong>{plan.is_private ? <small style={{ color: privateAccent.color }}>Súkromné</small> : customerId && <small>{getCustomerName(customerId)}</small>}{plan.note && <em>{plan.note}</em>}</button>
