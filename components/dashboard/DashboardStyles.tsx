@@ -348,7 +348,7 @@ export function DashboardStyles() {
         }
 
         .ordersControlPanel {
-          background: linear-gradient(135deg, #0b1120 0%, #182235 68%, #243b12 100%) !important;
+          background: linear-gradient(135deg, #0b1120 0%, #182235 100%) !important;
           border: 1px solid rgba(148, 163, 184, 0.24) !important;
           color: #fff;
           box-shadow: 0 14px 34px rgba(15, 23, 42, 0.16) !important;
@@ -466,19 +466,15 @@ export function DashboardStyles() {
           align-items: center;
           margin: 0;
           border: none;
-          background: #111827;
+          background: var(--section-soft, #f1f5f9);
           border-radius: 0;
           padding: 4px 9px 4px 12px;
-          color: #fff;
+          color: var(--section-text, #334155);
+          border-left: 4px solid var(--section-accent, #64748b);
         }
 
         .ordersSectionHeader::before {
-          content: '';
-          align-self: stretch;
-          width: 4px;
-          border-radius: 999px;
-          background: rgba(255, 255, 255, 0.68);
-          box-shadow: 0 0 18px rgba(255, 255, 255, 0.2);
+          display: none;
         }
 
         .ordersSectionHeader > div:first-child {
@@ -491,12 +487,12 @@ export function DashboardStyles() {
           font-size: 11px;
           line-height: 1.1;
           font-weight: 900;
-          color: #fff;
+          color: var(--section-text, #334155);
         }
 
         .ordersSectionHeader p {
           margin: 2px 0 0;
-          color: rgba(226, 232, 240, 0.7);
+          color: #64748b;
           font-size: 9px;
           font-weight: 700;
         }
@@ -505,8 +501,9 @@ export function DashboardStyles() {
           min-width: 20px;
           height: 20px;
           border-radius: 999px;
-          background: rgba(255, 255, 255, 0.14);
-          color: #f8fafc;
+          background: #fff;
+          color: var(--section-text, #334155);
+          border: 1px solid color-mix(in srgb, var(--section-accent, #64748b) 45%, white);
           display: inline-flex;
           align-items: center;
           justify-content: center;
@@ -515,36 +512,52 @@ export function DashboardStyles() {
         }
 
         .ordersSection-overdue .ordersSectionHeader {
-          background: linear-gradient(135deg, #991b1b 0%, #7f1d1d 100%);
+          --section-accent: #dc2626;
+          --section-soft: #fff1f2;
+          --section-text: #991b1b;
         }
 
         .ordersSection-pinned .ordersSectionHeader,
         .ordersSection-pripnute .ordersSectionHeader {
-          background: linear-gradient(135deg, #4d7c0f 0%, #365314 100%);
+          --section-accent: #65a30d;
+          --section-soft: #f7fee7;
+          --section-text: #3f6212;
         }
 
         .ordersSection-rozpracovana .ordersSectionHeader {
-          background: linear-gradient(135deg, #d97706 0%, #92400e 100%);
+          --section-accent: #d97706;
+          --section-soft: #fffbeb;
+          --section-text: #92400e;
         }
 
         .ordersSection-cenova_ponuka .ordersSectionHeader {
-          background: linear-gradient(135deg, #0e7490 0%, #075985 100%);
+          --section-accent: #0284c7;
+          --section-soft: #f0f9ff;
+          --section-text: #075985;
         }
 
         .ordersSection-obhliadka .ordersSectionHeader {
-          background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+          --section-accent: #7c3aed;
+          --section-soft: #faf5ff;
+          --section-text: #6b21a8;
         }
 
         .ordersSection-caka .ordersSectionHeader {
-          background: linear-gradient(135deg, #ea580c 0%, #9a3412 100%);
+          --section-accent: #ea580c;
+          --section-soft: #fff7ed;
+          --section-text: #9a3412;
         }
 
         .ordersSection-nova .ordersSectionHeader {
-          background: linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%);
+          --section-accent: #2563eb;
+          --section-soft: #eff6ff;
+          --section-text: #1e40af;
         }
 
         .ordersSection-hotova .ordersSectionHeader {
-          background: linear-gradient(135deg, #16a34a 0%, #166534 100%);
+          --section-accent: #16a34a;
+          --section-soft: #f0fdf4;
+          --section-text: #166534;
         }
 
         .ordersCardsStack {

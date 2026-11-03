@@ -2784,7 +2784,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
       style={{
         minHeight: '100vh',
         background:
-          'radial-gradient(circle at 74% -10%, rgba(132,204,22,0.18), transparent 30%), linear-gradient(180deg, #060a12 0%, #111827 280px, #eef4ff 281px, #f8fafc 100%)',
+          'linear-gradient(180deg, #070d18 0%, #111827 276px, #e9eff7 277px, #f8fafc 100%)',
         padding: 8,
         fontFamily: 'Arial, Helvetica, sans-serif',
         color: '#0f172a',
@@ -2905,7 +2905,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
               ...boxStyle,
               marginBottom: 12,
               padding: '10px 14px',
-              background: 'linear-gradient(135deg, #0b1120 0%, #1f2937 74%, #365314 100%)',
+              background: 'linear-gradient(135deg, #0b1120 0%, #182235 100%)',
               color: '#fff',
               border: 'none',
             }}
