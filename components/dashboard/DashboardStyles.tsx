@@ -1491,6 +1491,10 @@ export function DashboardStyles() {
           text-align: right;
         }
 
+        .simpleCalendarTimeScale span:first-child {
+          transform: translateY(0);
+        }
+
         .simpleCalendarTimeScale span:last-child {
           transform: translateY(-100%);
         }
