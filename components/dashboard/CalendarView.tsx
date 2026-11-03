@@ -21,7 +21,7 @@ const shortDayNames = ['Po', 'Ut', 'St', 'Št', 'Pi', 'So', 'Ne']
 const inactiveStatuses = new Set(['odovzdana', 'fakturovana', 'stornovana'])
 const dayStartMinutes = 7 * 60
 const dayEndMinutes = 16 * 60
-const hourHeight = 80
+const hourHeight = 72
 const timelineHours = Array.from({ length: 10 }, (_, index) => index + 7)
 
 function toLocalDate(dateKey: string) {

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { Viewport } from "next";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
+import { InternalAppShell } from "@/components/InternalAppShell";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -31,7 +32,7 @@ export default function RootLayout({
   return (
     <html lang="sk">
       <body>
-        {children}
+        <InternalAppShell>{children}</InternalAppShell>
         <PwaInstallPrompt />
       </body>
     </html>

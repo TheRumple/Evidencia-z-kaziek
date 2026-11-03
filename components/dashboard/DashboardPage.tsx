@@ -2785,15 +2785,15 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
         minHeight: '100vh',
         background:
           'radial-gradient(circle at 74% -10%, rgba(132,204,22,0.18), transparent 30%), linear-gradient(180deg, #060a12 0%, #111827 280px, #eef4ff 281px, #f8fafc 100%)',
-        padding: 12,
+        padding: 8,
         fontFamily: 'Arial, Helvetica, sans-serif',
         color: '#0f172a',
         overflowX: 'hidden',
         boxSizing: 'border-box',
       }}
     >
-      <div className={`layoutWrap appShell ${sideMenuExpanded ? 'menuExpanded' : 'menuCollapsed'}`} style={{ maxWidth: 'none', margin: 0, display: 'grid', gridTemplateColumns: `${sideMenuExpanded ? 220 : 94}px minmax(0, 1fr)`, gap: 10 }}>
-        <aside className={`sideMenu ${sideMenuExpanded ? 'expanded' : 'collapsed'}`}>
+      <div className={`layoutWrap appShell ${sideMenuExpanded ? 'menuExpanded' : 'menuCollapsed'}`} style={{ maxWidth: 1760, margin: '0 auto', display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 8 }}>
+        <aside className={`sideMenu ${sideMenuExpanded ? 'expanded' : 'collapsed'}`} style={{ display: 'none' }}>
           <div className="sideMenuBrand">
             <BrandLogo size="sm" tone="light" />
             <div className="sideMenuBrandText"><div className="sideMenuTitle">Servisné centrum</div><div className="sideMenuSubTitle">ITspot evidencia</div></div>
