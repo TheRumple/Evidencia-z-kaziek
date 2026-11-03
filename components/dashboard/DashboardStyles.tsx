@@ -1193,12 +1193,12 @@ export function DashboardStyles() {
 
         .simpleCalendar {
           display: grid;
-          gap: 10px;
+          gap: 8px;
           min-width: 0;
         }
 
         .simpleCalendarTop {
-          padding: 10px 12px;
+          padding: 11px 14px;
           display: grid;
           grid-template-columns: auto minmax(320px, 1fr) auto;
           align-items: center;
@@ -1210,6 +1210,7 @@ export function DashboardStyles() {
           margin: 0;
           font-size: 22px;
           font-weight: 950;
+          letter-spacing: 0;
         }
 
         .simpleCalendarNavigation,
@@ -1238,7 +1239,7 @@ export function DashboardStyles() {
         }
 
         .simpleCalendarToolbar {
-          padding: 8px 10px;
+          padding: 7px 10px;
           display: flex;
           justify-content: space-between;
           align-items: center;
@@ -1262,6 +1263,8 @@ export function DashboardStyles() {
         .simpleCalendarBoard {
           padding: 0;
           overflow: hidden;
+          border-color: #cbd5e1 !important;
+          box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08) !important;
         }
 
         .simpleCalendarScroller {
@@ -1271,13 +1274,13 @@ export function DashboardStyles() {
 
         .simpleCalendarGrid {
           display: grid;
-          grid-template-columns: 58px repeat(5, minmax(155px, 1fr));
+          grid-template-columns: 62px repeat(5, minmax(155px, 1fr));
           min-width: 900px;
           background: #fff;
         }
 
         .simpleCalendarGrid.dayView {
-          grid-template-columns: 58px minmax(520px, 1fr);
+          grid-template-columns: 62px minmax(520px, 1fr);
           min-width: 640px;
         }
 
@@ -1286,11 +1289,11 @@ export function DashboardStyles() {
           position: sticky;
           top: 0;
           z-index: 5;
-          min-height: 52px;
+          min-height: 58px;
           border: 0;
           border-bottom: 1px solid #cbd5e1;
           border-right: 1px solid #e2e8f0;
-          background: #f8fafc;
+          background: #fff;
         }
 
         .simpleCalendarCorner {
@@ -1300,6 +1303,8 @@ export function DashboardStyles() {
           font-size: 10px;
           font-weight: 950;
           text-transform: uppercase;
+          letter-spacing: 0;
+          background: #f8fafc;
         }
 
         .simpleCalendarDayHeader {
@@ -1307,7 +1312,7 @@ export function DashboardStyles() {
           grid-template-columns: 1fr auto auto;
           align-items: center;
           gap: 8px;
-          padding: 7px 10px;
+          padding: 8px 11px;
           color: #475569;
           cursor: pointer;
           text-align: left;
@@ -1318,22 +1323,28 @@ export function DashboardStyles() {
           background: #f7fee7;
         }
 
+        .simpleCalendarDayHeader.today {
+          box-shadow: inset 0 4px 0 #84cc16;
+        }
+
         .simpleCalendarDayHeader span {
-          font-size: 12px;
+          color: #64748b;
+          font-size: 11px;
           font-weight: 950;
+          text-transform: uppercase;
         }
 
         .simpleCalendarDayHeader strong {
           color: #0f172a;
-          font-size: 17px;
+          font-size: 18px;
         }
 
         .simpleCalendarDayHeader em {
           min-width: 22px;
           height: 22px;
           border-radius: 999px;
-          background: #0f172a;
-          color: #fff;
+          background: #e2e8f0;
+          color: #334155;
           display: grid;
           place-items: center;
           font-size: 10px;
@@ -1345,7 +1356,7 @@ export function DashboardStyles() {
         .simpleCalendarTrack {
           position: relative;
           border-right: 1px solid #e2e8f0;
-          background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 31px, #f1f5f9 31px, #f1f5f9 32px, transparent 32px, transparent 63px, #dbe4ef 63px, #dbe4ef 64px);
+          background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 31px, #f1f5f9 31px, #f1f5f9 32px, transparent 32px, transparent 63px, #cbd5e1 63px, #cbd5e1 64px);
         }
 
         .simpleCalendarTimeScale {
@@ -1358,7 +1369,7 @@ export function DashboardStyles() {
           right: 0;
           transform: translateY(-7px);
           padding-right: 7px;
-          color: #64748b;
+          color: #475569;
           font-size: 10px;
           font-weight: 900;
           text-align: right;
@@ -1369,7 +1380,7 @@ export function DashboardStyles() {
         }
 
         .simpleCalendarTrack.today {
-          background-color: rgba(236, 252, 203, 0.28);
+          background-color: rgba(236, 252, 203, 0.34);
         }
 
         .simpleCalendarTrack.dragOver {
@@ -1404,13 +1415,20 @@ export function DashboardStyles() {
           z-index: 2;
           min-height: 28px;
           border: 1px solid;
-          border-left-width: 5px;
-          border-radius: 7px;
+          border-left-width: 4px;
+          border-radius: 6px;
           padding: 5px 25px 5px 7px;
           overflow: hidden;
           box-sizing: border-box;
           cursor: grab;
-          box-shadow: 0 3px 9px rgba(15, 23, 42, 0.1);
+          box-shadow: 0 2px 7px rgba(15, 23, 42, 0.1);
+          transition: box-shadow 120ms ease, filter 120ms ease;
+        }
+
+        .simpleCalendarEvent:hover {
+          z-index: 4;
+          filter: saturate(1.08);
+          box-shadow: 0 6px 16px rgba(15, 23, 42, 0.16);
         }
 
         .simpleCalendarEventMain {
@@ -1446,6 +1464,44 @@ export function DashboardStyles() {
           white-space: nowrap;
         }
 
+        .simpleCalendarEventMain small::before {
+          content: '';
+          display: inline-block;
+          width: 6px;
+          height: 6px;
+          margin-right: 5px;
+          border-radius: 50%;
+          background: var(--event-accent, #64748b);
+          vertical-align: 1px;
+        }
+
+        .simpleCalendarEvent.compact {
+          padding-top: 3px;
+          padding-bottom: 3px;
+        }
+
+        .simpleCalendarEvent.compact .simpleCalendarEventMain {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          min-width: 0;
+        }
+
+        .simpleCalendarEvent.compact .simpleCalendarEventMain span {
+          flex: 0 0 auto;
+        }
+
+        .simpleCalendarEvent.compact .simpleCalendarEventMain strong {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .simpleCalendarEvent.compact .simpleCalendarEventMain small,
+        .simpleCalendarEvent.compact .simpleCalendarEventMain em {
+          display: none;
+        }
+
         .simpleCalendarEventDelete,
         .simpleAgendaDelete {
           position: absolute;
@@ -1455,11 +1511,17 @@ export function DashboardStyles() {
           height: 20px;
           border: 0;
           border-radius: 5px;
-          background: rgba(255, 255, 255, 0.76);
+          background: rgba(255, 255, 255, 0.84);
           color: #be123c;
           cursor: pointer;
           font-weight: 950;
           line-height: 1;
+          opacity: 0.78;
+        }
+
+        .simpleCalendarEvent:hover .simpleCalendarEventDelete,
+        .simpleCalendarEventDelete:focus-visible {
+          opacity: 1;
         }
 
         .simpleAgenda {

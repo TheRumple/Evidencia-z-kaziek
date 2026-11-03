@@ -260,7 +260,7 @@ export function CalendarView({ addCalendarPlan, boxStyle, buttonStyle, calendarP
     const top = ((start - dayStartMinutes) / 60) * hourHeight
     const height = Math.max(28, ((end - start) / 60) * hourHeight - 4)
     return (
-      <div key={plan.id} className="simpleCalendarEvent" draggable onDragStart={(event) => onPlanDragStart(event, plan.id)} style={{ top, height, borderColor: accent.border, background: accent.bg }}>
+      <div key={plan.id} className={`simpleCalendarEvent${height < 44 ? ' compact' : ''}`} draggable onDragStart={(event) => onPlanDragStart(event, plan.id)} style={{ top, height, borderColor: accent.border, background: accent.bg, '--event-accent': accent.border } as CSSProperties}>
         <button type="button" className="simpleCalendarEventMain" onClick={() => startEditPlan(plan)} onDoubleClick={() => order && startEditOrder(order)}>
           <span style={{ color: accent.color }}>{getTimeRange(plan)}</span><strong>{title}</strong>{customer && <small>{customer}</small>}{height >= 92 && plan.note && <em>{plan.note}</em>}
         </button>
