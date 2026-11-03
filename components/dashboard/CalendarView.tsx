@@ -11,7 +11,6 @@ type CalendarViewProps = {
   customers: Customer[]
   deleteCalendarPlan: (planId: string) => Promise<void>
   getCustomerName: (customerId: string) => string
-  onBackToOrders: () => void
   orders: Order[]
   startEditOrder: (order: Order) => void
   updateCalendarPlan: (planId: string, changes: Partial<Pick<CalendarPlan, 'customer_id' | 'plan_date' | 'start_time' | 'end_time' | 'note' | 'title'>>) => Promise<void>
@@ -22,7 +21,7 @@ const shortDayNames = ['Po', 'Ut', 'St', 'Št', 'Pi', 'So', 'Ne']
 const inactiveStatuses = new Set(['odovzdana', 'fakturovana', 'stornovana'])
 const dayStartMinutes = 7 * 60
 const dayEndMinutes = 16 * 60
-const hourHeight = 64
+const hourHeight = 80
 const timelineHours = Array.from({ length: 10 }, (_, index) => index + 7)
 
 function toLocalDate(dateKey: string) {
@@ -101,7 +100,7 @@ function getPlanAccent(customerId?: string | null) {
   return customerAccents[Math.abs(hash) % customerAccents.length]
 }
 
-export function CalendarView({ addCalendarPlan, boxStyle, buttonStyle, calendarPlans, customers, deleteCalendarPlan, getCustomerName, onBackToOrders, orders, startEditOrder, updateCalendarPlan }: CalendarViewProps) {
+export function CalendarView({ addCalendarPlan, boxStyle, buttonStyle, calendarPlans, customers, deleteCalendarPlan, getCustomerName, orders, startEditOrder, updateCalendarPlan }: CalendarViewProps) {
   const today = getTodayDate()
   const [selectedDate, setSelectedDate] = useState(today)
   const [weekStart, setWeekStart] = useState(() => getMonday(today))
@@ -286,6 +285,9 @@ export function CalendarView({ addCalendarPlan, boxStyle, buttonStyle, calendarP
     <div className="simpleCalendar">
       <section className="simpleCalendarTop" style={boxStyle}>
         <div><div className="sectionKicker">Pracovný plán</div><h2>Kalendár</h2></div>
+        <div className="workPlannerMode">
+          {[['week', 'Týždeň'], ['day', 'Deň'], ['agenda', 'Program']].map(([mode, label]) => <button key={mode} type="button" className={viewMode === mode ? 'active' : ''} onClick={() => setViewMode(mode as typeof viewMode)}>{label}</button>)}
+        </div>
         <div className="simpleCalendarNavigation">
           <button type="button" style={buttonStyle} onClick={() => movePeriod(-1)} title={viewMode === 'day' ? 'Predošlý deň' : 'Predošlý týždeň'}>‹</button>
           <button type="button" style={buttonStyle} onClick={() => { setWeekStart(getMonday(today)); setSelectedDate(today); setPlanDate(today) }}>Dnes</button>
@@ -293,16 +295,9 @@ export function CalendarView({ addCalendarPlan, boxStyle, buttonStyle, calendarP
           <strong>{viewMode === 'day' ? formatDate(selectedDate) : getWeekLabel(weekStart)}</strong>
         </div>
         <div className="simpleCalendarTopActions">
+          <div className="simpleCalendarSummary"><span><strong>{weekPlans.length}</strong> položiek</span>{viewMode === 'day' && <input type="date" value={selectedDate} onChange={(event) => chooseDate(event.target.value)} />}</div>
           <button type="button" style={{ ...buttonStyle, background: '#84cc16', borderColor: '#65a30d' }} onClick={() => openNewPlan()}>+ Pridať</button>
-          <button type="button" style={buttonStyle} onClick={onBackToOrders}>Zákazky</button>
         </div>
-      </section>
-
-      <section className="simpleCalendarToolbar" style={boxStyle}>
-        <div className="workPlannerMode">
-          {[['week', 'Týždeň'], ['day', 'Deň'], ['agenda', 'Program']].map(([mode, label]) => <button key={mode} type="button" className={viewMode === mode ? 'active' : ''} onClick={() => setViewMode(mode as typeof viewMode)}>{label}</button>)}
-        </div>
-        <div className="simpleCalendarSummary"><span><strong>{weekPlans.length}</strong> položiek tento týždeň</span>{viewMode === 'day' && <input type="date" value={selectedDate} onChange={(event) => chooseDate(event.target.value)} />}</div>
       </section>
 
       {viewMode !== 'agenda' ? (

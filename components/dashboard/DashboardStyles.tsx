@@ -31,17 +31,15 @@ export function DashboardStyles() {
           position: sticky;
           top: 12px;
           min-height: calc(100vh - 24px);
-          border-radius: 18px;
-          padding: 16px;
-          background:
-            radial-gradient(circle at 20% 8%, rgba(132, 204, 22, 0.2), transparent 30%),
-            linear-gradient(180deg, #07111f 0%, #0f172a 52%, #111827 100%);
-          border: 1px solid rgba(148, 163, 184, 0.22);
-          box-shadow: 0 24px 60px rgba(2, 6, 23, 0.28);
-          color: #fff;
+          border-radius: 12px;
+          padding: 12px;
+          background: #fff;
+          border: 1px solid #dbe4ef;
+          box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+          color: #0f172a;
           display: flex;
           flex-direction: column;
-          gap: 18px;
+          gap: 12px;
           min-width: 0;
           max-width: 100%;
         }
@@ -50,13 +48,13 @@ export function DashboardStyles() {
           font-size: 16px;
           font-weight: 950;
           line-height: 1.1;
-          color: #f8fafc;
+          color: #0f172a;
         }
 
         .sideMenuSubTitle {
           margin-top: 4px;
           font-size: 12px;
-          color: rgba(203, 213, 225, 0.72);
+          color: #64748b;
           font-weight: 800;
         }
 
@@ -70,7 +68,7 @@ export function DashboardStyles() {
         .sideMenuGroupTitle {
           margin-top: 7px;
           padding: 0 5px;
-          color: rgba(148, 163, 184, 0.78);
+          color: #94a3b8;
           font-size: 10px;
           font-weight: 950;
           text-transform: uppercase;
@@ -93,10 +91,10 @@ export function DashboardStyles() {
         .sideMenuMore summary {
           min-height: 38px;
           padding: 8px 10px;
-          border: 1px solid rgba(148, 163, 184, 0.18);
+          border: 1px solid #e2e8f0;
           border-radius: 10px;
-          background: rgba(255, 255, 255, 0.04);
-          color: #e2e8f0;
+          background: #f8fafc;
+          color: #475569;
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -112,8 +110,8 @@ export function DashboardStyles() {
         }
 
         .sideMenuMore[open] summary {
-          border-color: rgba(132, 204, 22, 0.5);
-          background: rgba(132, 204, 22, 0.1);
+          border-color: #84cc16;
+          background: #f7fee7;
         }
 
         .sideMenuMoreLinks {
@@ -126,7 +124,7 @@ export function DashboardStyles() {
           margin-top: auto;
           display: grid;
           gap: 8px;
-          border-top: 1px solid rgba(148, 163, 184, 0.18);
+          border-top: 1px solid #e2e8f0;
           padding-top: 12px;
           min-width: 0;
           max-width: 100%;
@@ -141,17 +139,17 @@ export function DashboardStyles() {
           border-radius: 10px;
           padding: 7px 9px;
           text-decoration: none;
-          background: rgba(255, 255, 255, 0.07);
-          border: 1px solid rgba(148, 163, 184, 0.18);
-          color: #f8fafc;
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+          color: #0f172a;
           font-size: 12px;
           font-weight: 950;
         }
 
         .portalRequestShortcutAlert {
-          background: rgba(239, 68, 68, 0.16);
-          border-color: rgba(248, 113, 113, 0.5);
-          color: #fee2e2;
+          background: #fff1f2;
+          border-color: #fda4af;
+          color: #9f1239;
         }
 
         .sideMenuBadge {
@@ -162,8 +160,8 @@ export function DashboardStyles() {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          background: rgba(255, 255, 255, 0.12);
-          color: #fff;
+          background: #e2e8f0;
+          color: #334155;
           font-size: 12px;
           font-weight: 950;
         }
@@ -175,8 +173,91 @@ export function DashboardStyles() {
         }
 
         .sideMenuIcon {
-          color: rgba(203, 213, 225, 0.72);
+          color: #94a3b8;
           font-weight: 950;
+        }
+
+        .sideMenuBrand {
+          min-height: 46px;
+          display: flex;
+          align-items: center;
+          gap: 9px;
+        }
+
+        .sideMenuBrandText {
+          min-width: 0;
+          flex: 1;
+        }
+
+        .sideMenuToggle {
+          width: 32px;
+          height: 32px;
+          flex: 0 0 32px;
+          border: 1px solid #dbe4ef;
+          border-radius: 8px;
+          background: #f8fafc;
+          color: #334155;
+          display: grid;
+          place-items: center;
+          cursor: pointer;
+        }
+
+        .sideMenuNavIcon {
+          flex: 0 0 auto;
+        }
+
+        @media (min-width: 1101px) {
+          .sideMenu.collapsed {
+            padding: 9px 7px;
+          }
+
+          .sideMenu.collapsed .sideMenuBrand {
+            display: grid;
+            justify-items: center;
+          }
+
+          .sideMenu.collapsed .sideMenuBrand > div:first-child > span {
+            width: 42px !important;
+            height: 42px !important;
+          }
+
+          .sideMenu.collapsed .sideMenuBrandText,
+          .sideMenu.collapsed .sideMenuGroupTitle,
+          .sideMenu.collapsed .sideMenuLabel,
+          .sideMenu.collapsed .sideMenuIcon,
+          .sideMenu.collapsed .sideMenuMoreLinks {
+            display: none;
+          }
+
+          .sideMenu.collapsed .sideMenuToggle {
+            width: 42px;
+          }
+
+          .sideMenu.collapsed .sideMenuNav a,
+          .sideMenu.collapsed .sideMenuNav button,
+          .sideMenu.collapsed .sideMenuMore summary,
+          .sideMenu.collapsed .sideMenuFooter button {
+            min-height: 44px !important;
+            padding: 8px !important;
+            justify-content: center !important;
+          }
+
+          .sideMenu.collapsed .sideMenuBadgeRow {
+            position: absolute;
+            top: 2px;
+            right: 1px;
+          }
+
+          .sideMenu.collapsed .sideMenuBadge {
+            min-width: 17px;
+            height: 17px;
+            padding: 0 4px;
+            font-size: 9px;
+          }
+
+          .sideMenu.collapsed .portalRequestShortcut {
+            display: none;
+          }
         }
 
         .mainPanel {
@@ -1200,7 +1281,7 @@ export function DashboardStyles() {
         .simpleCalendarTop {
           padding: 11px 14px;
           display: grid;
-          grid-template-columns: auto minmax(320px, 1fr) auto;
+          grid-template-columns: auto auto minmax(300px, 1fr) auto;
           align-items: center;
           gap: 12px;
         }
@@ -1268,8 +1349,9 @@ export function DashboardStyles() {
         }
 
         .simpleCalendarScroller {
-          overflow: auto;
-          max-height: calc(100vh - 205px);
+          overflow-x: auto;
+          overflow-y: visible;
+          max-height: none;
         }
 
         .simpleCalendarGrid {
@@ -1661,10 +1743,25 @@ export function DashboardStyles() {
             grid-template-columns: 1fr auto;
           }
 
-          .simpleCalendarNavigation {
-            grid-column: 1 / -1;
+          .simpleCalendarTop > div:first-child {
+            grid-column: 1;
+            grid-row: 1;
+          }
+
+          .simpleCalendarTop .workPlannerMode {
+            grid-column: 1;
             grid-row: 2;
-            justify-content: flex-start;
+          }
+
+          .simpleCalendarNavigation {
+            grid-column: 2;
+            grid-row: 2;
+            justify-content: flex-end;
+          }
+
+          .simpleCalendarTopActions {
+            grid-column: 2;
+            grid-row: 1;
           }
 
           .simpleCalendarToolbar {
@@ -1686,6 +1783,12 @@ export function DashboardStyles() {
             grid-column: auto;
             grid-row: auto;
             justify-content: flex-start;
+          }
+
+          .simpleCalendarTop > div:first-child,
+          .simpleCalendarTop .workPlannerMode {
+            grid-column: auto;
+            grid-row: auto;
           }
 
           .simpleCalendarNavigation strong {
@@ -1827,6 +1930,10 @@ export function DashboardStyles() {
           .sideMenu {
             position: static;
             min-height: 0;
+          }
+
+          .sideMenuToggle {
+            display: none;
           }
 
           .sideMenuNav {

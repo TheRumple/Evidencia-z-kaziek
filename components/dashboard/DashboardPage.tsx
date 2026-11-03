@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { BriefcaseBusiness, CalendarDays, ChevronLeft, ChevronRight, ClipboardCheck, ClipboardSignature, FileText, Inbox, LogOut, MoreHorizontal, StickyNote, Users, Warehouse } from 'lucide-react'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { BrandLogo } from '@/components/BrandLogo'
@@ -131,6 +132,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
   const [newSubtaskText, setNewSubtaskText] = useState<Record<string, string>>({})
 
   const [activeTab, setActiveTab] = useState<'zakazky' | 'kalendar' | 'zakaznici'>(initialTab)
+  const [sideMenuExpanded, setSideMenuExpanded] = useState(false)
   const [expandedOrderIds, setExpandedOrderIds] = useState<string[]>([])
   const [pinnedOrderIds, setPinnedOrderIds] = useState<string[]>([])
   const [seenCustomerUpdateIds, setSeenCustomerUpdateIds] = useState<string[]>([])
@@ -2707,9 +2709,9 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
     width: '100%',
     minHeight: 40,
     borderRadius: 10,
-    border: active ? '1px solid rgba(132, 204, 22, 0.7)' : '1px solid transparent',
-    background: active ? 'rgba(132, 204, 22, 0.16)' : 'transparent',
-    color: active ? '#ecfccb' : 'rgba(226,232,240,0.86)',
+    border: active ? '1px solid #0f172a' : '1px solid transparent',
+    background: active ? '#0f172a' : 'transparent',
+    color: active ? '#fff' : '#334155',
     cursor: 'pointer',
     fontWeight: 900,
     textDecoration: 'none',
@@ -2720,13 +2722,14 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
     padding: '9px 10px',
     textAlign: 'left',
     fontSize: 13,
+    position: 'relative',
   })
 
   const sideUtilityButton: CSSProperties = {
     ...sideNavButton(false),
-    background: 'rgba(255,255,255,0.06)',
-    border: '1px solid rgba(148,163,184,0.18)',
-    color: '#f8fafc',
+    background: '#f8fafc',
+    border: '1px solid #e2e8f0',
+    color: '#475569',
   }
 
   async function markCustomerUpdatesSeen(orderId: string) {
@@ -2789,12 +2792,12 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
         boxSizing: 'border-box',
       }}
     >
-      <div className="layoutWrap appShell" style={{ maxWidth: 1480, margin: '0 auto', display: 'grid', gridTemplateColumns: '230px minmax(0, 1fr)', gap: 14 }}>
-        <aside className="sideMenu">
-          <div>
-            <BrandLogo size="md" tone="dark" style={{ marginBottom: 12 }} />
-            <div className="sideMenuTitle">Servisné centrum</div>
-            <div className="sideMenuSubTitle">ITspot evidencia</div>
+      <div className={`layoutWrap appShell ${sideMenuExpanded ? 'menuExpanded' : 'menuCollapsed'}`} style={{ maxWidth: 'none', margin: 0, display: 'grid', gridTemplateColumns: `${sideMenuExpanded ? 220 : 72}px minmax(0, 1fr)`, gap: 10 }}>
+        <aside className={`sideMenu ${sideMenuExpanded ? 'expanded' : 'collapsed'}`}>
+          <div className="sideMenuBrand">
+            <BrandLogo size="sm" tone="light" />
+            <div className="sideMenuBrandText"><div className="sideMenuTitle">Servisné centrum</div><div className="sideMenuSubTitle">ITspot evidencia</div></div>
+            <button type="button" className="sideMenuToggle" onClick={() => setSideMenuExpanded((value) => !value)} title={sideMenuExpanded ? 'Zbaliť menu' : 'Rozbaliť menu'} aria-label={sideMenuExpanded ? 'Zbaliť menu' : 'Rozbaliť menu'}>{sideMenuExpanded ? <ChevronLeft size={18}/> : <ChevronRight size={18}/>}</button>
           </div>
 
           <Link
@@ -2809,12 +2812,11 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
 
           <nav className="sideMenuNav" aria-label="Hlavná navigácia">
             <div className="sideMenuGroupTitle">Práca</div>
-            <Link href="/poznamky" style={sideNavButton(false)}>
-              <span>Poznámky</span>
-              <span className="sideMenuIcon">›</span>
+            <Link href="/poznamky" style={sideNavButton(false)} title="Poznámky">
+              <StickyNote className="sideMenuNavIcon" size={18}/><span className="sideMenuLabel">Poznámky</span>
             </Link>
-            <button type="button" style={sideNavButton(activeTab === 'zakazky')} onClick={() => setActiveTab('zakazky')}>
-              <span>Zákazky</span>
+            <button type="button" style={sideNavButton(activeTab === 'zakazky')} onClick={() => setActiveTab('zakazky')} title="Zákazky">
+              <BriefcaseBusiness className="sideMenuNavIcon" size={18}/><span className="sideMenuLabel">Zákazky</span>
               <span className="sideMenuBadgeRow">
                 <span className="sideMenuBadge">{orders.filter((order) => AKTIVNE_STATUSY.includes(order.stav)).length}</span>
                 {unseenCustomerUpdateIds.length + unseenCustomerPriorityOrders.length > 0 && (
@@ -2828,48 +2830,41 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
               </span>
             </button>
 
-            <Link href="/admin/requests" style={sideNavButton(pendingRequestsCount > 0)}>
-              <span>Žiadosti</span>
+            <Link href="/admin/requests" style={sideNavButton(pendingRequestsCount > 0)} title="Žiadosti">
+              <Inbox className="sideMenuNavIcon" size={18}/><span className="sideMenuLabel">Žiadosti</span>
               <span className={pendingRequestsCount > 0 ? 'sideMenuBadge sideMenuBadgeAlert' : 'sideMenuBadge'}>
                 {pendingRequestsCount}
               </span>
             </Link>
 
-            <Link href="/kalendar" style={sideNavButton(activeTab === 'kalendar')}>
-              <span>Kalendár</span>
-              <span className="sideMenuIcon">›</span>
+            <Link href="/kalendar" style={sideNavButton(activeTab === 'kalendar')} title="Kalendár">
+              <CalendarDays className="sideMenuNavIcon" size={18}/><span className="sideMenuLabel">Kalendár</span>
             </Link>
 
-            <Link href="/obhliadky" style={sideNavButton(false)}>
-              <span>Obhliadky</span>
-              <span className="sideMenuIcon">›</span>
+            <Link href="/obhliadky" style={sideNavButton(false)} title="Obhliadky">
+              <ClipboardCheck className="sideMenuNavIcon" size={18}/><span className="sideMenuLabel">Obhliadky</span>
             </Link>
 
             <div className="sideMenuGroupTitle">Obchod a evidencia</div>
-            <Link href="/cenove-ponuky" style={sideNavButton(false)}>
-              <span>Cenové ponuky</span>
-              <span className="sideMenuIcon">›</span>
+            <Link href="/cenove-ponuky" style={sideNavButton(false)} title="Cenové ponuky">
+              <FileText className="sideMenuNavIcon" size={18}/><span className="sideMenuLabel">Cenové ponuky</span>
             </Link>
 
-            <Link href="/sklad" style={sideNavButton(false)}>
-              <span>Sklad</span>
-              <span className="sideMenuIcon">›</span>
+            <Link href="/sklad" style={sideNavButton(false)} title="Sklad">
+              <Warehouse className="sideMenuNavIcon" size={18}/><span className="sideMenuLabel">Sklad</span>
             </Link>
 
-            <Link href="/odovzdavacie-protokoly" style={sideNavButton(false)}>
-              <span>Odovzdávací protokol</span>
-              <span className="sideMenuIcon">›</span>
+            <Link href="/odovzdavacie-protokoly" style={sideNavButton(false)} title="Odovzdávacie protokoly">
+              <ClipboardSignature className="sideMenuNavIcon" size={18}/><span className="sideMenuLabel">Protokoly</span>
             </Link>
 
-            <button type="button" style={sideNavButton(activeTab === 'zakaznici')} onClick={() => setActiveTab('zakaznici')}>
-              <span>Zákazníci</span>
-              <span className="sideMenuIcon">›</span>
+            <button type="button" style={sideNavButton(activeTab === 'zakaznici')} onClick={() => setActiveTab('zakaznici')} title="Zákazníci">
+              <Users className="sideMenuNavIcon" size={18}/><span className="sideMenuLabel">Zákazníci</span>
             </button>
 
             <details className="sideMenuMore">
               <summary>
-                <span>Viac</span>
-                <span className="sideMenuIcon">⌄</span>
+                <MoreHorizontal className="sideMenuNavIcon" size={18}/><span className="sideMenuLabel">Viac</span><span className="sideMenuIcon">⌄</span>
               </summary>
               <div className="sideMenuMoreLinks">
                 <Link href="/revizie" style={sideNavButton(false)}>
@@ -2895,47 +2890,11 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
           <div className="sideMenuFooter">
             <button
               type="button"
-              style={{ ...primaryButtonStyle, width: '100%', justifyContent: 'center' }}
-              onClick={() => {
-                resetAddOrderForm()
-                setOpenAddOrder(true)
-              }}
-            >
-              + Nová zákazka
-            </button>
-
-            <button
-              type="button"
-              style={sideUtilityButton}
-              onClick={() => {
-                resetAddCustomerForm()
-                setOpenAddCustomer(true)
-              }}
-            >
-              <span>Nový zákazník</span>
-              <span className="sideMenuIcon">+</span>
-            </button>
-
-            <button
-              type="button"
-              style={sideUtilityButton}
-              onClick={() => {
-                resetEmployeeForm()
-                setOpenAddEmployee(true)
-              }}
-            >
-              <span>Nový zamestnanec</span>
-              <span className="sideMenuIcon">+</span>
-            </button>
-
-            <button
-              type="button"
               style={sideUtilityButton}
               onClick={logout}
               disabled={loggingOut}
             >
-              <span>{loggingOut ? 'Odhlasujem...' : 'Odhlásiť'}</span>
-              <span className="sideMenuIcon">×</span>
+              <LogOut size={18}/><span className="sideMenuLabel">{loggingOut ? 'Odhlasujem...' : 'Odhlásiť'}</span>
             </button>
           </div>
         </aside>
@@ -3165,7 +3124,6 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
             customers={customers}
             deleteCalendarPlan={deleteCalendarPlan}
             getCustomerName={getCustomerName}
-            onBackToOrders={() => router.push('/zakazky')}
             orders={orders}
             startEditOrder={startEditOrder}
             updateCalendarPlan={updateCalendarPlan}
