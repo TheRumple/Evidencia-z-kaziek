@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { BriefcaseBusiness, CalendarDays, ChevronLeft, ChevronRight, ClipboardCheck, ClipboardSignature, FileText, Home, Inbox, LogOut, MoreHorizontal, StickyNote, Users, Warehouse } from 'lucide-react'
+import { BriefcaseBusiness, CalendarDays, ClipboardCheck, ClipboardSignature, FileText, Home, Inbox, LogOut, MoreHorizontal, PackageSearch, ReceiptText, ShieldCheck, StickyNote, Trash2, Users, Warehouse } from 'lucide-react'
 import { BrandLogo } from '@/components/BrandLogo'
 import { supabase } from '@/lib/supabase'
 
@@ -23,16 +23,15 @@ const mainLinks = [
 ]
 
 const moreLinks = [
-  { href: '/revizie', label: 'Revízie' },
-  { href: '/fakturovane', label: 'Fakturované' },
-  { href: '/material', label: 'Na objednanie' },
-  { href: '/kos', label: 'Kôš' },
+  { href: '/revizie', label: 'Revízie', icon: ShieldCheck },
+  { href: '/fakturovane', label: 'Fakturované', icon: ReceiptText },
+  { href: '/material', label: 'Na objednanie', icon: PackageSearch },
+  { href: '/kos', label: 'Kôš', icon: Trash2 },
 ]
 
 export function InternalAppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
-  const [expanded, setExpanded] = useState(false)
   const [ordersCount, setOrdersCount] = useState(0)
   const [requestsCount, setRequestsCount] = useState(0)
   const [loggingOut, setLoggingOut] = useState(false)
@@ -63,12 +62,10 @@ export function InternalAppShell({ children }: { children: React.ReactNode }) {
 
   if (isPublic) return children
 
-  return <div className={`internalAppFrame ${expanded ? 'expanded' : 'compact'}`}>
+  return <div className="internalAppFrame">
     <aside className="globalSideMenu">
       <div className="globalSideBrand">
         <Link href="/" title="Domov"><BrandLogo size="sm" tone="dark"/></Link>
-        {expanded && <strong>ITspot</strong>}
-        <button type="button" onClick={() => setExpanded((value) => !value)} title={expanded ? 'Zbaliť menu' : 'Rozbaliť menu'}>{expanded ? <ChevronLeft size={17}/> : <ChevronRight size={17}/>}</button>
       </div>
       <nav aria-label="Hlavná navigácia">
         {mainLinks.map((item) => {
@@ -79,14 +76,17 @@ export function InternalAppShell({ children }: { children: React.ReactNode }) {
         })}
         <details>
           <summary title="Viac"><MoreHorizontal size={18}/><span>Viac</span></summary>
-          <div>{moreLinks.map((item) => <Link key={item.href} href={item.href}>{item.label}</Link>)}</div>
+          <div>{moreLinks.map((item) => {
+            const Icon = item.icon
+            return <Link key={item.href} href={item.href}><Icon size={17}/><span>{item.label}</span></Link>
+          })}</div>
         </details>
       </nav>
       <button type="button" className="globalLogout" onClick={() => void logout()} disabled={loggingOut} title="Odhlásiť"><LogOut size={18}/><span>{loggingOut ? 'Odhlasujem' : 'Odhlásiť'}</span></button>
     </aside>
     <div className="internalAppContent">{children}</div>
     <style jsx global>{`
-      .internalAppFrame{--rail:94px;min-height:100vh}.internalAppFrame.expanded{--rail:220px}.globalSideMenu{position:fixed;z-index:80;left:8px;top:8px;bottom:8px;width:var(--rail);box-sizing:border-box;padding:9px 7px;border:1px solid #263247;border-radius:12px;background:linear-gradient(180deg,#0b1120 0%,#111827 100%);box-shadow:0 14px 34px rgba(2,6,23,.26);display:flex;flex-direction:column;gap:9px;overflow:visible;color:#e2e8f0}.internalAppContent{min-width:0;margin-left:calc(var(--rail) + 8px)}.globalSideBrand{display:grid;justify-items:center;gap:6px;padding-bottom:7px;border-bottom:1px solid #263247}.internalAppFrame.expanded .globalSideBrand{grid-template-columns:auto 1fr auto;align-items:center;justify-items:start}.globalSideBrand>a{display:flex}.globalSideBrand strong{font-size:15px;color:#fff}.globalSideBrand button{width:42px;height:32px;border:1px solid #334155;border-radius:8px;background:#182235;color:#cbd5e1;display:grid;place-items:center;cursor:pointer}.globalSideBrand button:hover{border-color:#65a30d;color:#a3e635}.globalSideMenu nav{display:grid;gap:3px;overflow-y:auto;overflow-x:hidden;scrollbar-color:#334155 transparent}.globalSideMenu nav>a,.globalSideMenu summary{position:relative;min-height:50px;border:1px solid transparent;border-radius:9px;padding:6px 4px;color:#cbd5e1;text-decoration:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-align:center;cursor:pointer;box-sizing:border-box}.globalSideMenu nav>a span,.globalSideMenu summary span,.globalLogout span{max-width:76px;overflow:hidden;font-size:9px;font-weight:900;line-height:1.05;text-overflow:ellipsis;white-space:nowrap}.globalSideMenu nav>a:hover,.globalSideMenu summary:hover{background:#182235;color:#fff}.globalSideMenu nav>a.active{background:#26351b;border-color:#4d7c0f;color:#fff;box-shadow:inset 3px 0 #84cc16}.globalSideMenu nav>a.active svg{color:#a3e635}.globalSideMenu nav>a em{position:absolute;right:2px;top:2px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:#334155;color:#fff;font-size:9px;font-style:normal;font-weight:950;display:grid;place-items:center}.globalSideMenu nav>a.active em{background:#65a30d;color:#fff}.globalSideMenu details{position:relative}.globalSideMenu summary{list-style:none}.globalSideMenu summary::-webkit-details-marker{display:none}.globalSideMenu details>div{position:absolute;z-index:90;left:calc(100% + 8px);bottom:0;width:170px;padding:6px;border:1px solid #334155;border-radius:9px;background:#111827;box-shadow:0 14px 32px rgba(2,6,23,.32);display:grid;gap:2px}.globalSideMenu details>div a{padding:8px 9px;border-radius:6px;color:#cbd5e1;text-decoration:none;font-size:12px;font-weight:850}.globalSideMenu details>div a:hover{background:#26351b;color:#fff}.globalLogout{margin-top:auto;min-height:48px;border:1px solid #334155;border-radius:9px;background:#182235;color:#cbd5e1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer}.globalLogout:hover{border-color:#64748b;background:#243044;color:#fff}.internalAppFrame.expanded .globalSideMenu nav>a,.internalAppFrame.expanded .globalSideMenu summary,.internalAppFrame.expanded .globalLogout{min-height:40px;flex-direction:row;justify-content:flex-start;gap:9px;padding:8px 10px;text-align:left}.internalAppFrame.expanded .globalSideMenu nav>a span,.internalAppFrame.expanded .globalSideMenu summary span,.internalAppFrame.expanded .globalLogout span{max-width:none;font-size:12px}.internalAppFrame.expanded .globalSideMenu details>div{left:0;bottom:auto;top:100%;width:100%;box-sizing:border-box}@media(max-width:900px){.internalAppFrame{--rail:0px}.internalAppContent{margin-left:0;padding-top:76px}.globalSideMenu{left:6px;right:6px;top:6px;bottom:auto;width:auto;height:64px;padding:6px 8px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center}.globalSideBrand{display:flex;padding:0;border:0}.globalSideBrand button,.globalSideBrand strong{display:none}.globalSideMenu nav{display:flex;overflow-x:auto;overflow-y:hidden}.globalSideMenu nav>a,.globalSideMenu summary{width:66px;min-width:66px;min-height:50px}.globalSideMenu details>div{position:fixed;left:8px;right:8px;top:72px;bottom:auto;width:auto}.globalLogout{margin:0;width:48px;min-height:48px}.globalLogout span{display:none}}
+      .internalAppFrame{--rail:94px;min-height:100vh}.globalSideMenu{position:fixed;z-index:80;left:8px;top:8px;bottom:8px;width:var(--rail);box-sizing:border-box;padding:9px 7px;border:1px solid #263247;border-radius:12px;background:linear-gradient(180deg,#0b1120 0%,#111827 100%);box-shadow:0 14px 34px rgba(2,6,23,.26);display:flex;flex-direction:column;gap:9px;overflow:visible;color:#e2e8f0}.internalAppContent{min-width:0;margin-left:calc(var(--rail) + 8px)}.globalSideBrand{display:grid;justify-items:center;padding-bottom:8px;border-bottom:1px solid #263247}.globalSideBrand>a{display:flex}.globalSideMenu nav{display:grid;gap:3px;overflow-y:auto;overflow-x:hidden;scrollbar-color:#334155 transparent}.globalSideMenu nav>a,.globalSideMenu summary{position:relative;min-height:50px;border:1px solid transparent;border-radius:9px;padding:6px 4px;color:#cbd5e1;text-decoration:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-align:center;cursor:pointer;box-sizing:border-box}.globalSideMenu nav>a span,.globalSideMenu summary span,.globalLogout span{max-width:76px;overflow:hidden;font-size:9px;font-weight:900;line-height:1.05;text-overflow:ellipsis;white-space:nowrap}.globalSideMenu nav>a:hover,.globalSideMenu summary:hover{background:#182235;color:#fff}.globalSideMenu nav>a.active{background:#26351b;border-color:#4d7c0f;color:#fff;box-shadow:inset 3px 0 #84cc16}.globalSideMenu nav>a.active svg{color:#a3e635}.globalSideMenu nav>a em{position:absolute;right:2px;top:2px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:#334155;color:#fff;font-size:9px;font-style:normal;font-weight:950;display:grid;place-items:center}.globalSideMenu nav>a.active em{background:#65a30d;color:#fff}.globalSideMenu details{position:relative}.globalSideMenu summary{list-style:none}.globalSideMenu summary::-webkit-details-marker{display:none}.globalSideMenu details>div{position:fixed;z-index:90;left:calc(var(--rail) + 16px);bottom:68px;width:190px;padding:7px;border:1px solid #334155;border-radius:9px;background:#111827;box-shadow:0 14px 32px rgba(2,6,23,.32);display:grid;gap:3px}.globalSideMenu details>div a{min-height:38px;padding:7px 9px;border-radius:7px;color:#cbd5e1;text-decoration:none;font-size:12px;font-weight:850;display:flex;align-items:center;gap:9px}.globalSideMenu details>div a:hover{background:#26351b;color:#fff}.globalSideMenu details>div a svg{color:#a3e635}.globalLogout{margin-top:auto;min-height:48px;border:1px solid #334155;border-radius:9px;background:#182235;color:#cbd5e1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer}.globalLogout:hover{border-color:#64748b;background:#243044;color:#fff}@media(max-width:900px){.internalAppFrame{--rail:0px}.internalAppContent{margin-left:0;padding-top:76px}.globalSideMenu{left:6px;right:6px;top:6px;bottom:auto;width:auto;height:64px;padding:6px 8px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center}.globalSideBrand{display:flex;padding:0;border:0}.globalSideMenu nav{display:flex;overflow-x:auto;overflow-y:hidden}.globalSideMenu nav>a,.globalSideMenu summary{width:66px;min-width:66px;min-height:50px}.globalSideMenu details>div{position:fixed;left:8px;right:8px;top:72px;bottom:auto;width:auto;grid-template-columns:repeat(2,minmax(0,1fr))}.globalLogout{margin:0;width:48px;min-height:48px}.globalLogout span{display:none}}
     `}</style>
   </div>
 }
