@@ -1402,12 +1402,13 @@ export function DashboardStyles() {
           left: 4px;
           right: 4px;
           z-index: 2;
-          min-height: 46px;
+          min-height: 28px;
           border: 1px solid;
           border-left-width: 5px;
           border-radius: 7px;
           padding: 5px 25px 5px 7px;
           overflow: hidden;
+          box-sizing: border-box;
           cursor: grab;
           box-shadow: 0 3px 9px rgba(15, 23, 42, 0.1);
         }

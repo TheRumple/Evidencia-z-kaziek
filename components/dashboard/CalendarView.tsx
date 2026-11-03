@@ -21,9 +21,9 @@ const dayNames = ['Pondelok', 'Utorok', 'Streda', 'Štvrtok', 'Piatok', 'Sobota'
 const shortDayNames = ['Po', 'Ut', 'St', 'Št', 'Pi', 'So', 'Ne']
 const inactiveStatuses = new Set(['odovzdana', 'fakturovana', 'stornovana'])
 const dayStartMinutes = 7 * 60
-const dayEndMinutes = 19 * 60
+const dayEndMinutes = 16 * 60
 const hourHeight = 64
-const timelineHours = Array.from({ length: 13 }, (_, index) => index + 7)
+const timelineHours = Array.from({ length: 10 }, (_, index) => index + 7)
 
 function toLocalDate(dateKey: string) {
   const [year, month, day] = dateKey.split('-').map(Number)
@@ -258,7 +258,7 @@ export function CalendarView({ addCalendarPlan, boxStyle, buttonStyle, calendarP
     const start = Math.max(dayStartMinutes, Math.min(dayEndMinutes - 30, rawStart))
     const end = Math.max(start + 30, Math.min(dayEndMinutes, rawEnd))
     const top = ((start - dayStartMinutes) / 60) * hourHeight
-    const height = Math.max(46, ((end - start) / 60) * hourHeight - 4)
+    const height = Math.max(28, ((end - start) / 60) * hourHeight - 4)
     return (
       <div key={plan.id} className="simpleCalendarEvent" draggable onDragStart={(event) => onPlanDragStart(event, plan.id)} style={{ top, height, borderColor: accent.border, background: accent.bg }}>
         <button type="button" className="simpleCalendarEventMain" onClick={() => startEditPlan(plan)} onDoubleClick={() => order && startEditOrder(order)}>
