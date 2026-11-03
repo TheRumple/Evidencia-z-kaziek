@@ -102,6 +102,7 @@ export type CalendarPlan = {
   start_time: string | null
   end_time: string | null
   note: string | null
+  is_private: boolean
   created_at?: string
 }
 

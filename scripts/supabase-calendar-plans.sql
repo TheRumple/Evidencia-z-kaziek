@@ -11,6 +11,7 @@ create table if not exists public.calendar_plans (
   start_time time,
   end_time time,
   note text,
+  is_private boolean not null default false,
   created_at timestamptz not null default now()
 );
 
@@ -22,6 +23,9 @@ alter table public.calendar_plans
 
 alter table public.calendar_plans
   add column if not exists customer_id uuid references public.customers(id) on delete set null;
+
+alter table public.calendar_plans
+  add column if not exists is_private boolean not null default false;
 
 alter table public.calendar_plans enable row level security;
 

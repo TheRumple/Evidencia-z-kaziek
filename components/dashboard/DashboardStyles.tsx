@@ -1767,6 +1767,41 @@ export function DashboardStyles() {
           gap: 10px;
         }
 
+        .calendarPrivateToggle {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 10px 12px;
+          border: 1px solid #fecdd3;
+          border-radius: 8px;
+          background: #fff1f2;
+          color: #881337;
+          cursor: pointer;
+        }
+
+        .calendarPrivateToggle input {
+          width: 18px;
+          height: 18px;
+          accent-color: #e11d48;
+          flex: 0 0 auto;
+        }
+
+        .calendarPrivateToggle span,
+        .calendarPrivateToggle small {
+          display: block;
+        }
+
+        .calendarPrivateToggle strong {
+          font-size: 12px;
+        }
+
+        .calendarPrivateToggle small {
+          margin-top: 2px;
+          color: #9f1239;
+          font-size: 10px;
+          font-weight: 700;
+        }
+
         .simpleCalendarFormGrid {
           display: grid;
           grid-template-columns: 1.2fr 1fr 1fr;

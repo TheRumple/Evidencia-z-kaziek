@@ -559,6 +559,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
     startTime: string
     endTime: string
     note: string
+    isPrivate: boolean
   }) {
     if (!userId) return
     if (!input.planDate) {
@@ -583,13 +584,15 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
           start_time: input.startTime || null,
           end_time: input.endTime || null,
           note: input.note.trim() || null,
+          ...(input.isPrivate ? { is_private: true } : {}),
         },
       ])
       .select()
       .single()
 
     if (error) {
-      setNotice({ type: 'error', text: `Plán sa neuložil: ${error.message}` })
+      const missingPrivateColumn = input.isPrivate && (error.code === 'PGRST204' || error.message.includes('is_private'))
+      setNotice({ type: 'error', text: missingPrivateColumn ? 'Pre súkromné položky spusti v Supabase skript scripts/supabase-calendar-private.sql.' : `Plán sa neuložil: ${error.message}` })
       return
     }
 
@@ -617,7 +620,7 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
     setNotice({ type: 'success', text: 'Položka bola zmazaná z kalendára.' })
   }
 
-  async function updateCalendarPlan(planId: string, changes: Partial<Pick<CalendarPlan, 'customer_id' | 'plan_date' | 'start_time' | 'end_time' | 'note' | 'title'>>) {
+  async function updateCalendarPlan(planId: string, changes: Partial<Pick<CalendarPlan, 'order_id' | 'customer_id' | 'plan_date' | 'start_time' | 'end_time' | 'note' | 'title' | 'is_private'>>) {
     const previous = calendarPlans
     setCalendarPlans((current) =>
       current
@@ -628,19 +631,22 @@ export default function DashboardPage({ initialTab = 'zakazky' }: DashboardPageP
     const { error } = await supabase
       .from('calendar_plans')
       .update({
+        order_id: changes.order_id,
         customer_id: changes.customer_id,
         plan_date: changes.plan_date,
         start_time: changes.start_time,
         end_time: changes.end_time,
         note: changes.note,
         title: changes.title,
+        is_private: changes.is_private,
       })
       .eq('id', planId)
       .eq('user_id', userId)
 
     if (error) {
       setCalendarPlans(previous)
-      setNotice({ type: 'error', text: `Plán sa neupravil: ${error.message}` })
+      const missingPrivateColumn = changes.is_private !== undefined && (error.code === 'PGRST204' || error.message.includes('is_private'))
+      setNotice({ type: 'error', text: missingPrivateColumn ? 'Pre súkromné položky spusti v Supabase skript scripts/supabase-calendar-private.sql.' : `Plán sa neupravil: ${error.message}` })
       return
     }
 
