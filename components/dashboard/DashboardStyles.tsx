@@ -466,10 +466,10 @@ export function DashboardStyles() {
           align-items: center;
           margin: 0;
           border: none;
-          background: var(--section-soft, #f1f5f9);
+          background: var(--section-background, #475569);
           border-radius: 0;
           padding: 4px 9px 4px 12px;
-          color: var(--section-text, #334155);
+          color: #fff;
           border-left: 4px solid var(--section-accent, #64748b);
         }
 
@@ -487,12 +487,12 @@ export function DashboardStyles() {
           font-size: 11px;
           line-height: 1.1;
           font-weight: 900;
-          color: var(--section-text, #334155);
+          color: #fff;
         }
 
         .ordersSectionHeader p {
           margin: 2px 0 0;
-          color: #64748b;
+          color: rgba(255, 255, 255, 0.78);
           font-size: 9px;
           font-weight: 700;
         }
@@ -501,9 +501,9 @@ export function DashboardStyles() {
           min-width: 20px;
           height: 20px;
           border-radius: 999px;
-          background: #fff;
-          color: var(--section-text, #334155);
-          border: 1px solid color-mix(in srgb, var(--section-accent, #64748b) 45%, white);
+          background: rgba(255, 255, 255, 0.16);
+          color: #fff;
+          border: 1px solid rgba(255, 255, 255, 0.34);
           display: inline-flex;
           align-items: center;
           justify-content: center;
@@ -513,51 +513,43 @@ export function DashboardStyles() {
 
         .ordersSection-overdue .ordersSectionHeader {
           --section-accent: #dc2626;
-          --section-soft: #fff1f2;
-          --section-text: #991b1b;
+          --section-background: linear-gradient(90deg, #b91c1c, #dc2626);
         }
 
         .ordersSection-pinned .ordersSectionHeader,
         .ordersSection-pripnute .ordersSectionHeader {
           --section-accent: #65a30d;
-          --section-soft: #f7fee7;
-          --section-text: #3f6212;
+          --section-background: linear-gradient(90deg, #4d7c0f, #65a30d);
         }
 
         .ordersSection-rozpracovana .ordersSectionHeader {
           --section-accent: #d97706;
-          --section-soft: #fffbeb;
-          --section-text: #92400e;
+          --section-background: linear-gradient(90deg, #b45309, #d97706);
         }
 
         .ordersSection-cenova_ponuka .ordersSectionHeader {
           --section-accent: #0284c7;
-          --section-soft: #f0f9ff;
-          --section-text: #075985;
+          --section-background: linear-gradient(90deg, #036b8e, #0891b2);
         }
 
         .ordersSection-obhliadka .ordersSectionHeader {
           --section-accent: #7c3aed;
-          --section-soft: #faf5ff;
-          --section-text: #6b21a8;
+          --section-background: linear-gradient(90deg, #6d28d9, #7c3aed);
         }
 
         .ordersSection-caka .ordersSectionHeader {
           --section-accent: #ea580c;
-          --section-soft: #fff7ed;
-          --section-text: #9a3412;
+          --section-background: linear-gradient(90deg, #c2410c, #ea580c);
         }
 
         .ordersSection-nova .ordersSectionHeader {
           --section-accent: #2563eb;
-          --section-soft: #eff6ff;
-          --section-text: #1e40af;
+          --section-background: linear-gradient(90deg, #1d4ed8, #2563eb);
         }
 
         .ordersSection-hotova .ordersSectionHeader {
           --section-accent: #16a34a;
-          --section-soft: #f0fdf4;
-          --section-text: #166534;
+          --section-background: linear-gradient(90deg, #15803d, #16a34a);
         }
 
         .ordersCardsStack {
